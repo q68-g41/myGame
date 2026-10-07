@@ -35,6 +35,16 @@ export type MoveKind = AttackKind | 'support';
 /** 能力変化の対象になる能力 */
 export type StatKey = keyof StatStages;
 
+/** 状態異常の ID（3.8）。1体につき1つまで */
+export type StatusId = 'erosion' | 'slow';
+
+/** かかっている状態異常 */
+export interface StatusState {
+  readonly id: StatusId;
+  /** 残りターン数。ターン終了処理で 1 減り、0 になったら治る */
+  readonly remaining: number;
+}
+
 /** 補助技の効果 */
 export type MoveEffect =
   | {
@@ -48,6 +58,11 @@ export type MoveEffect =
       /** 自分のHPを、最大HPの percent % 回復する */
       readonly type: 'heal';
       readonly percent: number;
+    }
+  | {
+      /** 相手に状態異常を与える。すでに状態異常があれば効かない */
+      readonly type: 'status';
+      readonly status: StatusId;
     };
 
 /** 攻撃技の定義 */
@@ -88,6 +103,8 @@ export interface Combatant {
   readonly stages: StatStages;
   /** 技ID → 使えない残りターン数。0 または未設定なら使える */
   readonly cooldowns: Readonly<Record<string, number>>;
+  /** かかっている状態異常。なければ null */
+  readonly status: StatusState | null;
 }
 
 /** 陣営 */
@@ -174,6 +191,31 @@ export type BattleEvent =
       readonly amount: number;
       /** 回復したあとのHP */
       readonly hp: number;
+    }
+  | {
+      readonly type: 'statusApplied';
+      readonly side: Side;
+      readonly status: StatusId;
+    }
+  | {
+      /** すでに状態異常があって、効かなかった */
+      readonly type: 'statusBlocked';
+      readonly side: Side;
+      readonly status: StatusId;
+    }
+  | {
+      /** 状態異常によるダメージ（侵蝕） */
+      readonly type: 'statusDamage';
+      readonly side: Side;
+      readonly status: StatusId;
+      readonly amount: number;
+      readonly hp: number;
+    }
+  | {
+      /** 状態異常が治った */
+      readonly type: 'statusEnded';
+      readonly side: Side;
+      readonly status: StatusId;
     }
   | {
       readonly type: 'switched';
