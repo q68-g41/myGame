@@ -36,6 +36,12 @@ describe('バトルの開始', () => {
     expect(() => createCombatant(fighter({ moves: [NORMAL, NORMAL] }))).toThrow();
   });
 
+  it('大技以外の技を1つ以上覚えていないとエラー', () => {
+    const big2 = makeMove({ id: 'big2', kind: 'big', power: 90 });
+    expect(() => createCombatant(fighter({ moves: [BIG, big2] }))).toThrow('大技以外');
+    expect(() => createCombatant(fighter({ moves: [BIG, PRIORITY] }))).not.toThrow();
+  });
+
   it('相手の陣営', () => {
     expect(opponentOf('player')).toBe('enemy');
     expect(opponentOf('enemy')).toBe('player');

@@ -38,6 +38,10 @@ export function createCombatant(def: FighterDef): Combatant {
   if (new Set(def.moves.map((move) => move.id)).size !== def.moves.length) {
     throw new Error(`${def.id} に同じ技が重複しています`);
   }
+  // 大技が使えない間に、選べる技がなくならないようにする（3.6）
+  if (def.moves.every((move) => move.kind === 'big')) {
+    throw new Error(`${def.id} は大技以外の技を1つ以上覚えてください`);
+  }
   return {
     id: def.id,
     attribute: def.attribute,
