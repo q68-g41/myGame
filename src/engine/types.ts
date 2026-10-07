@@ -27,17 +27,47 @@ export interface StatStages {
  * - normal：通常の攻撃技
  * - big：大技（使ったあと一定ターン使えない）
  * - priority：先制技（技の中で先に動く）
- * 補助技は M2 で追加する。
+ * - support：補助技（ダメージを与えず、能力変化や回復をする）
  */
-export type MoveKind = 'normal' | 'big' | 'priority';
+export type AttackKind = 'normal' | 'big' | 'priority';
+export type MoveKind = AttackKind | 'support';
 
-/** 技の定義 */
-export interface MoveDef {
+/** 能力変化の対象になる能力 */
+export type StatKey = keyof StatStages;
+
+/** 補助技の効果 */
+export type MoveEffect =
+  | {
+      /** 能力変化。stages は段階数（正なら上げる、負なら下げる） */
+      readonly type: 'stat';
+      readonly target: 'self' | 'opponent';
+      readonly stat: StatKey;
+      readonly stages: number;
+    }
+  | {
+      /** 自分のHPを、最大HPの percent % 回復する */
+      readonly type: 'heal';
+      readonly percent: number;
+    };
+
+/** 攻撃技の定義 */
+export interface AttackMoveDef {
   readonly id: string;
   readonly attribute: AttributeId;
-  readonly kind: MoveKind;
+  readonly kind: AttackKind;
   readonly power: number;
 }
+
+/** 補助技の定義。効果を順番に適用する */
+export interface SupportMoveDef {
+  readonly id: string;
+  readonly attribute: AttributeId;
+  readonly kind: 'support';
+  readonly effects: readonly MoveEffect[];
+}
+
+/** 技の定義 */
+export type MoveDef = AttackMoveDef | SupportMoveDef;
 
 /** キャラの定義（戦闘に出す前のデータ） */
 export interface FighterDef {
@@ -127,6 +157,23 @@ export type BattleEvent =
       readonly hp: number;
       readonly effectiveness: Effectiveness;
       readonly resonance: boolean;
+    }
+  | {
+      readonly type: 'statChanged';
+      readonly side: Side;
+      readonly stat: StatKey;
+      /** 実際に変わった段階数（上限・下限で変わらなければ 0） */
+      readonly delta: number;
+      /** 変化したあとの段階 */
+      readonly stage: number;
+    }
+  | {
+      readonly type: 'healed';
+      readonly side: Side;
+      /** 実際に回復した量（HPが満タンなら 0） */
+      readonly amount: number;
+      /** 回復したあとのHP */
+      readonly hp: number;
     }
   | {
       readonly type: 'switched';

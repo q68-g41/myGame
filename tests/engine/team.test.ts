@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest';
 import { createBattle, resolveTurn, submitReplacements } from '../../src/engine/battle';
-import { selectableMoves } from '../../src/engine/moves';
+import { isAttackMove, selectableMoves } from '../../src/engine/moves';
 import { createRng, type RngState } from '../../src/engine/rng';
 import { activeCombatant, switchTargets } from '../../src/engine/team';
 import type { BattleEvent, BattleState, Command, Commands, FighterDef, Side } from '../../src/engine/types';
@@ -189,7 +189,7 @@ describe('倒れたとき（仕様書 3.9・3.10）', () => {
 describe('3対3を最後まで進める', () => {
   /** 威力が一番高い技を選び、倒れたら控えの先頭を出す */
   function strongest(state: BattleState, side: Side): Command {
-    const moves = [...selectableMoves(active(state, side))].sort((a, b) => b.power - a.power);
+    const moves = selectableMoves(active(state, side)).filter(isAttackMove).sort((a, b) => b.power - a.power);
     return move(moves[0]!.id);
   }
 

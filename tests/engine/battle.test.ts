@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest';
 import { createBattle, createCombatant, opponentOf, resolveTurn } from '../../src/engine/battle';
-import { selectableMoves } from '../../src/engine/moves';
+import { isAttackMove, selectableMoves } from '../../src/engine/moves';
 import { createRng, type RngState } from '../../src/engine/rng';
 import { activeCombatant } from '../../src/engine/team';
 import type { BattleEvent, BattleState, Commands, FighterDef, Side } from '../../src/engine/types';
@@ -209,7 +209,7 @@ describe('不正なコマンド', () => {
 describe('バトルを最後まで進める', () => {
   /** 選べる技のうち、威力が一番高いものを選ぶ */
   function strongest(state: BattleState, side: 'player' | 'enemy'): string {
-    const moves = [...selectableMoves(active(state, side))].sort((a, b) => b.power - a.power);
+    const moves = selectableMoves(active(state, side)).filter(isAttackMove).sort((a, b) => b.power - a.power);
     return moves[0]!.id;
   }
 

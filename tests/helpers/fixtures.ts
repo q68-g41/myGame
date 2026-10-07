@@ -1,4 +1,4 @@
-import type { AttributeId, Combatant, FighterDef, MoveDef, Stats } from '../../src/engine/types';
+import type { AttackMoveDef, AttributeId, Combatant, FighterDef, Stats, SupportMoveDef } from '../../src/engine/types';
 
 /** テスト用のキャラ定義。能力値はすべて 50 */
 export function makeFighterDef(
@@ -24,14 +24,25 @@ export function deepFreeze<T>(value: T): T {
   return value;
 }
 
-/** テスト用の技 */
-export function makeMove(overrides: Partial<MoveDef> = {}): MoveDef {
+/** テスト用の攻撃技 */
+export function makeMove(overrides: Partial<AttackMoveDef> = {}): AttackMoveDef {
   return {
     id: 'test-move',
     attribute: 'crimson',
     kind: 'normal',
     power: 60,
     ...overrides,
+  };
+}
+
+/** テスト用の補助技 */
+export function makeSupportMove(overrides: Partial<Omit<SupportMoveDef, 'kind'>> = {}): SupportMoveDef {
+  return {
+    id: 'test-support',
+    attribute: 'crimson',
+    effects: [{ type: 'stat', target: 'self', stat: 'attack', stages: 1 }],
+    ...overrides,
+    kind: 'support',
   };
 }
 

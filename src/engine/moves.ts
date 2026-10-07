@@ -1,4 +1,9 @@
-import type { Combatant, MoveDef } from './types';
+import type { AttackMoveDef, Combatant, MoveDef } from './types';
+
+/** 攻撃技か（補助技でないか） */
+export function isAttackMove(move: MoveDef): move is AttackMoveDef {
+  return move.kind !== 'support';
+}
 
 /** キャラが覚えている技を ID で探す。覚えていなければエラー */
 export function findMove(combatant: Combatant, moveId: string): MoveDef {
