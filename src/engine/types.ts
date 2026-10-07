@@ -98,6 +98,7 @@ export type BattleEvent =
       readonly type: 'damage';
       /** ダメージを受けた陣営 */
       readonly side: Side;
+      /** 計算したダメージ（残りHPより多いこともある） */
       readonly amount: number;
       /** ダメージを受けたあとのHP */
       readonly hp: number;
