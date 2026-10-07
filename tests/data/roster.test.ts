@@ -1,0 +1,58 @@
+import { describe, expect, it } from 'vitest';
+import { ATTRIBUTE_NAMES } from '../../src/data/attributes';
+import { FIGHTERS } from '../../src/data/fighters';
+import { MOVES, getMove } from '../../src/data/moves';
+import { createCombatant } from '../../src/engine/battle';
+import { ATTRIBUTE_ORDER } from '../../src/engine/constants';
+
+describe('属性の表示名', () => {
+  it('6属性すべてに表示名がある', () => {
+    for (const attribute of ATTRIBUTE_ORDER) {
+      expect(ATTRIBUTE_NAMES[attribute]).toBeTruthy();
+    }
+  });
+});
+
+describe('技のデータ（仕様書 3.6 の目安）', () => {
+  const moves = Object.values(MOVES);
+
+  it('ID が重ならない', () => {
+    expect(Object.keys(MOVES)).toHaveLength(moves.length);
+  });
+
+  it.each(moves)('$id の威力が目安の範囲（通常50〜70、大技90〜110、先制30〜40）', (move) => {
+    expect(move.name).toBeTruthy();
+    if (move.kind === 'support') {
+      expect(move.effects.length).toBeGreaterThan(0);
+      return;
+    }
+    const range = { normal: [50, 70], big: [90, 110], priority: [30, 40] }[move.kind];
+    expect(move.power).toBeGreaterThanOrEqual(range[0]!);
+    expect(move.power).toBeLessThanOrEqual(range[1]!);
+  });
+
+  it('存在しない技を取り出すとエラー', () => {
+    expect(() => getMove('unknown')).toThrow('unknown');
+  });
+});
+
+describe('キャラのデータ（仕様書 3.2 の目安）', () => {
+  it('ID が重ならない', () => {
+    expect(new Set(FIGHTERS.map((fighter) => fighter.id)).size).toBe(FIGHTERS.length);
+  });
+
+  it('属性ごとに1体ずついる', () => {
+    expect(FIGHTERS.map((fighter) => fighter.attribute).sort()).toEqual([...ATTRIBUTE_ORDER].sort());
+  });
+
+  it.each(FIGHTERS)('$name の能力値が目安の範囲（HP 80〜120、ほか 30〜70）で、戦闘に出せる', (fighter) => {
+    expect(fighter.stats.hp).toBeGreaterThanOrEqual(80);
+    expect(fighter.stats.hp).toBeLessThanOrEqual(120);
+    for (const stat of [fighter.stats.attack, fighter.stats.defense, fighter.stats.speed]) {
+      expect(stat).toBeGreaterThanOrEqual(30);
+      expect(stat).toBeLessThanOrEqual(70);
+    }
+    // 技は 1〜4 個、重複なし、大技以外が1つ以上（createCombatant が検査する）
+    expect(() => createCombatant(fighter)).not.toThrow();
+  });
+});
