@@ -1,8 +1,8 @@
 import { describe, expect, it } from 'vitest';
 import { ATTRIBUTE_ORDER } from '../../src/engine/constants';
 
-// src/engine/ のソースを文字列として読み込む
-const sources = import.meta.glob<string>('../../src/engine/**/*.ts', {
+// エンジン・データ・CPU のソースを文字列として読み込む
+const sources = import.meta.glob<string>(['../../src/engine/**/*.ts', '../../src/data/**/*.ts', '../../src/ai/**/*.ts'], {
   query: '?raw',
   import: 'default',
   eager: true,
@@ -13,7 +13,7 @@ describe('エンジンのルール', () => {
     expect(Object.keys(sources).length).toBeGreaterThan(0);
   });
 
-  // DOM・ブラウザAPIは tsconfig.engine.json の型チェックで禁止している。
+  // DOM・ブラウザAPIは tsconfig.engine.json の型チェックで禁止している（src/engine・src/data・src/ai）。
   // 型では防げない「結果が毎回変わるもの」をここで確かめる。
   it.each(Object.entries(sources))('%s は Math.random や現在時刻を使わない', (_path, source) => {
     expect(source).not.toMatch(/Math\.random/);
