@@ -10,6 +10,9 @@ export const SIDES: readonly Side[] = ['player', 'enemy'];
 /** 1体が覚えられる技の数（3.6） */
 export const MAX_MOVES = 4;
 
+/** 1つの陣営のチームの最大人数（3対3） */
+export const MAX_TEAM_SIZE = 3;
+
 /** 属性の並び順。円になっていて、最後の次は最初に戻る（3.3） */
 export const ATTRIBUTE_ORDER: readonly AttributeId[] = [
   'crimson',

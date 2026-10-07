@@ -1,8 +1,9 @@
-import { BIG_MOVE_COOLDOWN_TURNS, MAX_MOVES, SIDES } from './constants';
+import { BIG_MOVE_COOLDOWN_TURNS, MAX_MOVES, MAX_TEAM_SIZE, SIDES } from './constants';
 import { computeDamage, rollDamagePercent } from './damage';
 import { findMove, isMoveSelectable } from './moves';
 import { decideActionOrder } from './order';
 import type { RngState } from './rng';
+import { activeOf, isFainted, isWiped, switchTargets, withMember } from './team';
 import type {
   BattleEvent,
   BattleState,
@@ -11,7 +12,9 @@ import type {
   Commands,
   FighterDef,
   MoveDef,
+  Replacements,
   Side,
+  SideState,
 } from './types';
 
 type Sides = BattleState['sides'];
@@ -24,6 +27,14 @@ export interface TurnResult {
   /** 次のターンに渡す乱数の状態 */
   readonly rng: RngState;
 }
+
+/** 控えからキャラを出した結果 */
+export interface ReplacementResult {
+  readonly state: BattleState;
+  readonly events: readonly BattleEvent[];
+}
+
+const NO_STAGES = { attack: 0, defense: 0, speed: 0 } as const;
 
 /** 相手の陣営 */
 export function opponentOf(side: Side): Side {
@@ -48,29 +59,58 @@ export function createCombatant(def: FighterDef): Combatant {
     stats: def.stats,
     moves: def.moves,
     hp: def.stats.hp,
-    stages: { attack: 0, defense: 0, speed: 0 },
+    stages: NO_STAGES,
     cooldowns: {},
   };
 }
 
-/** 1対1のバトルを始める */
-export function createBattle(player: FighterDef, enemy: FighterDef): BattleState {
+function createSide(team: readonly FighterDef[]): SideState {
+  if (team.length === 0 || team.length > MAX_TEAM_SIZE) {
+    throw new Error(`チームは 1〜${MAX_TEAM_SIZE} 体にしてください（いま ${team.length} 体）`);
+  }
+  return { team: team.map(createCombatant), active: 0 };
+}
+
+/** バトルを始める。チームは 1〜3 体で、先頭のキャラから場に出る */
+export function createBattle(player: readonly FighterDef[], enemy: readonly FighterDef[]): BattleState {
   return {
     turn: 1,
-    sides: { player: createCombatant(player), enemy: createCombatant(enemy) },
+    sides: { player: createSide(player), enemy: createSide(enemy) },
+    awaitingReplacement: [],
     winner: null,
   };
 }
 
-function assertSelectable(combatant: Combatant, command: Command): void {
-  findMove(combatant, command.moveId);
-  if (!isMoveSelectable(combatant, command.moveId)) {
-    throw new Error(`${combatant.id} の技 ${command.moveId} はまだ使えません`);
+function assertCommandValid(side: SideState, command: Command): void {
+  if (command.type === 'switch') {
+    if (!switchTargets(side).includes(command.to)) {
+      throw new Error(`チームの ${command.to} 番目とは交代できません`);
+    }
+    return;
+  }
+  const active = activeOf(side);
+  findMove(active, command.moveId);
+  if (!isMoveSelectable(active, command.moveId)) {
+    throw new Error(`${active.id} の技 ${command.moveId} はまだ使えません`);
   }
 }
 
-function withCombatant(sides: Sides, side: Side, combatant: Combatant): Sides {
-  return { ...sides, [side]: combatant };
+function withSide(sides: Sides, side: Side, sideState: SideState): Sides {
+  return { ...sides, [side]: sideState };
+}
+
+/** 場のキャラを差し替える */
+function withActive(sides: Sides, side: Side, combatant: Combatant): Sides {
+  const sideState = sides[side];
+  return withSide(sides, side, withMember(sideState, sideState.active, combatant));
+}
+
+/** 場のキャラを入れ替える。引っ込めたキャラの能力変化はリセットし、状態異常と大技の使用不可ターンは残す（3.9） */
+function switchActive(sides: Sides, side: Side, to: number): Sides {
+  const sideState = sides[side];
+  const outgoing = activeOf(sideState);
+  const reset = withMember(sideState, sideState.active, { ...outgoing, stages: NO_STAGES });
+  return withSide(sides, side, { ...reset, active: to });
 }
 
 /** 技を使ったあとの状態。大技なら使用不可ターンを設定する */
@@ -98,6 +138,25 @@ function tickCooldowns(combatant: Combatant): Combatant {
 }
 
 /**
+ * 決着を判定する（3.10 の 5）。
+ * 全員倒れた陣営が1つならその相手の勝ち。両方なら、後に倒れた側の勝ち。
+ */
+function decideWinner(sides: Sides, faintOrder: readonly Side[]): Side | null {
+  const wiped = SIDES.filter((side) => isWiped(sides[side]));
+  if (wiped.length === 0) {
+    return null;
+  }
+  if (wiped.length === 1) {
+    return opponentOf(wiped[0]!);
+  }
+  const lastFainted = faintOrder.at(-1);
+  if (lastFainted === undefined) {
+    throw new Error('両方が全滅しているのに、倒れた記録がありません');
+  }
+  return lastFainted;
+}
+
+/**
  * 1ターンを処理する（3.10）。
  * (いまの状態, 双方のコマンド, 乱数) → 次の状態 + イベントログ + 次の乱数の状態。
  * 引数の状態は書き換えない。同じ引数なら必ず同じ結果になる。
@@ -107,26 +166,37 @@ export function resolveTurn(state: BattleState, commands: Commands, rng: RngStat
   if (state.winner !== null) {
     throw new Error('このバトルはすでに決着しています');
   }
+  if (state.awaitingReplacement.length > 0) {
+    throw new Error('倒れたキャラの代わりを、先に控えから選んでください');
+  }
   for (const side of SIDES) {
-    assertSelectable(state.sides[side], commands[side]);
+    assertCommandValid(state.sides[side], commands[side]);
   }
 
-  // 2. 交代（M2 で追加する）
-
-  // 3. 技を行動順に実行する。順番が来たときに倒れていたら行動しない
   const events: BattleEvent[] = [];
+  const faintOrder: Side[] = [];
   const order = decideActionOrder(state, commands, rng);
   let currentRng = order.rng;
   let sides = state.sides;
 
+  // 2・3. 交代と技を行動順に実行する（交代は行動順で先に来る）。順番が来たときに倒れていたら行動しない
   for (const side of order.value) {
-    const user = sides[side];
-    if (user.hp <= 0) {
+    const sideState = sides[side];
+    const user = activeOf(sideState);
+    if (isFainted(user)) {
       continue;
     }
+    const command = commands[side];
+
+    if (command.type === 'switch') {
+      sides = switchActive(sides, side, command.to);
+      events.push({ type: 'switched', side, from: sideState.active, to: command.to, reason: 'command' });
+      continue;
+    }
+
     const targetSide = opponentOf(side);
-    const target = sides[targetSide];
-    const move = findMove(user, commands[side].moveId);
+    const target = activeOf(sides[targetSide]);
+    const move = findMove(user, command.moveId);
     events.push({ type: 'moveUsed', side, moveId: move.id, moveKind: move.kind });
 
     const roll = rollDamagePercent(currentRng);
@@ -134,8 +204,8 @@ export function resolveTurn(state: BattleState, commands: Commands, rng: RngStat
     const damage = computeDamage(user, target, move, roll.value);
     const hp = Math.max(0, target.hp - damage.amount);
 
-    sides = withCombatant(sides, side, afterMoveUsed(user, move));
-    sides = withCombatant(sides, targetSide, { ...target, hp });
+    sides = withActive(sides, side, afterMoveUsed(user, move));
+    sides = withActive(sides, targetSide, { ...target, hp });
     events.push({
       type: 'damage',
       side: targetSide,
@@ -145,24 +215,61 @@ export function resolveTurn(state: BattleState, commands: Commands, rng: RngStat
       resonance: damage.resonance,
     });
     if (hp === 0) {
-      events.push({ type: 'fainted', side: targetSide });
+      events.push({ type: 'fainted', side: targetSide, index: sides[targetSide].active });
+      faintOrder.push(targetSide);
     }
   }
 
-  // 4. ターン終了処理：大技の使用不可ターンの残りを1減らす（侵蝕・状態異常は M2 で追加する）
-  sides = { player: tickCooldowns(sides.player), enemy: tickCooldowns(sides.enemy) };
+  // 4. ターン終了処理：場のキャラだけ、大技の使用不可ターンの残りを1減らす（控えは止まる）
+  for (const side of SIDES) {
+    sides = withActive(sides, side, tickCooldowns(activeOf(sides[side])));
+  }
 
-  // 5. 勝敗を決める。1対1なので、倒れた側がいればその相手の勝ち
-  //    （M1 ではターン終了時のダメージが無いため、両方が同時に倒れることはない）
-  const loser = SIDES.find((side) => sides[side].hp <= 0);
-  const winner = loser === undefined ? null : opponentOf(loser);
+  // 5. 倒れたキャラがいれば控えから選ぶ。控えがいなければ決着
+  const winner = decideWinner(sides, faintOrder);
   if (winner !== null) {
     events.push({ type: 'battleEnd', winner });
   }
+  const awaitingReplacement =
+    winner === null ? SIDES.filter((side) => isFainted(activeOf(sides[side]))) : [];
 
   return {
-    state: { turn: state.turn + 1, sides, winner },
+    state: { turn: state.turn + 1, sides, awaitingReplacement, winner },
     events,
     rng: currentRng,
   };
+}
+
+/**
+ * 倒れた場のキャラの代わりに、控えからキャラを出す（3.9：ターンを使わない）。
+ * 選ぶ必要がある陣営（state.awaitingReplacement）すべての分を、まとめて渡す。
+ */
+export function submitReplacements(state: BattleState, replacements: Replacements): ReplacementResult {
+  if (state.awaitingReplacement.length === 0) {
+    throw new Error('控えから選ぶ必要はありません');
+  }
+  for (const side of SIDES) {
+    const awaiting = state.awaitingReplacement.includes(side);
+    const choice = replacements[side];
+    if (awaiting && choice === undefined) {
+      throw new Error(`${side} の控えから出すキャラを選んでください`);
+    }
+    if (!awaiting && choice !== undefined) {
+      throw new Error(`${side} は控えから選ぶ必要がありません`);
+    }
+  }
+
+  const events: BattleEvent[] = [];
+  let sides = state.sides;
+  for (const side of state.awaitingReplacement) {
+    const sideState = sides[side];
+    const to = replacements[side]!;
+    if (!switchTargets(sideState).includes(to)) {
+      throw new Error(`チームの ${to} 番目は出せません`);
+    }
+    sides = withSide(sides, side, { ...sideState, active: to });
+    events.push({ type: 'switched', side, from: sideState.active, to, reason: 'replacement' });
+  }
+
+  return { state: { ...state, sides, awaitingReplacement: [] }, events };
 }

@@ -63,25 +63,48 @@ export interface Combatant {
 /** 陣営 */
 export type Side = 'player' | 'enemy';
 
+/** 陣営ごとのチーム */
+export interface SideState {
+  /** チームのキャラ（1〜3体）。並び順は変わらない */
+  readonly team: readonly Combatant[];
+  /** 場に出ているキャラの、チーム内の位置 */
+  readonly active: number;
+}
+
 /** バトル全体の状態 */
 export interface BattleState {
   /** 次に処理するターンの番号（1 から） */
   readonly turn: number;
-  readonly sides: Readonly<Record<Side, Combatant>>;
+  readonly sides: Readonly<Record<Side, SideState>>;
+  /**
+   * 場のキャラが倒れて、控えから次を選ぶ必要がある陣営。
+   * 空でなければ、submitReplacements で選ぶまで次のターンに進めない
+   */
+  readonly awaitingReplacement: readonly Side[];
   /** 勝った陣営。決着前は null */
   readonly winner: Side | null;
 }
 
-/** 1ターンに選ぶコマンド。交代は M2 で追加する */
+/** 技を使うコマンド */
 export interface MoveCommand {
   readonly type: 'move';
   readonly moveId: string;
 }
 
-export type Command = MoveCommand;
+/** 控えと交代するコマンド */
+export interface SwitchCommand {
+  readonly type: 'switch';
+  /** 交代先の、チーム内の位置 */
+  readonly to: number;
+}
+
+export type Command = MoveCommand | SwitchCommand;
 
 /** 双方のコマンド */
 export type Commands = Readonly<Record<Side, Command>>;
+
+/** 倒れたあとに控えから出すキャラ（陣営 → チーム内の位置） */
+export type Replacements = Readonly<Partial<Record<Side, number>>>;
 
 /** 相性の結果 */
 export type Effectiveness = 'advantage' | 'neutral' | 'disadvantage';
@@ -106,8 +129,20 @@ export type BattleEvent =
       readonly resonance: boolean;
     }
   | {
+      readonly type: 'switched';
+      readonly side: Side;
+      /** 引っ込めたキャラの位置 */
+      readonly from: number;
+      /** 出したキャラの位置 */
+      readonly to: number;
+      /** command：交代コマンド、replacement：倒れたあとに控えから出した */
+      readonly reason: 'command' | 'replacement';
+    }
+  | {
       readonly type: 'fainted';
       readonly side: Side;
+      /** 倒れたキャラの位置 */
+      readonly index: number;
     }
   | {
       readonly type: 'battleEnd';

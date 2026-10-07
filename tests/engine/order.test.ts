@@ -1,7 +1,7 @@
 import { describe, expect, it } from 'vitest';
 import { decideActionOrder } from '../../src/engine/order';
 import { createRng } from '../../src/engine/rng';
-import type { BattleState, Combatant, Commands, MoveKind, Side, StatStages } from '../../src/engine/types';
+import type { BattleState, Combatant, Command, Commands, MoveKind, Side, StatStages } from '../../src/engine/types';
 import { makeCombatant, makeMove } from '../helpers/fixtures';
 
 const MOVES = [
@@ -19,11 +19,23 @@ function fighter(speed: number, stages: Partial<StatStages> = {}): Combatant {
 }
 
 function battle(player: Combatant, enemy: Combatant): BattleState {
-  return { turn: 1, sides: { player, enemy }, winner: null };
+  // 控えを1体ずつ置いて、交代もできるようにする
+  return {
+    turn: 1,
+    sides: { player: { team: [player, fighter(10)], active: 0 }, enemy: { team: [enemy, fighter(10)], active: 0 } },
+    awaitingReplacement: [],
+    winner: null,
+  };
 }
 
-function commands(player: MoveKind, enemy: MoveKind): Commands {
-  return { player: { type: 'move', moveId: player }, enemy: { type: 'move', moveId: enemy } };
+type Choice = MoveKind | 'switch';
+
+function toCommand(choice: Choice): Command {
+  return choice === 'switch' ? { type: 'switch', to: 1 } : { type: 'move', moveId: choice };
+}
+
+function commands(player: Choice, enemy: Choice): Commands {
+  return { player: toCommand(player), enemy: toCommand(enemy) };
 }
 
 const PLAYER_FIRST: readonly Side[] = ['player', 'enemy'];
@@ -48,6 +60,16 @@ describe('行動順（仕様書 3.5）', () => {
   it('大技は通常の技と同じ扱い（素早さ順）', () => {
     const state = battle(fighter(30), fighter(70));
     expect(decideActionOrder(state, commands('big', 'normal'), createRng(1)).value).toEqual(ENEMY_FIRST);
+  });
+
+  it('交代は、先制技より先に動く', () => {
+    const state = battle(fighter(30), fighter(70));
+    expect(decideActionOrder(state, commands('switch', 'priority'), createRng(1)).value).toEqual(PLAYER_FIRST);
+  });
+
+  it('両方が交代なら素早さ順（場に出ているキャラの素早さ）', () => {
+    const state = battle(fighter(30), fighter(70));
+    expect(decideActionOrder(state, commands('switch', 'switch'), createRng(1)).value).toEqual(ENEMY_FIRST);
   });
 
   it('両方が先制技なら素早さ順', () => {
