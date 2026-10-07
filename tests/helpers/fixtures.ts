@@ -1,4 +1,28 @@
-import type { AttributeId, Combatant, MoveDef, Stats } from '../../src/engine/types';
+import type { AttributeId, Combatant, FighterDef, MoveDef, Stats } from '../../src/engine/types';
+
+/** テスト用のキャラ定義。能力値はすべて 50 */
+export function makeFighterDef(
+  overrides: Partial<Omit<FighterDef, 'stats'>> & { stats?: Partial<Stats> } = {},
+): FighterDef {
+  return {
+    id: 'test-fighter',
+    attribute: 'crimson',
+    moves: [makeMove()],
+    ...overrides,
+    stats: { hp: 100, attack: 50, defense: 50, speed: 50, ...overrides.stats },
+  };
+}
+
+/** オブジェクトを中まで凍結する（書き換えようとするとエラーになる） */
+export function deepFreeze<T>(value: T): T {
+  if (value !== null && typeof value === 'object') {
+    for (const child of Object.values(value)) {
+      deepFreeze(child);
+    }
+    Object.freeze(value);
+  }
+  return value;
+}
 
 /** テスト用の技 */
 export function makeMove(overrides: Partial<MoveDef> = {}): MoveDef {
