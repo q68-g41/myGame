@@ -2,7 +2,7 @@ import { affinityMultiplier, getEffectiveness, isResonant, resonanceMultiplier }
 import { DAMAGE_ROLL_MAX_PERCENT, DAMAGE_ROLL_MIN_PERCENT, DAMAGE_SCALE, MIN_DAMAGE } from './constants';
 import { nextInt, type RngResult, type RngState } from './rng';
 import { effectiveAttack, effectiveDefense } from './stats';
-import type { Combatant, Effectiveness, MoveDef } from './types';
+import type { AttackMoveDef, Combatant, Effectiveness } from './types';
 
 /**
  * 小数の計算誤差で、本来ちょうど整数になる値（例：9）が 8.999… になり、
@@ -48,7 +48,7 @@ export interface DamageResult {
 export function computeDamage(
   attacker: Combatant,
   defender: Combatant,
-  move: MoveDef,
+  move: AttackMoveDef,
   rollPercent: number,
 ): DamageResult {
   const amount = calcDamage({

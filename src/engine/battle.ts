@@ -1,23 +1,34 @@
 import { BIG_MOVE_COOLDOWN_TURNS, MAX_MOVES, MAX_TEAM_SIZE, SIDES } from './constants';
 import { computeDamage, rollDamagePercent } from './damage';
-import { findMove, isMoveSelectable } from './moves';
+import { applySupportMove } from './effects';
+import { findMove, isAttackMove, isMoveSelectable } from './moves';
 import { decideActionOrder } from './order';
 import type { RngState } from './rng';
-import { activeOf, isFainted, isWiped, switchTargets, withMember } from './team';
+import {
+  activeOf,
+  isFainted,
+  isWiped,
+  opponentOf,
+  switchTargets,
+  withActive,
+  withMember,
+  withSide,
+  type Sides,
+} from './team';
 import type {
+  AttackMoveDef,
   BattleEvent,
   BattleState,
   Combatant,
   Command,
   Commands,
   FighterDef,
-  MoveDef,
   Replacements,
   Side,
   SideState,
 } from './types';
 
-type Sides = BattleState['sides'];
+export { opponentOf };
 
 /** 1ターン処理した結果 */
 export interface TurnResult {
@@ -36,11 +47,6 @@ export interface ReplacementResult {
 
 const NO_STAGES = { attack: 0, defense: 0, speed: 0 } as const;
 
-/** 相手の陣営 */
-export function opponentOf(side: Side): Side {
-  return side === 'player' ? 'enemy' : 'player';
-}
-
 /** キャラの定義から、戦闘に出した状態を作る */
 export function createCombatant(def: FighterDef): Combatant {
   if (def.moves.length === 0 || def.moves.length > MAX_MOVES) {
@@ -52,6 +58,11 @@ export function createCombatant(def: FighterDef): Combatant {
   // 大技が使えない間に、選べる技がなくならないようにする（3.6）
   if (def.moves.every((move) => move.kind === 'big')) {
     throw new Error(`${def.id} は大技以外の技を1つ以上覚えてください`);
+  }
+  for (const move of def.moves) {
+    if (!isAttackMove(move) && move.effects.length === 0) {
+      throw new Error(`補助技 ${move.id} に効果がありません`);
+    }
   }
   return {
     id: def.id,
@@ -95,16 +106,6 @@ function assertCommandValid(side: SideState, command: Command): void {
   }
 }
 
-function withSide(sides: Sides, side: Side, sideState: SideState): Sides {
-  return { ...sides, [side]: sideState };
-}
-
-/** 場のキャラを差し替える */
-function withActive(sides: Sides, side: Side, combatant: Combatant): Sides {
-  const sideState = sides[side];
-  return withSide(sides, side, withMember(sideState, sideState.active, combatant));
-}
-
 /** 場のキャラを入れ替える。引っ込めたキャラの能力変化はリセットし、状態異常と大技の使用不可ターンは残す（3.9） */
 function switchActive(sides: Sides, side: Side, to: number): Sides {
   const sideState = sides[side];
@@ -114,7 +115,7 @@ function switchActive(sides: Sides, side: Side, to: number): Sides {
 }
 
 /** 技を使ったあとの状態。大技なら使用不可ターンを設定する */
-function afterMoveUsed(user: Combatant, move: MoveDef): Combatant {
+function afterMoveUsed(user: Combatant, move: AttackMoveDef): Combatant {
   if (move.kind !== 'big') {
     return user;
   }
@@ -194,10 +195,18 @@ export function resolveTurn(state: BattleState, commands: Commands, rng: RngStat
       continue;
     }
 
-    const targetSide = opponentOf(side);
-    const target = activeOf(sides[targetSide]);
     const move = findMove(user, command.moveId);
     events.push({ type: 'moveUsed', side, moveId: move.id, moveKind: move.kind });
+
+    if (!isAttackMove(move)) {
+      const applied = applySupportMove(sides, side, move);
+      sides = applied.sides;
+      events.push(...applied.events);
+      continue;
+    }
+
+    const targetSide = opponentOf(side);
+    const target = activeOf(sides[targetSide]);
 
     const roll = rollDamagePercent(currentRng);
     currentRng = roll.rng;

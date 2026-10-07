@@ -1,5 +1,13 @@
 import type { BattleState, Combatant, Side, SideState } from './types';
 
+/** 両陣営の状態 */
+export type Sides = BattleState['sides'];
+
+/** 相手の陣営 */
+export function opponentOf(side: Side): Side {
+  return side === 'player' ? 'enemy' : 'player';
+}
+
 /** 倒れているか */
 export function isFainted(combatant: Combatant): boolean {
   return combatant.hp <= 0;
@@ -38,4 +46,15 @@ export function isWiped(side: SideState): boolean {
 export function withMember(side: SideState, index: number, combatant: Combatant): SideState {
   memberAt(side, index);
   return { ...side, team: side.team.with(index, combatant) };
+}
+
+/** 陣営の状態を差し替えた両陣営を返す */
+export function withSide(sides: Sides, side: Side, sideState: SideState): Sides {
+  return { ...sides, [side]: sideState };
+}
+
+/** 場のキャラを差し替えた両陣営を返す */
+export function withActive(sides: Sides, side: Side, combatant: Combatant): Sides {
+  const sideState = sides[side];
+  return withSide(sides, side, withMember(sideState, sideState.active, combatant));
 }
