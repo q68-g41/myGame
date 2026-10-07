@@ -1,4 +1,4 @@
-import { MAX_STAGE, STAGE_DOWN_MULTIPLIER, STAGE_UP_MULTIPLIER } from './constants';
+import { MAX_STAGE, SLOW_SPEED_MULTIPLIER, STAGE_DOWN_MULTIPLIER, STAGE_UP_MULTIPLIER } from './constants';
 import type { Combatant } from './types';
 
 /** 能力変化の段階を上下の上限に収める */
@@ -22,7 +22,8 @@ export function effectiveDefense(combatant: Combatant): number {
   return combatant.stats.defense * stageMultiplier(combatant.stages.defense);
 }
 
-/** 能力変化を反映した素早さ（状態異常の鈍化は M2 で反映する） */
+/** 能力変化と状態異常（鈍化）を反映した素早さ（3.5） */
 export function effectiveSpeed(combatant: Combatant): number {
-  return combatant.stats.speed * stageMultiplier(combatant.stages.speed);
+  const slow = combatant.status?.id === 'slow' ? SLOW_SPEED_MULTIPLIER : 1;
+  return combatant.stats.speed * stageMultiplier(combatant.stages.speed) * slow;
 }

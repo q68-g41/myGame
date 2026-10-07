@@ -58,6 +58,7 @@ export function makeCombatant(
     hp: stats.hp,
     stages: { attack: 0, defense: 0, speed: 0 },
     cooldowns: {},
+    status: null,
     ...overrides,
     stats,
   };

@@ -1,3 +1,4 @@
+import { STATUS_DURATION } from './constants';
 import { clampStage } from './stats';
 import { activeOf, opponentOf, withActive, type Sides } from './team';
 import type { BattleEvent, Side, SupportMoveDef } from './types';
@@ -15,7 +16,7 @@ export function percentOfMaxHp(maxHp: number, percent: number): number {
 
 /**
  * 補助技の効果を順番に適用する（3.6）。
- * 能力変化は上下3段階で止まり、回復は最大HPを超えない。
+ * 能力変化は上下3段階で止まり、回復は最大HPを超えない。状態異常は相手にかける。
  */
 export function applySupportMove(sides: Sides, side: Side, move: SupportMoveDef): EffectResult {
   let current = sides;
@@ -41,6 +42,21 @@ export function applySupportMove(sides: Sides, side: Side, move: SupportMoveDef)
         const hp = user.hp + amount;
         current = withActive(current, side, { ...user, hp });
         events.push({ type: 'healed', side, amount, hp });
+        break;
+      }
+      case 'status': {
+        // 1体につき1つまで。すでにかかっていれば上書きしない（3.8）
+        const targetSide = opponentOf(side);
+        const target = activeOf(current[targetSide]);
+        if (target.status !== null) {
+          events.push({ type: 'statusBlocked', side: targetSide, status: effect.status });
+          break;
+        }
+        current = withActive(current, targetSide, {
+          ...target,
+          status: { id: effect.status, remaining: STATUS_DURATION[effect.status] },
+        });
+        events.push({ type: 'statusApplied', side: targetSide, status: effect.status });
         break;
       }
     }

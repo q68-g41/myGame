@@ -2,7 +2,7 @@
  * 仕様（docs/spec.md）の数値。ロジックに直接数値を書かず、ここから使う。
  * 数値はすべて仮で、バランス調整で変える前提。
  */
-import type { AttributeId, Side } from './types';
+import type { AttributeId, Side, StatusId } from './types';
 
 /** 陣営の一覧 */
 export const SIDES: readonly Side[] = ['player', 'enemy'];
@@ -50,3 +50,15 @@ export const MAX_STAGE = 3;
 
 /** 大技を使ったあと、使えなくなるターン数（3.6） */
 export const BIG_MOVE_COOLDOWN_TURNS = 2;
+
+/** 状態異常の持続ターン数。かかったターンから数える（3.8） */
+export const STATUS_DURATION: Readonly<Record<StatusId, number>> = {
+  erosion: 3,
+  slow: 2,
+};
+
+/** 侵蝕：ターン終了時に最大HPの何%のダメージを受けるか（切り捨て、最低1）（3.8） */
+export const EROSION_DAMAGE_PERCENT = 10;
+
+/** 鈍化：素早さの倍率（3.8） */
+export const SLOW_SPEED_MULTIPLIER = 0.5;

@@ -4,6 +4,7 @@ import { applySupportMove } from './effects';
 import { findMove, isAttackMove, isMoveSelectable } from './moves';
 import { decideActionOrder } from './order';
 import type { RngState } from './rng';
+import { processTurnEnd } from './turnEnd';
 import {
   activeOf,
   isFainted,
@@ -72,6 +73,7 @@ export function createCombatant(def: FighterDef): Combatant {
     hp: def.stats.hp,
     stages: NO_STAGES,
     cooldowns: {},
+    status: null,
   };
 }
 
@@ -121,21 +123,6 @@ function afterMoveUsed(user: Combatant, move: AttackMoveDef): Combatant {
   }
   // このターンの終了処理で 1 減り、ちょうど「次から使えないターン数」になる
   return { ...user, cooldowns: { ...user.cooldowns, [move.id]: BIG_MOVE_COOLDOWN_TURNS + 1 } };
-}
-
-/** ターン終了時に、使用不可ターンの残りを1減らす。0 になった技は一覧から外す */
-function tickCooldowns(combatant: Combatant): Combatant {
-  const entries = Object.entries(combatant.cooldowns);
-  if (entries.length === 0) {
-    return combatant;
-  }
-  const cooldowns: Record<string, number> = {};
-  for (const [moveId, remaining] of entries) {
-    if (remaining > 1) {
-      cooldowns[moveId] = remaining - 1;
-    }
-  }
-  return { ...combatant, cooldowns };
 }
 
 /**
@@ -229,10 +216,12 @@ export function resolveTurn(state: BattleState, commands: Commands, rng: RngStat
     }
   }
 
-  // 4. ターン終了処理：場のキャラだけ、大技の使用不可ターンの残りを1減らす（控えは止まる）
-  for (const side of SIDES) {
-    sides = withActive(sides, side, tickCooldowns(activeOf(sides[side])));
-  }
+  // 4. ターン終了処理：侵蝕のダメージ → 状態異常と大技の使用不可ターンの残りを1減らす（場のキャラだけ）
+  const turnEnd = processTurnEnd(sides, currentRng);
+  sides = turnEnd.sides;
+  currentRng = turnEnd.rng;
+  events.push(...turnEnd.events);
+  faintOrder.push(...turnEnd.fainted);
 
   // 5. 倒れたキャラがいれば控えから選ぶ。控えがいなければ決着
   const winner = decideWinner(sides, faintOrder);
