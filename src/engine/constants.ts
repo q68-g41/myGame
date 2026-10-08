@@ -88,3 +88,12 @@ export const BOSS_STAT_MULTIPLIER = 1.2;
 
 /** 戦闘に勝ったあと、倒れていたキャラが戻るときのHP。最大HPの%（切り捨て、最低1）（8. 未決の仮決め） */
 export const REVIVE_HP_PERCENT = 10;
+
+/** 戦闘後の報酬の選択肢の数（4.4） */
+export const REWARD_OFFER_COUNT = 3;
+
+/** 強敵に勝ったときに選べる報酬の回数（4.2） */
+export const ELITE_REWARD_PICKS = 2;
+
+/** 能力強化で上がる量。いまの値の % （四捨五入、最低1）（4.4：10%前後） */
+export const STAT_BOOST_PERCENT = 10;

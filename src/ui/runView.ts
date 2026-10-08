@@ -2,14 +2,23 @@
  * ランの画面（チーム選択・マップ・ランの結果）に出す内容を、ランの状態から組み立てる（DOM は使わない）。
  */
 import { ATTRIBUTE_COLORS, ATTRIBUTE_NAMES } from '../data/attributes';
+import { getCharm } from '../data/charms';
 import { getFighter } from '../data/fighters';
 import { NODE_KIND_MARKS, NODE_KIND_NAMES, STAT_NAMES } from '../data/labels';
 import { getMove } from '../data/moves';
-import { RUN_TEAM_SIZE } from '../engine/constants';
+import { MAX_MOVES, RUN_TEAM_SIZE } from '../engine/constants';
 import { nodeAt, type MapPosition, type NodeKind } from '../engine/map';
 import { isAttackMove } from '../engine/moves';
-import { runChoices, type RunMember, type RunResult, type RunState } from '../engine/run';
-import type { FighterDef } from '../engine/types';
+import {
+  runChoices,
+  type RewardChoice,
+  type RewardOffer,
+  type RunMember,
+  type RunResult,
+  type RunState,
+  type StatBoostKey,
+} from '../engine/run';
+import type { FighterDef, MoveDef } from '../engine/types';
 import { MOVE_KIND_NAMES, summarizeEffects } from './moveInfo';
 
 /** チームの1体の表示（HPつき） */
@@ -70,12 +79,16 @@ export interface DraftView {
   readonly canConfirm: boolean;
 }
 
-function moveLine(fighter: FighterDef, index: number): string {
-  const move = fighter.moves[index]!;
-  const detail = isAttackMove(move)
+/** 技の種類と威力（補助技は効果）。例：「通常・威力60」「補助・攻撃↑2」 */
+function moveSummary(move: MoveDef): string {
+  return isAttackMove(move)
     ? `${MOVE_KIND_NAMES[move.kind]}・威力${move.power}`
     : `${MOVE_KIND_NAMES[move.kind]}・${summarizeEffects(move.effects)}`;
-  return `${getMove(move.id).name}（${detail}）`;
+}
+
+function moveLine(fighter: FighterDef, index: number): string {
+  const move = fighter.moves[index]!;
+  return `${getMove(move.id).name}（${moveSummary(move)}）`;
 }
 
 /** キャラの能力と技の詳細 */
@@ -173,6 +186,8 @@ export interface MapView {
   readonly layers: readonly (readonly MapNodeView[])[];
   readonly choices: readonly MapChoiceView[];
   readonly team: readonly TeamMemberView[];
+  /** 持っているお守りの名前 */
+  readonly charms: readonly string[];
   /** 下半分に出す案内1行 */
   readonly message: string;
   /** 例：「2層目 / 7層」。まだどのマスにも入っていなければ「スタート」 */
@@ -180,6 +195,10 @@ export interface MapView {
 }
 
 const CHOICE_LETTERS = ['A', 'B', 'C', 'D'] as const;
+
+function charmNames(run: RunState): string[] {
+  return run.charms.map((charm) => getCharm(charm.id).name);
+}
 
 function teamViews(team: readonly RunMember[]): TeamMemberView[] {
   return team.map((member) => ({
@@ -254,6 +273,7 @@ export function buildMapView(run: RunState, notice: string | null = null): MapVi
       name: NODE_KIND_NAMES[nodeAt(run.map, { layer: nextLayer, index }).kind],
     })),
     team: teamViews(run.team),
+    charms: charmNames(run),
     message: notice ?? '進むマスを選んでください',
     progress: run.position === null ? 'スタート' : `${run.position.layer + 1}層目 / ${run.map.layers.length}層`,
   };
@@ -265,6 +285,201 @@ export function battleCaption(run: RunState): string | null {
     return null;
   }
   return `${run.position.layer + 1}層目・${NODE_KIND_NAMES[nodeAt(run.map, run.position).kind]}`;
+}
+
+/* ===== 戦闘後の報酬 ===== */
+
+/**
+ * 報酬の画面だけが持つ状態。
+ * - offer：選択肢を選んで「決定」を押す（2タップ）
+ * - member：技を覚えさせるキャラを選ぶ
+ * - forget：4つ覚えているとき、忘れる技を選ぶ
+ */
+export interface RewardUiState {
+  readonly step: 'offer' | 'member' | 'forget';
+  /** 選んでいる選択肢。まだなら null */
+  readonly selected: number | null;
+  /** 技を覚えさせるキャラ（forget のとき） */
+  readonly member: number | null;
+}
+
+export const INITIAL_REWARD_UI: RewardUiState = { step: 'offer', selected: null, member: null };
+
+export interface RewardOfferView {
+  readonly index: number;
+  /** 種類（技・能力・お守り） */
+  readonly kindLabel: string;
+  readonly title: string;
+  readonly detail: string;
+  /** 属性やキャラの色。なければ null */
+  readonly color: string | null;
+  readonly selected: boolean;
+}
+
+/** 技を覚えさせるキャラの選択肢 */
+export interface RewardMemberView {
+  readonly index: number;
+  readonly name: string;
+  readonly color: string;
+  readonly disabled: boolean;
+  /** 選べない理由など。なければ null */
+  readonly note: string | null;
+}
+
+/** 忘れる技の選択肢 */
+export interface RewardForgetView {
+  readonly index: number;
+  readonly name: string;
+  readonly detail: string;
+  readonly color: string;
+  /** 忘れると大技だけになってしまう技は選べない */
+  readonly disabled: boolean;
+}
+
+export interface RewardView {
+  /** 例：「報酬を選ぶ（1/2）」 */
+  readonly heading: string;
+  readonly step: RewardUiState['step'];
+  /** 下半分に出す案内 */
+  readonly prompt: string;
+  readonly offers: readonly RewardOfferView[];
+  readonly canConfirm: boolean;
+  readonly members: readonly RewardMemberView[];
+  readonly forgets: readonly RewardForgetView[];
+  /** 上半分に出す、選んでいる報酬の詳細。選んでいなければ null */
+  readonly detail: { readonly title: string; readonly lines: readonly string[] } | null;
+  readonly team: readonly TeamMemberView[];
+  readonly charms: readonly string[];
+}
+
+/** 能力の表示名（能力強化用。HP は最大HPが上がる） */
+const BOOST_STAT_NAMES: Readonly<Record<StatBoostKey, string>> = { hp: '最大HP', ...STAT_NAMES };
+
+function offerView(run: RunState, offer: RewardOffer, index: number, selected: boolean): RewardOfferView {
+  switch (offer.kind) {
+    case 'move':
+      return {
+        index,
+        kindLabel: '技',
+        title: getMove(offer.move.id).name,
+        detail: `${ATTRIBUTE_NAMES[offer.move.attribute]}属性・${moveSummary(offer.move)}`,
+        color: ATTRIBUTE_COLORS[offer.move.attribute],
+        selected,
+      };
+    case 'stat': {
+      const { fighter } = run.team[offer.member]!;
+      const value = fighter.stats[offer.stat];
+      return {
+        index,
+        kindLabel: '能力',
+        title: `${getFighter(fighter.id).name}の${BOOST_STAT_NAMES[offer.stat]} +${offer.amount}`,
+        detail: `${value} → ${value + offer.amount}`,
+        color: ATTRIBUTE_COLORS[fighter.attribute],
+        selected,
+      };
+    }
+    case 'charm': {
+      const charm = getCharm(offer.charm.id);
+      return { index, kindLabel: 'お守り', title: charm.name, detail: charm.description, color: null, selected };
+    }
+  }
+}
+
+function offerDetail(run: RunState, offer: RewardOffer): { title: string; lines: string[] } {
+  const view = offerView(run, offer, 0, true);
+  switch (offer.kind) {
+    case 'move':
+      return {
+        title: `技：${view.title}`,
+        lines: [view.detail, `チームのだれかに覚えさせる（${MAX_MOVES}つ覚えていたら、1つ忘れる）`],
+      };
+    case 'stat':
+      return {
+        title: `能力強化：${view.title}`,
+        lines: [view.detail, ...(offer.stat === 'hp' ? ['いまのHPも同じだけ増える'] : [])],
+      };
+    case 'charm':
+      return { title: `お守り：${view.title}`, lines: [view.detail, 'チーム全体に、ランの間ずっと効く'] };
+  }
+}
+
+/** 技を覚えたあとの技が、大技だけにならないか */
+function keepsNonBig(fighter: FighterDef, move: MoveDef, forget: number): boolean {
+  return fighter.moves.some((known, index) => index !== forget && known.kind !== 'big') || move.kind !== 'big';
+}
+
+export function buildRewardView(run: RunState, ui: RewardUiState = INITIAL_REWARD_UI): RewardView {
+  const { phase } = run;
+  if (phase.kind !== 'reward') {
+    throw new Error('いまは報酬を選ぶ段階ではありません');
+  }
+  const selectedOffer = ui.selected === null ? undefined : phase.offers[ui.selected];
+  const move = selectedOffer?.kind === 'move' ? selectedOffer.move : null;
+  const member = ui.member === null ? undefined : run.team[ui.member];
+
+  let prompt = '報酬を1つ選んで「決定」を押してください';
+  if (ui.step === 'member' && move) {
+    prompt = `${getMove(move.id).name}を だれに覚えさせますか？`;
+  } else if (ui.step === 'forget' && member) {
+    prompt = `${getFighter(member.fighter.id).name}は 技を${MAX_MOVES}つ覚えています。忘れる技を選んでください`;
+  }
+
+  return {
+    heading: phase.picks > 1 ? `報酬を選ぶ（${phase.pick}/${phase.picks}）` : '報酬を選ぶ',
+    step: ui.step,
+    prompt,
+    offers: phase.offers.map((offer, index) => offerView(run, offer, index, index === ui.selected)),
+    canConfirm: selectedOffer !== undefined,
+    members:
+      ui.step === 'member' && move
+        ? run.team.map((m, index) => {
+            const known = m.fighter.moves.some((k) => k.id === move.id);
+            return {
+              index,
+              name: getFighter(m.fighter.id).name,
+              color: ATTRIBUTE_COLORS[m.fighter.attribute],
+              disabled: known,
+              note: known ? 'もう覚えている' : `技 ${m.fighter.moves.length}/${MAX_MOVES}`,
+            };
+          })
+        : [],
+    forgets:
+      ui.step === 'forget' && member && move
+        ? member.fighter.moves.map((known, index) => ({
+            index,
+            name: getMove(known.id).name,
+            detail: moveSummary(known),
+            color: ATTRIBUTE_COLORS[known.attribute],
+            disabled: !keepsNonBig(member.fighter, move, index),
+          }))
+        : [],
+    detail: selectedOffer ? offerDetail(run, selectedOffer) : null,
+    team: teamViews(run.team),
+    charms: charmNames(run),
+  };
+}
+
+/** 報酬を受け取ったあと、マップに出す一言 */
+export function rewardNotice(run: RunState, choice: RewardChoice): string {
+  if (run.phase.kind !== 'reward') {
+    return '';
+  }
+  const offer = run.phase.offers[choice.offer];
+  if (!offer) {
+    return '';
+  }
+  switch (offer.kind) {
+    case 'move': {
+      const member = choice.member === undefined ? undefined : run.team[choice.member];
+      return member ? `${getFighter(member.fighter.id).name}が ${getMove(offer.move.id).name}を覚えた` : '';
+    }
+    case 'stat': {
+      const name = getFighter(run.team[offer.member]!.fighter.id).name;
+      return `${name}の ${BOOST_STAT_NAMES[offer.stat]}が ${offer.amount} 上がった`;
+    }
+    case 'charm':
+      return `${getCharm(offer.charm.id).name}を手に入れた`;
+  }
 }
 
 /* ===== ランの結果 ===== */

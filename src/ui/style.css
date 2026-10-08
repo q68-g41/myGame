@@ -944,3 +944,132 @@ body {
 .run-end__controls {
   gap: 12px;
 }
+
+/* ===== 戦闘後の報酬（M4-3） ===== */
+
+.charm-line {
+  margin: 0;
+  font-size: 14px;
+  color: var(--color-muted);
+  text-align: left;
+}
+
+.reward__view {
+  justify-content: flex-start;
+  align-items: stretch;
+  gap: 12px;
+  text-align: left;
+}
+
+.reward__title {
+  margin: 0;
+  font-size: 20px;
+}
+
+.reward__placeholder {
+  margin: 0;
+  font-size: 14px;
+  color: var(--color-muted);
+}
+
+.reward-detail {
+  padding: 8px 12px;
+  border: 2px solid var(--color-accent);
+  border-radius: 8px;
+  background: var(--color-panel);
+}
+
+.reward-detail__title {
+  margin: 0 0 4px;
+  font-weight: bold;
+}
+
+.reward-detail__lines {
+  margin: 0;
+  padding-left: 1.2em;
+  font-size: 14px;
+}
+
+.reward__controls {
+  justify-content: flex-start;
+  gap: 12px;
+}
+
+.reward__prompt {
+  margin: 0;
+  font-size: 14px;
+}
+
+.reward-offers,
+.reward-members {
+  display: grid;
+  gap: 8px;
+}
+
+.reward-members {
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+}
+
+.reward-forgets {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 8px;
+}
+
+.reward-offer,
+.reward-option {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  justify-content: center;
+  gap: 2px;
+  min-height: 64px;
+  padding: 8px 12px;
+  border: 2px solid var(--color-border);
+  border-left-width: 8px;
+  border-radius: 8px;
+  background: var(--color-bg);
+  color: var(--color-text);
+  font: inherit;
+  text-align: left;
+  touch-action: manipulation;
+  -webkit-tap-highlight-color: transparent;
+  user-select: none;
+  cursor: pointer;
+}
+
+.reward-offer--selected {
+  border-top-color: var(--color-accent);
+  border-right-color: var(--color-accent);
+  border-bottom-color: var(--color-accent);
+  background: rgba(240, 180, 69, 0.15);
+}
+
+.reward-option:disabled {
+  opacity: 0.45;
+  cursor: default;
+}
+
+.reward-offer__top {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.reward-offer__kind {
+  font-size: 14px;
+  padding: 0 6px;
+  border-radius: 4px;
+  background: var(--color-border);
+}
+
+.reward-offer__title,
+.reward-option__name {
+  font-weight: bold;
+}
+
+.reward-offer__detail,
+.reward-option__note {
+  font-size: 14px;
+  color: var(--color-muted);
+}

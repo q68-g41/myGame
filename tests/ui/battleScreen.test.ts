@@ -103,7 +103,7 @@ describe('バトル画面', () => {
     expect(logText()).toMatch(/を戻して .+を出した$/);
   });
 
-  it('最後まで遊ぶと勝敗が出て、「次へ」で勝てばマップ、負ければランの結果に進む', () => {
+  it('最後まで遊ぶと勝敗が出て、「次へ」で勝てば報酬、負ければランの結果に進む', () => {
     for (let i = 0; i < 300 && root.querySelector('.result') === null; i += 1) {
       expect(tapSomething()).toBe(true);
       // どの場面でも、操作できる要素は下半分だけ
@@ -116,8 +116,7 @@ describe('バトル画面', () => {
 
     result!.querySelector<HTMLButtonElement>('button')!.click();
     if (text === 'あなたの勝ち！') {
-      expect(root.querySelector('.map-screen')).not.toBeNull();
-      expect(root.querySelector('.map__message')?.textContent).toBe('戦闘に勝った！ 次のマスを選んでください');
+      expect(root.querySelector('.reward')).not.toBeNull();
     } else {
       expect(root.querySelector('.run-end')).not.toBeNull();
     }

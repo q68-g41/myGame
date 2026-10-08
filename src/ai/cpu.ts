@@ -6,21 +6,30 @@ import { DAMAGE_ROLL_MAX_PERCENT, DAMAGE_ROLL_MIN_PERCENT } from '../engine/cons
 import { computeDamage } from '../engine/damage';
 import { isAttackMove, selectableMoves } from '../engine/moves';
 import { activeCombatant, memberAt, opponentOf, switchTargets } from '../engine/team';
-import type { AttackMoveDef, BattleState, Combatant, Command, Side } from '../engine/types';
+import type { AttackMoveDef, BattleState, CharmEffect, Combatant, Command, Side } from '../engine/types';
 
 /** 予想ダメージに使う乱数（0.90〜1.00 の真ん中） */
 const EXPECTED_ROLL_PERCENT = (DAMAGE_ROLL_MIN_PERCENT + DAMAGE_ROLL_MAX_PERCENT) / 2;
 
-/** 予想ダメージ（乱数を真ん中の値にしたダメージ） */
-export function expectedDamage(attacker: Combatant, defender: Combatant, move: AttackMoveDef): number {
-  return computeDamage(attacker, defender, move, EXPECTED_ROLL_PERCENT).amount;
+/** 予想ダメージ（乱数を真ん中の値にしたダメージ）。charms は攻撃側の陣営のお守り */
+export function expectedDamage(
+  attacker: Combatant,
+  defender: Combatant,
+  move: AttackMoveDef,
+  charms: readonly CharmEffect[] = [],
+): number {
+  return computeDamage(attacker, defender, move, EXPECTED_ROLL_PERCENT, charms).amount;
 }
 
 /** いま選べる攻撃技のうち、予想ダメージが最大のもの。同じなら技の並び順で先のもの */
-function bestAttack(attacker: Combatant, defender: Combatant): { move: AttackMoveDef; damage: number } | null {
+function bestAttack(
+  attacker: Combatant,
+  defender: Combatant,
+  charms: readonly CharmEffect[] = [],
+): { move: AttackMoveDef; damage: number } | null {
   let best: { move: AttackMoveDef; damage: number } | null = null;
   for (const move of selectableMoves(attacker).filter(isAttackMove)) {
-    const damage = expectedDamage(attacker, defender, move);
+    const damage = expectedDamage(attacker, defender, move, charms);
     if (best === null || damage > best.damage) {
       best = { move, damage };
     }
@@ -34,7 +43,7 @@ function bestAttack(attacker: Combatant, defender: Combatant): { move: AttackMov
  */
 export function chooseCommandStage1(state: BattleState, side: Side): Command {
   const self = activeCombatant(state, side);
-  const best = bestAttack(self, activeCombatant(state, opponentOf(side)));
+  const best = bestAttack(self, activeCombatant(state, opponentOf(side)), state.sides[side].charms);
   if (best !== null) {
     return { type: 'move', moveId: best.move.id };
   }
@@ -54,7 +63,7 @@ export function chooseReplacementStage1(state: BattleState, side: Side): number 
   const opponent = activeCombatant(state, opponentOf(side));
   let best: { index: number; damage: number } | null = null;
   for (const index of switchTargets(sideState)) {
-    const damage = bestAttack(memberAt(sideState, index), opponent)?.damage ?? 0;
+    const damage = bestAttack(memberAt(sideState, index), opponent, sideState.charms)?.damage ?? 0;
     if (best === null || damage > best.damage) {
       best = { index, damage };
     }

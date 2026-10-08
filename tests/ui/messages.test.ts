@@ -24,6 +24,12 @@ describe('ログの文章', () => {
     expect(one({ type: 'fainted', side: 'enemy', index: 1 })).toBe(`相手の${name('enemy', 1)}は 倒れた`);
   });
 
+  it('お守りで回復したときは、そう書く', () => {
+    expect(one({ type: 'healed', side: 'player', amount: 5, hp: 55, source: 'charm' })).toBe(
+      `${name('player', 0)}は お守りで HPを 5 回復した`,
+    );
+  });
+
   it('能力変化・回復・状態異常', () => {
     expect(one({ type: 'statChanged', side: 'player', stat: 'attack', delta: 2, stage: 2 })).toBe(
       `${name('player', 0)}の 攻撃が 上がった`,

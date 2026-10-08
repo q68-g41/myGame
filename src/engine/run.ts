@@ -1,6 +1,7 @@
 /**
  * ローグライトの1ラン（4章）。
- * チームを選び、分岐マップを下から進み、戦闘をまたいでHPを持ち越す。ボスを倒せばクリア、全員倒れたら終わり。
+ * チームを選び、分岐マップを下から進み、戦闘をまたいでHPを持ち越す。戦闘に勝つたびに報酬を選ぶ。
+ * ボスを倒せばクリア、全員倒れたら終わり。
  * ほかのエンジンと同じく、状態は書き換えずに新しい状態を返す。乱数の状態もランの状態に含める。
  */
 import { createBattle } from './battle';
@@ -10,19 +11,33 @@ import {
   BOSS_STAT_MULTIPLIER,
   DRAFT_CANDIDATE_COUNT,
   ELITE_ENEMY_COUNT,
+  ELITE_REWARD_PICKS,
   ELITE_STAT_MULTIPLIER,
+  MAX_MOVES,
   REVIVE_HP_PERCENT,
+  REWARD_OFFER_COUNT,
   RUN_TEAM_SIZE,
+  STAT_BOOST_PERCENT,
 } from './constants';
 import { percentOfMaxHp } from './effects';
 import { generateAreaMap, nextChoices, nodeAt, type AreaMap, type MapPosition, type NodeKind } from './map';
 import { createRng, nextSeed, pickDistinct, type RngResult, type RngState } from './rng';
-import type { BattleState, FighterDef } from './types';
+import type { BattleState, CharmEffect, FighterDef, MoveDef, Stats } from './types';
+
+/** お守り（4.4）。効果はチーム全体にかかる */
+export interface CharmDef {
+  readonly id: string;
+  readonly effect: CharmEffect;
+}
 
 /** ランで使うデータ。エンジンはデータを直接読まず、ここで受け取る */
 export interface RunContent {
   /** スタートの候補と、相手のチームに使うキャラ */
   readonly fighters: readonly FighterDef[];
+  /** 報酬で覚えられる技 */
+  readonly moves: readonly MoveDef[];
+  /** 報酬で手に入るお守り */
+  readonly charms: readonly CharmDef[];
 }
 
 /** チームの1体 */
@@ -35,17 +50,43 @@ export interface RunMember {
 /** ランの結果 */
 export type RunResult = 'cleared' | 'defeated';
 
+/** 能力強化で上げられる能力 */
+export type StatBoostKey = keyof Stats;
+
+/**
+ * 戦闘後の報酬の選択肢（4.4）。
+ * - move：新しい技。だれに覚えさせるか（4つ覚えていれば、どれを忘れるか）は選ぶときに決める
+ * - stat：チームの1体の能力を1つ上げる（だれの・どの能力・いくつ上がるかは、選択肢を出すときに決まる）
+ * - charm：お守り
+ */
+export type RewardOffer =
+  | { readonly kind: 'move'; readonly move: MoveDef }
+  | { readonly kind: 'stat'; readonly member: number; readonly stat: StatBoostKey; readonly amount: number }
+  | { readonly kind: 'charm'; readonly charm: CharmDef };
+
+/** 報酬の選び方 */
+export interface RewardChoice {
+  /** 選んだ選択肢の位置 */
+  readonly offer: number;
+  /** 技：覚えさせるキャラのチーム内の位置 */
+  readonly member?: number;
+  /** 技：4つ覚えているとき、忘れる技の位置 */
+  readonly forget?: number;
+}
+
 /**
  * ランの段階。
  * - draft：候補からチームを選ぶ
  * - map：次のマスを選ぶ
  * - battle：戦闘中（相手のチームとバトルのシードは、マスに入ったときに決まる）
+ * - reward：戦闘に勝って、報酬を選ぶ（強敵なら2回。pick は何回目か、picks は全部で何回か）
  * - ended：ランが終わった
  */
 export type RunPhase =
   | { readonly kind: 'draft'; readonly candidates: readonly FighterDef[] }
   | { readonly kind: 'map' }
   | { readonly kind: 'battle'; readonly enemy: readonly FighterDef[]; readonly seed: number }
+  | { readonly kind: 'reward'; readonly offers: readonly RewardOffer[]; readonly pick: number; readonly picks: number }
   | { readonly kind: 'ended'; readonly result: RunResult };
 
 /** ランの状態 */
@@ -55,6 +96,8 @@ export interface RunState {
   readonly position: MapPosition | null;
   /** チーム。並び順が戦闘に出る順になる */
   readonly team: readonly RunMember[];
+  /** 持っているお守り（手に入れた順） */
+  readonly charms: readonly CharmDef[];
   readonly phase: RunPhase;
   /** 次に使う乱数の状態 */
   readonly rng: RngState;
@@ -71,6 +114,7 @@ export function startRun(content: RunContent, seed: number): RunState {
     map: map.value,
     position: null,
     team: [],
+    charms: [],
     phase: { kind: 'draft', candidates: candidates.value },
     rng: candidates.rng,
   };
@@ -156,15 +200,67 @@ export function createRunBattle(run: RunState): BattleState {
   return createBattle(
     run.team.map((member) => member.fighter),
     phase.enemy,
-    { playerHp: run.team.map((member) => member.hp) },
+    { playerHp: run.team.map((member) => member.hp), playerCharms: run.charms.map((charm) => charm.effect) },
   );
+}
+
+/** 能力強化の候補（チームのだれの、どの能力か） */
+const STAT_BOOST_KEYS: readonly StatBoostKey[] = ['hp', 'attack', 'defense', 'speed'];
+
+/** 能力強化で上がる量（いまの値の STAT_BOOST_PERCENT %、四捨五入、最低1） */
+export function statBoostAmount(value: number): number {
+  return Math.max(1, Math.round((value * STAT_BOOST_PERCENT) / 100));
+}
+
+/** そのキャラがまだ覚えていない技か */
+function canLearn(fighter: FighterDef, move: MoveDef): boolean {
+  return !fighter.moves.some((known) => known.id === move.id);
+}
+
+/**
+ * 報酬の選択肢を出す（4.4）。技・能力強化・お守りを1つずつ。
+ * 覚えられる技がない、またはお守りを全部持っていれば、その分は能力強化（重ならないもの）にする。
+ */
+function rewardOffers(run: RunState, content: RunContent, rng: RngState): RngResult<readonly RewardOffer[]> {
+  let current = rng;
+  const learnable = content.moves.filter((move) => run.team.some((member) => canLearn(member.fighter, move)));
+  const charms = content.charms.filter((charm) => !run.charms.some((owned) => owned.id === charm.id));
+
+  const moveDraw = pickDistinct(learnable, Math.min(1, learnable.length), current);
+  current = moveDraw.rng;
+  const charmDraw = pickDistinct(charms, Math.min(1, charms.length), current);
+  current = charmDraw.rng;
+
+  const boosts = run.team.flatMap((_member, index) => STAT_BOOST_KEYS.map((stat) => ({ member: index, stat })));
+  const statCount = REWARD_OFFER_COUNT - moveDraw.value.length - charmDraw.value.length;
+  const statDraw = pickDistinct(boosts, Math.min(statCount, boosts.length), current);
+  current = statDraw.rng;
+
+  const offers: RewardOffer[] = [
+    ...moveDraw.value.map((move): RewardOffer => ({ kind: 'move', move })),
+    ...statDraw.value.map(({ member, stat }): RewardOffer => ({
+      kind: 'stat',
+      member,
+      stat,
+      amount: statBoostAmount(run.team[member]!.fighter.stats[stat]),
+    })),
+    ...charmDraw.value.map((charm): RewardOffer => ({ kind: 'charm', charm })),
+  ];
+  return { value: offers, rng: current };
+}
+
+/** 報酬を選ぶ段階に入る */
+function enterReward(run: RunState, content: RunContent, pick: number, picks: number): RunState {
+  const offers = rewardOffers(run, content, run.rng);
+  return { ...run, phase: { kind: 'reward', offers: offers.value, pick, picks }, rng: offers.rng };
 }
 
 /**
  * 決着したバトルの結果をランに反映する。
- * 負けたらラン終了。勝ったらHPを持ち越し、倒れていたキャラは最大HPの一部で戻る。ボスに勝てばクリア。
+ * 負けたらラン終了。勝ったらHPを持ち越し、倒れていたキャラは最大HPの一部で戻る。
+ * ボスに勝てばクリア。それ以外は報酬を選ぶ（強敵なら2回）。
  */
-export function finishBattle(run: RunState, battle: BattleState): RunState {
+export function finishBattle(run: RunState, battle: BattleState, content: RunContent): RunState {
   if (run.phase.kind !== 'battle' || run.position === null) {
     throw new Error('いまは戦闘の段階ではありません');
   }
@@ -184,6 +280,87 @@ export function finishBattle(run: RunState, battle: BattleState): RunState {
     const hp = fighters[index]!.hp;
     return { ...member, hp: hp > 0 ? hp : percentOfMaxHp(member.fighter.stats.hp, REVIVE_HP_PERCENT) };
   });
-  const cleared = nodeAt(run.map, run.position).kind === 'boss';
-  return { ...run, team, phase: cleared ? { kind: 'ended', result: 'cleared' } : { kind: 'map' } };
+  const kind = nodeAt(run.map, run.position).kind;
+  if (kind === 'boss') {
+    return { ...run, team, phase: { kind: 'ended', result: 'cleared' } };
+  }
+  return enterReward({ ...run, team }, content, 1, kind === 'elite' ? ELITE_REWARD_PICKS : 1);
+}
+
+/** 技を覚えさせたキャラ。4つ覚えていれば forget の技と入れ替える */
+function learnMove(fighter: FighterDef, move: MoveDef, forget: number | undefined): FighterDef {
+  if (!canLearn(fighter, move)) {
+    throw new Error(`${fighter.id} は ${move.id} をもう覚えています`);
+  }
+  let moves: readonly MoveDef[];
+  if (fighter.moves.length < MAX_MOVES) {
+    if (forget !== undefined) {
+      throw new Error('技の枠が空いているので、忘れる技は選べません');
+    }
+    moves = [...fighter.moves, move];
+  } else {
+    if (forget === undefined || fighter.moves[forget] === undefined) {
+      throw new Error(`技が ${MAX_MOVES} つ埋まっているので、忘れる技を選んでください`);
+    }
+    moves = fighter.moves.with(forget, move);
+  }
+  // 大技が使えない間に、選べる技がなくならないようにする（3.6）
+  if (moves.every((known) => known.kind === 'big')) {
+    throw new Error('大技以外の技を1つ以上残してください');
+  }
+  return { ...fighter, moves };
+}
+
+/** 能力を上げたキャラ。HPを上げたときは、いまのHPも同じだけ増える */
+function boostStat(member: RunMember, stat: StatBoostKey, amount: number): RunMember {
+  const { fighter } = member;
+  return {
+    fighter: { ...fighter, stats: { ...fighter.stats, [stat]: fighter.stats[stat] + amount } },
+    hp: stat === 'hp' ? member.hp + amount : member.hp,
+  };
+}
+
+/** チームの1体を取り出す。いなければエラー */
+function memberOf(run: RunState, index: number | undefined): RunMember {
+  const member = index === undefined ? undefined : run.team[index];
+  if (!member) {
+    throw new Error(`チームの ${index} 番目のキャラはいません`);
+  }
+  return member;
+}
+
+/**
+ * 報酬を1つ受け取る（4.4）。
+ * まだ選べる回数が残っていれば（強敵）、新しい選択肢を出す。残っていなければマップに戻る。
+ */
+export function takeReward(run: RunState, choice: RewardChoice, content: RunContent): RunState {
+  const { phase } = run;
+  if (phase.kind !== 'reward') {
+    throw new Error('いまは報酬を選ぶ段階ではありません');
+  }
+  const offer = phase.offers[choice.offer];
+  if (!offer) {
+    throw new Error(`報酬の ${choice.offer} 番目の選択肢はありません`);
+  }
+
+  let next: RunState;
+  switch (offer.kind) {
+    case 'move': {
+      const member = memberOf(run, choice.member);
+      const fighter = learnMove(member.fighter, offer.move, choice.forget);
+      next = { ...run, team: run.team.with(choice.member!, { ...member, fighter }) };
+      break;
+    }
+    case 'stat':
+      next = { ...run, team: run.team.with(offer.member, boostStat(memberOf(run, offer.member), offer.stat, offer.amount)) };
+      break;
+    case 'charm':
+      next = { ...run, charms: [...run.charms, offer.charm] };
+      break;
+  }
+
+  if (phase.pick < phase.picks) {
+    return enterReward(next, content, phase.pick + 1, phase.picks);
+  }
+  return { ...next, phase: { kind: 'map' } };
 }

@@ -39,6 +39,9 @@ function describeEvent(event: BattleEvent, state: BattleState, actives: Actives)
       return `${subject(event.side)}の ${stat}が ${event.delta > 0 ? '上がった' : '下がった'}`;
     }
     case 'healed':
+      if (event.source === 'charm') {
+        return `${subject(event.side)}は お守りで HPを ${event.amount} 回復した`;
+      }
       return event.amount === 0
         ? `${subject(event.side)}の HPは 満タンだ`
         : `${subject(event.side)}は HPを ${event.amount} 回復した`;

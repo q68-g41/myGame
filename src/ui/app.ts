@@ -4,19 +4,33 @@
 import { RUN_CONTENT } from '../data/content';
 import { NODE_KIND_NAMES } from '../data/labels';
 import { nodeAt } from '../engine/map';
-import { chooseTeam, createRunBattle, enterNode, finishBattle, startRun, type RunState } from '../engine/run';
+import { MAX_MOVES } from '../engine/constants';
+import {
+  chooseTeam,
+  createRunBattle,
+  enterNode,
+  finishBattle,
+  startRun,
+  takeReward,
+  type RewardChoice,
+  type RunState,
+} from '../engine/run';
 import { renderBattleScreen, type BattleScreenHandlers } from './battleScreen';
 import { buildBattleView, INITIAL_UI_STATE, type UiState } from './battleView';
 import { buildFrames, stepDuration, type PlaybackFrame } from './playback';
-import { renderDraftScreen, renderMapScreen, renderRunEndScreen } from './runScreens';
+import { renderDraftScreen, renderMapScreen, renderRewardScreen, renderRunEndScreen } from './runScreens';
 import {
   battleCaption,
   buildDraftView,
   buildMapView,
+  buildRewardView,
   buildRunEndView,
   INITIAL_DRAFT_UI,
+  INITIAL_REWARD_UI,
+  rewardNotice,
   toggleDraftPick,
   type DraftUiState,
+  type RewardUiState,
 } from './runView';
 import {
   createSession,
@@ -48,6 +62,7 @@ interface Playback {
 export function startApp(root: HTMLElement, options: AppOptions): void {
   let run: RunState | null = null;
   let draft: DraftUiState = INITIAL_DRAFT_UI;
+  let reward: RewardUiState = INITIAL_REWARD_UI;
   /** マップ画面の案内の代わりに出す、直前に起きたこと */
   let notice: string | null = null;
   /** 戦闘中だけ持つ */
@@ -77,6 +92,9 @@ export function startApp(root: HTMLElement, options: AppOptions): void {
         renderBattleScreen(root, buildBattleView(session, ui, frame, battleCaption(run)), battleHandlers);
         return;
       }
+      case 'reward':
+        renderRewardScreen(root, buildRewardView(run, reward), rewardHandlers);
+        return;
       case 'ended':
         renderRunEndScreen(root, buildRunEndView(run), runEndHandlers);
         return;
@@ -196,14 +214,15 @@ export function startApp(root: HTMLElement, options: AppOptions): void {
       ui = { ...ui, selectedBench: null };
       render();
     },
-    // 決着したら、結果をランに反映してマップ（またはランの結果）へ
+    // 決着したら、結果をランに反映して報酬（またはランの結果）へ
     onContinue: () => {
       if (run === null || session === null || session.state.winner === null) {
         return;
       }
       stopPlayback();
-      run = finishBattle(run, session.state);
-      notice = session.state.winner === 'player' ? '戦闘に勝った！ 次のマスを選んでください' : null;
+      run = finishBattle(run, session.state, RUN_CONTENT);
+      reward = INITIAL_REWARD_UI;
+      notice = null;
       session = null;
       render();
     },
@@ -213,6 +232,58 @@ export function startApp(root: HTMLElement, options: AppOptions): void {
     },
     onSkip: () => {
       stopPlayback();
+      render();
+    },
+  };
+
+  /** 報酬を受け取る。強敵ならもう1回選び、終わればマップへ */
+  const receiveReward = (choice: RewardChoice) => {
+    if (run === null) {
+      return;
+    }
+    notice = rewardNotice(run, choice);
+    run = takeReward(run, choice, RUN_CONTENT);
+    reward = INITIAL_REWARD_UI;
+    render();
+  };
+
+  const rewardHandlers = {
+    onOffer: (index: number) => {
+      reward = { ...reward, selected: index };
+      render();
+    },
+    // 2タップ目：技なら覚えさせるキャラを選びに進み、それ以外はそのまま受け取る
+    onConfirm: () => {
+      if (run?.phase.kind !== 'reward' || reward.selected === null) {
+        return;
+      }
+      if (run.phase.offers[reward.selected]?.kind === 'move') {
+        reward = { ...reward, step: 'member' };
+        render();
+        return;
+      }
+      receiveReward({ offer: reward.selected });
+    },
+    // 技の枠が空いていればすぐ覚え、埋まっていれば忘れる技を選びに進む
+    onMember: (index: number) => {
+      if (run === null || reward.selected === null) {
+        return;
+      }
+      if ((run.team[index]?.fighter.moves.length ?? 0) < MAX_MOVES) {
+        receiveReward({ offer: reward.selected, member: index });
+        return;
+      }
+      reward = { ...reward, step: 'forget', member: index };
+      render();
+    },
+    onForget: (index: number) => {
+      if (reward.selected === null || reward.member === null) {
+        return;
+      }
+      receiveReward({ offer: reward.selected, member: reward.member, forget: index });
+    },
+    onBack: () => {
+      reward = reward.step === 'forget' ? { ...reward, step: 'member', member: null } : { ...reward, step: 'offer' };
       render();
     },
   };
