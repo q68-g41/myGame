@@ -1,14 +1,16 @@
 // @vitest-environment happy-dom
-import { beforeEach, describe, expect, it } from 'vitest';
+import { beforeEach, describe, expect, it, vi } from 'vitest';
 import { renderTopScreen } from '../../src/ui/top';
 
-describe('仮のトップ画面', () => {
+describe('トップ画面', () => {
   let root: HTMLElement;
+  const onStart = vi.fn();
 
   beforeEach(() => {
+    onStart.mockClear();
     document.body.innerHTML = '<div id="app"></div>';
     root = document.querySelector<HTMLElement>('#app')!;
-    renderTopScreen(root, { buildId: 'abc1234' });
+    renderTopScreen(root, { buildId: 'abc1234', onStart });
   });
 
   it('タイトルを表示する', () => {
@@ -24,17 +26,9 @@ describe('仮のトップ画面', () => {
     expect(controls.querySelectorAll(interactive).length).toBeGreaterThan(0);
   });
 
-  it('ボタンをタップすると、タップした回数つきのメッセージに変わる', () => {
-    const button = root.querySelector<HTMLButtonElement>('.screen__controls button')!;
-    const message = root.querySelector('[role="status"]')!;
-
-    expect(message.textContent).not.toContain('回目');
-
-    button.click();
-    expect(message.textContent).toContain('1回目');
-
-    button.click();
-    expect(message.textContent).toContain('2回目');
+  it('「はじめる」をタップするとバトルを始める', () => {
+    root.querySelector<HTMLButtonElement>('.screen__controls button')!.click();
+    expect(onStart).toHaveBeenCalledTimes(1);
   });
 
   it('ビルドの識別子を表示する', () => {
@@ -42,7 +36,7 @@ describe('仮のトップ画面', () => {
   });
 
   it('もう一度描画しても要素が重複しない', () => {
-    renderTopScreen(root, { buildId: 'abc1234' });
+    renderTopScreen(root, { buildId: 'abc1234', onStart });
     expect(root.querySelectorAll('.screen')).toHaveLength(1);
   });
 });
