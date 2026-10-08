@@ -1,13 +1,16 @@
 /**
  * ローグライトの1ラン（4章）。
- * チームを選び、分岐マップを下から進み、戦闘をまたいでHPを持ち越す。戦闘に勝つたびに報酬を選ぶ。
- * ボスを倒せばクリア、全員倒れたら終わり。
+ * チームを選び、エリアごとの分岐マップを下から進み、戦闘をまたいでHPを持ち越す。戦闘に勝つたびに報酬を選ぶ。
+ * エリアの最後のボスを倒すと次のエリアへ。最後のエリアのボスを倒せばクリア、全員倒れたら終わり。
  * ほかのエンジンと同じく、状態は書き換えずに新しい状態を返す。乱数の状態もランの状態に含める。
  */
 import { createBattle } from './battle';
 import {
-  BATTLE_ENEMY_COUNT_BY_LAYER,
+  AREA_COUNT,
+  AREA_STAT_MULTIPLIER,
+  BATTLE_ENEMY_COUNT,
   BOSS_ENEMY_COUNT,
+  BOSS_REWARD_PICKS,
   BOSS_STAT_MULTIPLIER,
   DRAFT_CANDIDATE_COUNT,
   ELITE_ENEMY_COUNT,
@@ -88,7 +91,7 @@ export interface RewardChoice {
  * - draft：候補からチームを選ぶ
  * - map：次のマスを選ぶ
  * - battle：戦闘中（相手のチームとバトルのシードは、マスに入ったときに決まる）
- * - reward：戦闘に勝って、報酬を選ぶ（強敵なら2回。pick は何回目か、picks は全部で何回か）
+ * - reward：戦闘に勝って、報酬を選ぶ（強敵とボスなら2回。pick は何回目か、picks は全部で何回か）
  * - rest：休憩（HPを回復するか、技を強化するか）
  * - scout：スカウト（候補の1体とチームの1体を入れ替えるか、入れ替えずに進む）
  * - event：イベント（選択肢を選ぶと outcome と chosen に結果が入る。結果を見たらマップへ）
@@ -113,6 +116,9 @@ export type RunPhase =
 
 /** ランの状態 */
 export interface RunState {
+  /** いまのエリア（0 がエリア1） */
+  readonly area: number;
+  /** いまのエリアのマップ */
   readonly map: AreaMap;
   /** いまいるマス。スタート直後（まだどのマスにも入っていない）は null */
   readonly position: MapPosition | null;
@@ -130,6 +136,7 @@ export function startRun(content: RunContent, seed: number): RunState {
   const map = generateAreaMap(createRng(seed));
   const candidates = pickDistinct(content.fighters, DRAFT_CANDIDATE_COUNT, map.rng);
   return {
+    area: 0,
     map: map.value,
     position: null,
     team: [],
@@ -173,20 +180,27 @@ function strengthen(fighter: FighterDef, multiplier: number): FighterDef {
   };
 }
 
-/** マスの種類と層から、相手のチームを決める */
+/** マスの種類・層・エリアから、相手のチームを決める。能力はエリアの倍率と、強敵・ボスの倍率をかけ合わせて強くする */
 function enemyTeam(
   kind: NodeKind,
   layer: number,
+  area: number,
   content: RunContent,
   rng: RngState,
 ): RngResult<readonly FighterDef[]> {
   const count =
-    kind === 'boss' ? BOSS_ENEMY_COUNT : kind === 'elite' ? ELITE_ENEMY_COUNT : BATTLE_ENEMY_COUNT_BY_LAYER[layer];
-  if (count === undefined) {
-    throw new Error(`${layer + 1} 層目の戦闘の相手の人数が決まっていません`);
+    kind === 'boss'
+      ? BOSS_ENEMY_COUNT[area]
+      : kind === 'elite'
+        ? ELITE_ENEMY_COUNT[area]
+        : BATTLE_ENEMY_COUNT[area]?.[layer];
+  const areaMultiplier = AREA_STAT_MULTIPLIER[area];
+  if (count === undefined || areaMultiplier === undefined) {
+    throw new Error(`エリア${area + 1}・${layer + 1} 層目の相手の人数か強さが決まっていません`);
   }
   const picked = pickDistinct(content.fighters, count, rng);
-  const multiplier = kind === 'boss' ? BOSS_STAT_MULTIPLIER : kind === 'elite' ? ELITE_STAT_MULTIPLIER : 1;
+  const kindMultiplier = kind === 'boss' ? BOSS_STAT_MULTIPLIER : kind === 'elite' ? ELITE_STAT_MULTIPLIER : 1;
+  const multiplier = areaMultiplier * kindMultiplier;
   const team = multiplier === 1 ? picked.value : picked.value.map((fighter) => strengthen(fighter, multiplier));
   return { value: team, rng: picked.rng };
 }
@@ -205,7 +219,7 @@ export function enterNode(run: RunState, index: number, content: RunContent): Ru
     const phase = nodePhase(node.kind, run, content, run.rng);
     return { ...run, position, phase: phase.value, rng: phase.rng };
   }
-  const enemy = enemyTeam(node.kind, position.layer, content, run.rng);
+  const enemy = enemyTeam(node.kind, position.layer, run.area, content, run.rng);
   const seed = nextSeed(enemy.rng);
   return { ...run, position, phase: { kind: 'battle', enemy: enemy.value, seed: seed.value }, rng: seed.rng };
 }
@@ -261,10 +275,21 @@ function enterReward(run: RunState, content: RunContent, pick: number, picks: nu
   return { ...run, phase: { kind: 'reward', offers: offers.value, pick, picks }, rng: offers.rng };
 }
 
+/** いまのマスがボスか */
+function atBoss(run: RunState): boolean {
+  return run.position !== null && nodeAt(run.map, run.position).kind === 'boss';
+}
+
+/** 次のエリアに進む。新しいマップを作り、1層目の手前から始める */
+function enterNextArea(run: RunState): RunState {
+  const map = generateAreaMap(run.rng);
+  return { ...run, area: run.area + 1, map: map.value, position: null, phase: { kind: 'map' }, rng: map.rng };
+}
+
 /**
  * 決着したバトルの結果をランに反映する。
  * 負けたらラン終了。勝ったらHPを持ち越し、倒れていたキャラは最大HPの一部で戻る。
- * ボスに勝てばクリア。それ以外は報酬を選ぶ（強敵なら2回）。
+ * 最後のエリアのボスに勝てばクリア。それ以外は報酬を選ぶ（強敵とボスなら2回）。
  */
 export function finishBattle(run: RunState, battle: BattleState, content: RunContent): RunState {
   if (run.phase.kind !== 'battle' || run.position === null) {
@@ -287,15 +312,17 @@ export function finishBattle(run: RunState, battle: BattleState, content: RunCon
     return { ...member, hp: hp > 0 ? hp : percentOfMaxHp(member.fighter.stats.hp, REVIVE_HP_PERCENT) };
   });
   const kind = nodeAt(run.map, run.position).kind;
-  if (kind === 'boss') {
+  if (kind === 'boss' && run.area >= AREA_COUNT - 1) {
     return { ...run, team, phase: { kind: 'ended', result: 'cleared' } };
   }
-  return enterReward({ ...run, team }, content, 1, kind === 'elite' ? ELITE_REWARD_PICKS : 1);
+  const picks = kind === 'boss' ? BOSS_REWARD_PICKS : kind === 'elite' ? ELITE_REWARD_PICKS : 1;
+  return enterReward({ ...run, team }, content, 1, picks);
 }
 
 /**
  * 報酬を1つ受け取る（4.4）。
- * まだ選べる回数が残っていれば（強敵）、新しい選択肢を出す。残っていなければマップに戻る。
+ * まだ選べる回数が残っていれば（強敵・ボス）、新しい選択肢を出す。
+ * 残っていなければマップに戻る（ボスのあとなら、次のエリアのマップへ進む）。
  */
 export function takeReward(run: RunState, choice: RewardChoice, content: RunContent): RunState {
   const { phase } = run;
@@ -326,5 +353,5 @@ export function takeReward(run: RunState, choice: RewardChoice, content: RunCont
   if (phase.pick < phase.picks) {
     return enterReward(next, content, phase.pick + 1, phase.picks);
   }
-  return { ...next, phase: { kind: 'map' } };
+  return atBoss(next) ? enterNextArea(next) : { ...next, phase: { kind: 'map' } };
 }

@@ -54,12 +54,13 @@ function simulateRuns(): void {
     } else if (result.result === 'cleared') {
       cleared += 1;
     } else {
-      const layer = (result.run.position?.layer ?? 0) + 1;
-      defeatedAt.set(layer, (defeatedAt.get(layer) ?? 0) + 1);
+      // エリアと層を1つの数にまとめて数える（並べ替えやすいように）
+      const where = result.run.area * 100 + (result.run.position?.layer ?? 0);
+      defeatedAt.set(where, (defeatedAt.get(where) ?? 0) + 1);
     }
   }
 
-  const layers = [...defeatedAt.keys()].sort((a, b) => a - b);
+  const places = [...defeatedAt.keys()].sort((a, b) => a - b);
   const lines = [
     'CPU が遊ぶラン（自分も相手も段階1の CPU。チームは候補の先頭3体、マスはランダム、報酬は能力強化、休憩は回復）',
     `ラン数: ${runs}  シード: ${seed}`,
@@ -67,7 +68,10 @@ function simulateRuns(): void {
     `1ランの戦闘数: 平均 ${(battles / Math.max(1, runs)).toFixed(1)}`,
     '',
     '負けた層（全ラン中の割合）',
-    ...layers.map((layer) => `  ${layer}層目  ${percent(defeatedAt.get(layer)!, runs).padStart(6)}`),
+    ...places.map(
+      (where) =>
+        `  エリア${Math.floor(where / 100) + 1}・${(where % 100) + 1}層目  ${percent(defeatedAt.get(where)!, runs).padStart(6)}`,
+    ),
   ];
   console.log(lines.join('\n'));
 

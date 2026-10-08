@@ -9,7 +9,7 @@ import { saveSession, type BattleSession, type SavedBattle } from './session';
 export const SAVE_KEY = 'mygame.save';
 
 /** 保存の形の版。形を変えて古いセーブが読めなくなるときに上げる（古い版のセーブは捨てる） */
-export const SAVE_VERSION = 1;
+export const SAVE_VERSION = 2;
 
 /** 保存したゲーム：ランの状態と、戦闘中ならバトルの状態 */
 export interface SavedGame {
@@ -47,7 +47,13 @@ export function parseSavedGame(text: string | null): SavedGame | null {
     return null;
   }
   const { run, battle } = file;
-  if (!isObject(run.map) || !Array.isArray(run.team) || !isObject(run.phase) || typeof run.phase.kind !== 'string') {
+  if (
+    typeof run.area !== 'number' ||
+    !isObject(run.map) ||
+    !Array.isArray(run.team) ||
+    !isObject(run.phase) ||
+    typeof run.phase.kind !== 'string'
+  ) {
     return null;
   }
   if (run.phase.kind === 'ended') {

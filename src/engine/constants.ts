@@ -75,12 +75,22 @@ export const RUN_TEAM_SIZE = 3;
 export const MAP_LAYER_MIN_WIDTH = 2;
 export const MAP_LAYER_MAX_WIDTH = 3;
 
-/** 戦闘マスの相手の人数（仮）。添字は層（0 が1層目）。戦闘マスがあるのは1〜5層目 */
-export const BATTLE_ENEMY_COUNT_BY_LAYER: readonly number[] = [1, 1, 1, 1, 2];
+/** 1ランのエリアの数（4章）。最後のエリアのボスを倒せばクリア */
+export const AREA_COUNT = 3;
 
-/** 強敵マス・ボスの相手の人数（仮） */
-export const ELITE_ENEMY_COUNT = 2;
-export const BOSS_ENEMY_COUNT = 3;
+/** 戦闘マスの相手の人数（仮）。[エリア][層]（層は 0 が1層目）。戦闘マスがあるのは1〜5層目 */
+export const BATTLE_ENEMY_COUNT: readonly (readonly number[])[] = [
+  [1, 1, 1, 1, 2],
+  [1, 2, 2, 2, 2],
+  [2, 2, 2, 3, 3],
+];
+
+/** 強敵マス・ボスの相手の人数（仮）。添字はエリア */
+export const ELITE_ENEMY_COUNT: readonly number[] = [2, 3, 3];
+export const BOSS_ENEMY_COUNT: readonly number[] = [3, 3, 3];
+
+/** エリアごとに、相手全員の能力にかける倍率（仮）。添字はエリア。強敵・ボスの倍率とかけ合わせる */
+export const AREA_STAT_MULTIPLIER: readonly number[] = [1, 1.1, 1.2];
 
 /** 強敵・ボスの能力の倍率（仮）。HP・攻撃・防御にかけて四捨五入する（素早さは変えない） */
 export const ELITE_STAT_MULTIPLIER = 1.1;
@@ -94,6 +104,9 @@ export const REWARD_OFFER_COUNT = 3;
 
 /** 強敵に勝ったときに選べる報酬の回数（4.2） */
 export const ELITE_REWARD_PICKS = 2;
+
+/** ボスに勝ったときに選べる報酬の回数（仮）。最後のエリアのボスはクリアなので報酬はない */
+export const BOSS_REWARD_PICKS = 2;
 
 /** 能力強化で上がる量。いまの値の % （四捨五入、最低1）（4.4：10%前後） */
 export const STAT_BOOST_PERCENT = 10;

@@ -21,6 +21,7 @@ const MAP: AreaMap = {
 
 const team = FIGHTERS.slice(0, 3).map((fighter) => ({ fighter, hp: fighter.stats.hp }));
 const mapRun = (overrides: Partial<RunState> = {}): RunState => ({
+  area: 0,
   map: MAP,
   position: null,
   team,
@@ -175,8 +176,24 @@ describe('報酬を受け取る', () => {
     expect(() => takeReward(rewardRun(0), { offer: 3 }, RUN_CONTENT)).toThrow('ありません');
   });
 
-  it('ボスに勝ったら報酬はなく、クリアになる', () => {
-    const run = enterNode(mapRun({ position: { layer: 0, index: 0 } }), 0, RUN_CONTENT);
+  it('最後のエリアのボスに勝ったら報酬はなく、クリアになる', () => {
+    const run = enterNode(mapRun({ area: 2, position: { layer: 0, index: 0 } }), 0, RUN_CONTENT);
     expect(finishBattle(run, won(run), RUN_CONTENT).phase).toEqual({ kind: 'ended', result: 'cleared' });
+  });
+
+  it('それ以外のエリアのボスに勝ったら、報酬を2回選んでから、次のエリアの新しいマップへ進む', () => {
+    const run = enterNode(mapRun({ position: { layer: 0, index: 0 } }), 0, RUN_CONTENT);
+    let next = finishBattle(run, won(run), RUN_CONTENT);
+    expect(next.phase).toMatchObject({ kind: 'reward', pick: 1, picks: 2 });
+    next = takeReward(next, { offer: offersOf(next).findIndex((offer) => offer.kind === 'stat') }, RUN_CONTENT);
+    expect(next.area).toBe(0);
+    next = takeReward(deepFreeze(next), { offer: offersOf(next).findIndex((offer) => offer.kind === 'stat') }, RUN_CONTENT);
+    expect(next.area).toBe(1);
+    expect(next.position).toBeNull();
+    expect(next.phase).toEqual({ kind: 'map' });
+    expect(next.map.layers).toHaveLength(7);
+    expect(next.map).not.toEqual(MAP);
+    // チームとお守りはそのまま持ち越す
+    expect(next.team.map((m) => m.fighter.id)).toEqual(team.map((m) => m.fighter.id));
   });
 });

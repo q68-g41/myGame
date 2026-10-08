@@ -314,8 +314,12 @@ export function startApp(root: HTMLElement, options: AppOptions): void {
     if (run === null) {
       return;
     }
+    const area = run.area;
     notice = rewardNotice(run, choice);
     run = takeReward(run, choice, RUN_CONTENT);
+    if (run.area !== area) {
+      notice = `エリア${run.area + 1}に進んだ！（${notice}）`;
+    }
     reward = INITIAL_REWARD_UI;
     render();
   };

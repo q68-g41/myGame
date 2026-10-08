@@ -6,7 +6,7 @@ import { getCharm } from '../data/charms';
 import { getFighter } from '../data/fighters';
 import { NODE_KIND_MARKS, NODE_KIND_NAMES, STAT_NAMES } from '../data/labels';
 import { getMove } from '../data/moves';
-import { MAX_MOVES, RUN_TEAM_SIZE } from '../engine/constants';
+import { AREA_COUNT, MAX_MOVES, RUN_TEAM_SIZE } from '../engine/constants';
 import { nodeAt, type MapPosition, type NodeKind } from '../engine/map';
 import { isAttackMove } from '../engine/moves';
 import {
@@ -190,7 +190,7 @@ export interface MapView {
   readonly charms: readonly string[];
   /** 下半分に出す案内1行 */
   readonly message: string;
-  /** 例：「2層目 / 7層」。まだどのマスにも入っていなければ「スタート」 */
+  /** 例：「エリア2・3層目 / 7層」。そのエリアでまだどのマスにも入っていなければ「エリア2・スタート」 */
   readonly progress: string;
 }
 
@@ -275,16 +275,19 @@ export function buildMapView(run: RunState, notice: string | null = null): MapVi
     team: teamViews(run.team),
     charms: charmNames(run),
     message: notice ?? '進むマスを選んでください',
-    progress: run.position === null ? 'スタート' : `${run.position.layer + 1}層目 / ${run.map.layers.length}層`,
+    progress:
+      run.position === null
+        ? `エリア${run.area + 1}・スタート`
+        : `エリア${run.area + 1}・${run.position.layer + 1}層目 / ${run.map.layers.length}層`,
   };
 }
 
-/** バトル画面に出す、いまのマスの説明（例：「3層目・強敵」） */
+/** バトル画面に出す、いまのマスの説明（例：「エリア2・3層目・強敵」） */
 export function battleCaption(run: RunState): string | null {
   if (run.position === null) {
     return null;
   }
-  return `${run.position.layer + 1}層目・${NODE_KIND_NAMES[nodeAt(run.map, run.position).kind]}`;
+  return `エリア${run.area + 1}・${run.position.layer + 1}層目・${NODE_KIND_NAMES[nodeAt(run.map, run.position).kind]}`;
 }
 
 /* ===== 戦闘後の報酬 ===== */
@@ -500,7 +503,7 @@ export function buildRunEndView(run: RunState): RunEndView {
   return {
     result,
     title: result === 'cleared' ? 'クリア！' : '全滅…',
-    message: result === 'cleared' ? 'ボスを倒して、エリアを突破した！' : `${where}で全滅した`,
+    message: result === 'cleared' ? `${AREA_COUNT}つのエリアを突破した！` : `${where}で全滅した`,
     team: teamViews(run.team),
   };
 }
