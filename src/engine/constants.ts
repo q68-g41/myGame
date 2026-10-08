@@ -2,7 +2,7 @@
  * 仕様（docs/spec.md）の数値。ロジックに直接数値を書かず、ここから使う。
  * 数値はすべて仮で、バランス調整で変える前提。
  */
-import type { AttributeId, Side, StatusId } from './types';
+import type { AttributeId, CpuLevel, Side, StatusId } from './types';
 
 /** 陣営の一覧 */
 export const SIDES: readonly Side[] = ['player', 'enemy'];
@@ -91,6 +91,12 @@ export const BOSS_ENEMY_COUNT: readonly number[] = [3, 3, 3];
 
 /** エリアごとに、相手全員の能力にかける倍率（仮）。添字はエリア。強敵・ボスの倍率とかけ合わせる */
 export const AREA_STAT_MULTIPLIER: readonly number[] = [1, 1.1, 1.2];
+
+/**
+ * 相手の CPU の段階（仕様書 6）。添字はエリア。強敵とボスもエリアの段階を使う。
+ * 段階3はまだないので、エリア3も段階2（M5-3 で段階3にする）
+ */
+export const CPU_LEVEL_BY_AREA: readonly CpuLevel[] = [1, 2, 2];
 
 /** 強敵・ボスの能力の倍率（仮）。HP・攻撃・防御にかけて四捨五入する（素早さは変えない） */
 export const ELITE_STAT_MULTIPLIER = 1.1;

@@ -110,6 +110,9 @@ export interface Combatant {
 /** 陣営 */
 export type Side = 'player' | 'enemy';
 
+/** 相手の CPU の段階（仕様書 6）。数が大きいほど賢い */
+export type CpuLevel = 1 | 2 | 3;
+
 /**
  * お守りの効果（4.4：チーム全体にかかる常時効果）。
  * - movePower：その種類の技の威力を percent % 上げる（切り捨て）

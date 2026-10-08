@@ -28,7 +28,7 @@ describe('保存の形', () => {
 
   it('戦闘中は、バトルの状態・乱数・素早さが分かった相手も保存する', () => {
     const session = playMove(firstBattleSession(), firstBattleSession().state.sides.player.team[0]!.moves[0]!.id);
-    const battleRun = { ...run, phase: { kind: 'battle' as const, enemy: [], seed: 1 } };
+    const battleRun = { ...run, phase: { kind: 'battle' as const, enemy: [], cpu: 1 as const, seed: 1 } };
     const saved = parseSavedGame(serializeGame(battleRun, session));
     expect(saved?.battle).toEqual({
       state: session.state,

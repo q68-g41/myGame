@@ -1,7 +1,7 @@
 /**
  * CPU 同士の自動対戦（バランス確認用）。
  * 使い方：
- *   npm run sim -- --battles 1000 --seed 1   3対3 の対戦を繰り返す
+ *   npm run sim -- --battles 1000 --seed 1   3対3 の対戦を繰り返す（--player 2 --enemy 1 で CPU の段階を変えられる）
  *   npm run sim -- --runs 1000 --seed 1      CPU にランを遊ばせる（クリア率と、倒れた層を見る）
  */
 import { playCpuBattle, playCpuRun } from '../src/ai/selfPlay';
@@ -9,6 +9,7 @@ import { RUN_CONTENT } from '../src/data/content';
 import { FIGHTERS, type FighterData } from '../src/data/fighters';
 import { TEAM_SIZE_FOR_SIM, pickTeams } from '../src/ai/teams';
 import { createRng, nextInt } from '../src/engine/rng';
+import type { CpuLevel } from '../src/engine/types';
 
 function hasOption(name: string): boolean {
   return process.argv.slice(2).some((arg) => arg === `--${name}` || arg.startsWith(`--${name}=`));
@@ -27,6 +28,15 @@ function readOption(name: string, fallback: number): number {
     throw new Error(`--${name} には 0 以上の整数を指定してください（いま ${raw}）`);
   }
   return value;
+}
+
+/** CPU の段階（1〜3）。省くと1 */
+function readLevel(name: string): CpuLevel {
+  const level = readOption(name, 1);
+  if (level !== 1 && level !== 2 && level !== 3) {
+    throw new Error(`--${name} には 1〜3 を指定してください（いま ${level}）`);
+  }
+  return level;
 }
 
 const percent = (value: number, total: number) => (total === 0 ? '-' : `${((value / total) * 100).toFixed(1)}%`);
@@ -84,6 +94,7 @@ function simulateRuns(): void {
 function simulateBattles(): void {
   const battles = readOption('battles', 1000);
   const seed = readOption('seed', 1);
+  const levels = { player: readLevel('player'), enemy: readLevel('enemy') };
 
   let rng = createRng(seed);
   let finished = 0;
@@ -99,7 +110,7 @@ function simulateBattles(): void {
     const battleSeed = nextInt(rng, 0, 0xffffffff);
     rng = battleSeed.rng;
 
-    const result = playCpuBattle(teams.value.player, teams.value.enemy, createRng(battleSeed.value));
+    const result = playCpuBattle(teams.value.player, teams.value.enemy, createRng(battleSeed.value), levels);
     if (result.winner === null) {
       continue;
     }
@@ -121,7 +132,7 @@ function simulateBattles(): void {
 
   const average = turnCounts.reduce((sum, turns) => sum + turns, 0) / Math.max(1, turnCounts.length);
   const lines = [
-    'CPU同士の自動対戦（段階1どうし、3対3）',
+    `CPU同士の自動対戦（3対3。player 側は段階${levels.player}、enemy 側は段階${levels.enemy}）`,
     `対戦数: ${battles}  シード: ${seed}`,
     `決着: ${finished} / ${battles}`,
     `player 側の勝率: ${percent(playerWins, finished)}`,

@@ -2,11 +2,11 @@
  * 画面とエンジンの間で、1戦の流れを管理する（DOM は使わない）。
  * ルールはエンジンに任せ、ここではコマンドを渡して結果を受け取るだけ。
  */
-import { chooseCommandStage1, chooseReplacementStage1 } from '../ai/cpu';
+import { chooseCommand, chooseReplacement } from '../ai/policy';
 import { resolveTurn, submitReplacements } from '../engine/battle';
 import { memberAt } from '../engine/team';
 import { createRng, type RngState } from '../engine/rng';
-import type { BattleEvent, BattleState, Command, Replacements } from '../engine/types';
+import type { BattleEvent, BattleState, Command, CpuLevel, Replacements } from '../engine/types';
 
 /** 1戦の状態 */
 export interface BattleSession {
@@ -21,11 +21,13 @@ export interface BattleSession {
    * 同じバトルで、そのキャラと同じ段階の技どうしで行動順を比べたら「分かった」とする
    */
   readonly knownEnemySpeeds: ReadonlySet<string>;
+  /** 相手の CPU の段階 */
+  readonly cpu: CpuLevel;
 }
 
-/** 始まったバトルと、そのバトルで使う乱数のシードから、1戦の流れを始める */
-export function createSession(state: BattleState, seed: number): BattleSession {
-  return { state, rng: createRng(seed), lastEvents: [], previousState: state, knownEnemySpeeds: new Set() };
+/** 始まったバトルと、そのバトルで使う乱数のシード、相手の CPU の段階から、1戦の流れを始める */
+export function createSession(state: BattleState, seed: number, cpu: CpuLevel = 1): BattleSession {
+  return { state, rng: createRng(seed), lastEvents: [], previousState: state, knownEnemySpeeds: new Set(), cpu };
 }
 
 /** 保存したバトル（毎ターンの自動保存用。乱数の状態と、素早さが分かった相手も残す） */
@@ -41,13 +43,14 @@ export function saveSession(session: BattleSession): SavedBattle {
 }
 
 /** 保存したバトルから、1戦の流れを再開する（直前に起きたことは残らない） */
-export function restoreSession(saved: SavedBattle): BattleSession {
+export function restoreSession(saved: SavedBattle, cpu: CpuLevel): BattleSession {
   return {
     state: saved.state,
     rng: saved.rng,
     lastEvents: [],
     previousState: saved.state,
     knownEnemySpeeds: new Set(saved.knownEnemySpeeds),
+    cpu,
   };
 }
 
@@ -57,12 +60,12 @@ export function needsPlayerReplacement(session: BattleSession): boolean {
 }
 
 /** 相手だけが控えから選ぶ必要があれば、CPU に選ばせて出す */
-function replaceEnemyIfNeeded(state: BattleState): { state: BattleState; events: readonly BattleEvent[] } {
+function replaceEnemyIfNeeded(state: BattleState, cpu: CpuLevel): { state: BattleState; events: readonly BattleEvent[] } {
   const awaiting = state.awaitingReplacement;
   if (!awaiting.includes('enemy') || awaiting.includes('player')) {
     return { state, events: [] };
   }
-  return submitReplacements(state, { enemy: chooseReplacementStage1(state, 'enemy') });
+  return submitReplacements(state, { enemy: chooseReplacement(state, 'enemy', cpu) });
 }
 
 /**
@@ -89,13 +92,14 @@ export function comparedEnemySpeed(before: BattleState, events: readonly BattleE
   return enemyMover !== null && playerPriority === enemyMover.priority ? enemyMover.id : null;
 }
 
-/** 自分のコマンドでターンを進める。相手のコマンドは CPU（段階1）が選ぶ */
+/** 自分のコマンドでターンを進める。相手のコマンドは、そのバトルの段階の CPU が選ぶ */
 export function playCommand(session: BattleSession, command: Command): BattleSession {
-  const commands = { player: command, enemy: chooseCommandStage1(session.state, 'enemy') };
+  const commands = { player: command, enemy: chooseCommand(session.state, 'enemy', session.cpu) };
   const turn = resolveTurn(session.state, commands, session.rng);
-  const replaced = replaceEnemyIfNeeded(turn.state);
+  const replaced = replaceEnemyIfNeeded(turn.state, session.cpu);
   const compared = comparedEnemySpeed(session.state, turn.events);
   return {
+    ...session,
     state: replaced.state,
     rng: turn.rng,
     lastEvents: [...turn.events, ...replaced.events],
@@ -118,7 +122,7 @@ export function playSwitch(session: BattleSession, to: number): BattleSession {
 export function playReplacement(session: BattleSession, index: number): BattleSession {
   const { state } = session;
   const replacements: Replacements = state.awaitingReplacement.includes('enemy')
-    ? { player: index, enemy: chooseReplacementStage1(state, 'enemy') }
+    ? { player: index, enemy: chooseReplacement(state, 'enemy', session.cpu) }
     : { player: index };
   const result = submitReplacements(state, replacements);
   return { ...session, state: result.state, lastEvents: result.events, previousState: state };

@@ -208,7 +208,8 @@ export function startApp(root: HTMLElement, options: AppOptions): void {
     resetScreens();
     try {
       run = saved.run;
-      session = saved.battle === null ? null : restoreSession(saved.battle);
+      const { phase } = saved.run;
+      session = saved.battle === null || phase.kind !== 'battle' ? null : restoreSession(saved.battle, phase.cpu);
       render();
     } catch {
       store.clear();
@@ -254,7 +255,7 @@ export function startApp(root: HTMLElement, options: AppOptions): void {
       scout = INITIAL_SCOUT_UI;
       event = INITIAL_EVENT_UI;
       if (run.phase.kind === 'battle') {
-        session = createSession(createRunBattle(run), run.phase.seed);
+        session = createSession(createRunBattle(run), run.phase.seed, run.phase.cpu);
         ui = { ...INITIAL_UI_STATE, speed: ui.speed };
       }
       render();

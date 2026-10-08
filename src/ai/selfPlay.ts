@@ -16,8 +16,8 @@ import {
   type RunResult,
   type RunState,
 } from '../engine/run';
-import type { BattleState, FighterDef, Side } from '../engine/types';
-import { chooseCommandStage1, chooseReplacementStage1 } from './cpu';
+import type { BattleState, CpuLevel, FighterDef, Side } from '../engine/types';
+import { chooseCommand, chooseReplacement } from './policy';
 
 /** 決着しないまま打ち切るターン数（無限ループを防ぐため） */
 export const MAX_SELF_PLAY_TURNS = 200;
@@ -31,17 +31,23 @@ export interface SelfPlayResult {
   readonly state: BattleState;
 }
 
-/** 段階1の CPU どうしで、決着するまで対戦する */
+/** 陣営ごとの CPU の段階 */
+export type CpuLevels = Readonly<Record<Side, CpuLevel>>;
+
+const STAGE1_BOTH: CpuLevels = { player: 1, enemy: 1 };
+
+/** CPU どうしで、決着するまで対戦する（省くと、どちらも段階1） */
 export function playCpuBattle(
   player: readonly FighterDef[],
   enemy: readonly FighterDef[],
   rng: RngState,
+  levels: CpuLevels = STAGE1_BOTH,
 ): SelfPlayResult {
-  return playCpuBattleFrom(createBattle(player, enemy), rng);
+  return playCpuBattleFrom(createBattle(player, enemy), rng, levels);
 }
 
-/** 始まっているバトルを、段階1の CPU どうしで決着するまで進める */
-export function playCpuBattleFrom(start: BattleState, rng: RngState): SelfPlayResult {
+/** 始まっているバトルを、CPU どうしで決着するまで進める */
+export function playCpuBattleFrom(start: BattleState, rng: RngState, levels: CpuLevels = STAGE1_BOTH): SelfPlayResult {
   let state = start;
   let currentRng = rng;
   let turns = 0;
@@ -50,12 +56,15 @@ export function playCpuBattleFrom(start: BattleState, rng: RngState): SelfPlayRe
     if (state.awaitingReplacement.length > 0) {
       const replacements: Partial<Record<Side, number>> = {};
       for (const side of state.awaitingReplacement) {
-        replacements[side] = chooseReplacementStage1(state, side);
+        replacements[side] = chooseReplacement(state, side, levels[side]);
       }
       state = submitReplacements(state, replacements).state;
       continue;
     }
-    const commands = { player: chooseCommandStage1(state, 'player'), enemy: chooseCommandStage1(state, 'enemy') };
+    const commands = {
+      player: chooseCommand(state, 'player', levels.player),
+      enemy: chooseCommand(state, 'enemy', levels.enemy),
+    };
     const result = resolveTurn(state, commands, currentRng);
     state = result.state;
     currentRng = result.rng;
@@ -75,7 +84,8 @@ export interface CpuRunResult {
 }
 
 /**
- * CPU にランを1回遊ばせる。チームは候補の先頭3体、次のマスは乱数で選び、戦闘は段階1の CPU どうしで進める。
+ * CPU にランを1回遊ばせる。チームは候補の先頭3体、次のマスは乱数で選ぶ。
+ * 戦闘は、自分側は段階1、相手はそのバトルの段階の CPU で進める。
  * 報酬は、能力強化の選択肢の先頭を選ぶ（いつも1つ以上ある）。休憩はHPの回復、スカウトは入れ替えない、
  * イベントは最初の選択肢を選ぶ。
  * マスの選び方は、ランの乱数とは別の乱数（choiceSeed から作る）で決める。
@@ -87,7 +97,10 @@ export function playCpuRun(content: RunContent, seed: number, choiceSeed: number
 
   while (run.phase.kind !== 'ended') {
     if (run.phase.kind === 'battle') {
-      const played = playCpuBattleFrom(createRunBattle(run), createRng(run.phase.seed));
+      const played = playCpuBattleFrom(createRunBattle(run), createRng(run.phase.seed), {
+        player: 1,
+        enemy: run.phase.cpu,
+      });
       battles += 1;
       if (played.winner === null) {
         return { result: null, battles, run };
