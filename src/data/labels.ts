@@ -2,6 +2,9 @@
 import type { NodeKind } from '../engine/map';
 import type { StatKey, StatusId } from '../engine/types';
 
+/** ゲームのタイトル（和風の世界観での仮題。仕様書 8） */
+export const GAME_TITLE = '彩霊のみち';
+
 /** 状態異常の表示名（仕様書 3.8 の仮名） */
 export const STATUS_NAMES: Readonly<Record<StatusId, string>> = {
   erosion: '侵蝕',

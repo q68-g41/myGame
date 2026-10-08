@@ -1,3 +1,4 @@
+import { GAME_TITLE } from '../data/labels';
 import { el } from './dom';
 
 export interface TopScreenOptions {
@@ -29,9 +30,7 @@ export function renderTopScreen(root: HTMLElement, options: TopScreenOptions, co
   view.setAttribute('aria-label', '表示');
 
   const subtitle = el(doc, 'p', 'top__subtitle', '仮題');
-  // 語の途中で折り返さないよう、2つのかたまりに分ける
-  const title = el(doc, 'h1', 'top__title');
-  title.append(el(doc, 'span', 'nowrap', 'ローグライト'), el(doc, 'span', 'nowrap', '対戦コマンドゲーム'));
+  const title = el(doc, 'h1', 'top__title', GAME_TITLE);
 
   // 仮素材：チーム3体ぶんの色付きの四角
   const team = el(doc, 'div', 'top__team');
@@ -44,7 +43,7 @@ export function renderTopScreen(root: HTMLElement, options: TopScreenOptions, co
     doc,
     'p',
     'top__message',
-    onContinue ? '前回のランの続きから遊べます' : '1エリア分のランを遊べます（仮素材）',
+    onContinue ? '前回のランの続きから遊べます' : '彩霊を3体えらんで、旅に出ます（仮素材）',
   );
   view.append(subtitle, title, team, message);
 

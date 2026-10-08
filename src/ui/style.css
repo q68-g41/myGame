@@ -92,10 +92,6 @@ body {
   color: var(--color-accent-text);
 }
 
-.nowrap {
-  display: inline-block;
-}
-
 .top__subtitle {
   margin: 0;
   font-size: 14px;
@@ -503,6 +499,10 @@ body {
   color: var(--color-muted);
 }
 
+.move-button__effect {
+  display: inline-block;
+}
+
 .move-button__mark {
   font-size: 14px;
   font-weight: bold;
@@ -584,6 +584,7 @@ body {
   min-width: 0;
   padding: 8px;
   border: 2px solid var(--color-border);
+  border-left-width: 8px;
   border-radius: 8px;
   text-align: left;
 }
@@ -597,13 +598,6 @@ body {
   align-items: center;
   gap: 6px;
   min-width: 0;
-}
-
-.member__icon {
-  flex: none;
-  width: 16px;
-  height: 16px;
-  border-radius: 3px;
 }
 
 .member__name {
@@ -735,9 +729,10 @@ body {
 .candidate {
   display: flex;
   align-items: center;
-  gap: 8px;
+  /* 6文字の名前（例：イナホイタチ）が、選んだ順の数字と並んでも1行に収まるように詰める */
+  gap: 6px;
   min-height: 56px;
-  padding: 8px 12px;
+  padding: 8px;
   border: 2px solid var(--color-border);
   border-radius: 8px;
   background: var(--color-bg);
@@ -768,7 +763,7 @@ body {
 }
 
 .candidate__order {
-  min-width: 1.5em;
+  min-width: 1em;
   font-weight: bold;
   color: var(--color-accent);
   text-align: center;
@@ -1182,4 +1177,15 @@ body {
   margin: 0;
   font-size: 14px;
   text-align: center;
+}
+
+/* 3列のキャラ選び（報酬・休憩・スカウト）：6文字の名前（例：ユウヒダヌキ）が1行に収まるように詰める */
+.reward-members .reward-option,
+.node-members .node-pick {
+  padding: 8px;
+}
+
+.reward-members .reward-option__name,
+.node-members .node-pick__name {
+  font-size: 14px;
 }

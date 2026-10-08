@@ -195,6 +195,6 @@ describe('ランを最後まで', () => {
       playStep();
     }
     root.querySelector<HTMLButtonElement>('.run-end .button--secondary')!.click();
-    expect(root.querySelector('h1')?.textContent).toBe('ローグライト対戦コマンドゲーム');
+    expect(root.querySelector('h1')?.textContent).toBe('彩霊のみち');
   });
 });

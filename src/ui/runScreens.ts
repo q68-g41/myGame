@@ -44,11 +44,12 @@ function hpLevel(hp: number, maxHp: number): 'high' | 'middle' | 'low' {
   return ratio > 0.5 ? 'high' : ratio > 0.2 ? 'middle' : 'low';
 }
 
-/** チームの1体（名前・HPバー・数字） */
+/** チームの1体（名前・HPバー・数字）。属性の色は、技ボタンと同じく左の帯で見せる（6文字の名前が1行に収まるように） */
 function memberCard(doc: Document, member: TeamMemberView): HTMLElement {
   const card = el(doc, 'div', member.hp === 0 ? 'member member--fainted' : 'member');
+  card.style.borderLeftColor = member.color;
   const header = el(doc, 'div', 'member__header');
-  header.append(swatch(doc, 'member__icon', member.color), el(doc, 'span', 'member__name', member.name));
+  header.append(el(doc, 'span', 'member__name', member.name));
   const bar = el(doc, 'div', 'hp-bar');
   const fill = el(doc, 'div', `hp-bar__fill hp-bar__fill--${hpLevel(member.hp, member.maxHp)}`);
   fill.style.width = `${(member.hp / member.maxHp) * 100}%`;

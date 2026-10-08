@@ -17,7 +17,7 @@ describe('技の詳細（長押しで出す文章）', () => {
   it('攻撃技：属性・種類・威力・いまの相手への相性・共鳴', () => {
     const move = makeMove({ id: 'crimson-strike', attribute: 'crimson', kind: 'normal', power: 60 });
     expect(describeMove(move, user, orange)).toEqual({
-      name: '紅撃',
+      name: '緋の爪',
       lines: ['紅属性・通常', '威力 60', 'いまの相手に 有利（×1.5）', '共鳴（×1.2）'],
     });
   });
@@ -48,7 +48,7 @@ describe('技の詳細（長押しで出す文章）', () => {
       ],
     });
     expect(describeMove(support, user, orange)).toEqual({
-      name: '集中',
+      name: '闘志',
       lines: ['紅属性・補助', '自分の攻撃を 2段階 上げる', '相手の防御を 1段階 下げる', '自分のHPを 最大HPの30% 回復する', '相手を 侵蝕 にする'],
     });
   });

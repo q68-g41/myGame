@@ -73,11 +73,11 @@ describe('チーム選択', () => {
   it('詳細には、属性・能力・技（種類と威力、補助技は効果）を出す', () => {
     const crimson = FIGHTERS.find((fighter) => fighter.id === 'crimson-trial')!;
     expect(fighterDetail(crimson)).toEqual({
-      name: '仮・紅',
+      name: 'ベニギツネ',
       color: expect.any(String),
       attributeName: '紅属性',
       stats: 'HP 95・攻撃 65・防御 45・素早さ 60',
-      moves: ['紅撃（通常・威力60）', '紅の大技（大技・威力100）', '先手突き（先制・威力35）', '集中（補助・攻撃↑2）'],
+      moves: ['緋の爪（通常・威力60）', '紅炎落とし（大技・威力100）', '火花突き（先制・威力35）', '闘志（補助・攻撃↑2）'],
     });
   });
 });
@@ -115,9 +115,9 @@ describe('マップ', () => {
   it('チームのHPを出す', () => {
     const hurt = { ...runAt(null), team: [{ ...team[0]!, hp: 12 }, team[1]!, { ...team[2]!, hp: 0 }] };
     expect(buildMapView(hurt).team.map((m) => [m.name, m.hp, m.maxHp])).toEqual([
-      ['仮・紅', 12, 95],
-      ['仮・橙', 115, 115],
-      ['仮・黄', 0, 85],
+      ['ベニギツネ', 12, 95],
+      ['ユウヒダヌキ', 115, 115],
+      ['イナホイタチ', 0, 85],
     ]);
   });
 
