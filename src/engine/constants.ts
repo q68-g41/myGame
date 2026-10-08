@@ -97,3 +97,12 @@ export const ELITE_REWARD_PICKS = 2;
 
 /** 能力強化で上がる量。いまの値の % （四捨五入、最低1）（4.4：10%前後） */
 export const STAT_BOOST_PERCENT = 10;
+
+/** 休憩：全員のHPを最大HPの何%回復するか（4.2） */
+export const REST_HEAL_PERCENT = 30;
+
+/** 休憩：技の強化で上がる威力（4.2 の補足） */
+export const REST_POWER_UP = 10;
+
+/** スカウトの候補の数（4.2） */
+export const SCOUT_CANDIDATE_COUNT = 3;

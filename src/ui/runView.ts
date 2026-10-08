@@ -80,7 +80,7 @@ export interface DraftView {
 }
 
 /** 技の種類と威力（補助技は効果）。例：「通常・威力60」「補助・攻撃↑2」 */
-function moveSummary(move: MoveDef): string {
+export function moveSummary(move: MoveDef): string {
   return isAttackMove(move)
     ? `${MOVE_KIND_NAMES[move.kind]}・威力${move.power}`
     : `${MOVE_KIND_NAMES[move.kind]}・${summarizeEffects(move.effects)}`;
@@ -196,11 +196,11 @@ export interface MapView {
 
 const CHOICE_LETTERS = ['A', 'B', 'C', 'D'] as const;
 
-function charmNames(run: RunState): string[] {
+export function charmNames(run: RunState): string[] {
   return run.charms.map((charm) => getCharm(charm.id).name);
 }
 
-function teamViews(team: readonly RunMember[]): TeamMemberView[] {
+export function teamViews(team: readonly RunMember[]): TeamMemberView[] {
   return team.map((member) => ({
     name: getFighter(member.fighter.id).name,
     color: ATTRIBUTE_COLORS[member.fighter.attribute],
@@ -353,7 +353,7 @@ export interface RewardView {
 }
 
 /** 能力の表示名（能力強化用。HP は最大HPが上がる） */
-const BOOST_STAT_NAMES: Readonly<Record<StatBoostKey, string>> = { hp: '最大HP', ...STAT_NAMES };
+export const BOOST_STAT_NAMES: Readonly<Record<StatBoostKey, string>> = { hp: '最大HP', ...STAT_NAMES };
 
 function offerView(run: RunState, offer: RewardOffer, index: number, selected: boolean): RewardOfferView {
   switch (offer.kind) {

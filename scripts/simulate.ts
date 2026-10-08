@@ -61,7 +61,7 @@ function simulateRuns(): void {
 
   const layers = [...defeatedAt.keys()].sort((a, b) => a - b);
   const lines = [
-    'CPU が遊ぶラン（自分も相手も段階1の CPU。チームは候補の先頭3体、マスはランダム、報酬は能力強化）',
+    'CPU が遊ぶラン（自分も相手も段階1の CPU。チームは候補の先頭3体、マスはランダム、報酬は能力強化、休憩は回復）',
     `ラン数: ${runs}  シード: ${seed}`,
     `クリア率: ${percent(cleared, runs)}`,
     `1ランの戦闘数: 平均 ${(battles / Math.max(1, runs)).toFixed(1)}`,

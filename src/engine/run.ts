@@ -13,16 +13,26 @@ import {
   ELITE_ENEMY_COUNT,
   ELITE_REWARD_PICKS,
   ELITE_STAT_MULTIPLIER,
-  MAX_MOVES,
   REVIVE_HP_PERCENT,
   REWARD_OFFER_COUNT,
   RUN_TEAM_SIZE,
-  STAT_BOOST_PERCENT,
 } from './constants';
 import { percentOfMaxHp } from './effects';
+import {
+  boostStat,
+  canLearn,
+  learnMove,
+  memberOf,
+  STAT_BOOST_KEYS,
+  statBoostAmount,
+  type StatBoostKey,
+} from './growth';
 import { generateAreaMap, nextChoices, nodeAt, type AreaMap, type MapPosition, type NodeKind } from './map';
+import { nodePhase, type EventDef, type EventOutcome } from './nodes';
 import { createRng, nextSeed, pickDistinct, type RngResult, type RngState } from './rng';
-import type { BattleState, CharmEffect, FighterDef, MoveDef, Stats } from './types';
+import type { BattleState, CharmEffect, FighterDef, MoveDef } from './types';
+
+export { statBoostAmount, type StatBoostKey } from './growth';
 
 /** お守り（4.4）。効果はチーム全体にかかる */
 export interface CharmDef {
@@ -38,6 +48,8 @@ export interface RunContent {
   readonly moves: readonly MoveDef[];
   /** 報酬で手に入るお守り */
   readonly charms: readonly CharmDef[];
+  /** イベントのマスで起きるイベント */
+  readonly events: readonly EventDef[];
 }
 
 /** チームの1体 */
@@ -49,9 +61,6 @@ export interface RunMember {
 
 /** ランの結果 */
 export type RunResult = 'cleared' | 'defeated';
-
-/** 能力強化で上げられる能力 */
-export type StatBoostKey = keyof Stats;
 
 /**
  * 戦闘後の報酬の選択肢（4.4）。
@@ -80,6 +89,9 @@ export interface RewardChoice {
  * - map：次のマスを選ぶ
  * - battle：戦闘中（相手のチームとバトルのシードは、マスに入ったときに決まる）
  * - reward：戦闘に勝って、報酬を選ぶ（強敵なら2回。pick は何回目か、picks は全部で何回か）
+ * - rest：休憩（HPを回復するか、技を強化するか）
+ * - scout：スカウト（候補の1体とチームの1体を入れ替えるか、入れ替えずに進む）
+ * - event：イベント（選択肢を選ぶと outcome と chosen に結果が入る。結果を見たらマップへ）
  * - ended：ランが終わった
  */
 export type RunPhase =
@@ -87,6 +99,16 @@ export type RunPhase =
   | { readonly kind: 'map' }
   | { readonly kind: 'battle'; readonly enemy: readonly FighterDef[]; readonly seed: number }
   | { readonly kind: 'reward'; readonly offers: readonly RewardOffer[]; readonly pick: number; readonly picks: number }
+  | { readonly kind: 'rest' }
+  | { readonly kind: 'scout'; readonly candidates: readonly FighterDef[] }
+  | {
+      readonly kind: 'event';
+      readonly event: EventDef;
+      /** 選んだ選択肢の結果。まだ選んでいなければ null */
+      readonly outcome: readonly EventOutcome[] | null;
+      /** 選んだ選択肢の位置 */
+      readonly chosen?: number;
+    }
   | { readonly kind: 'ended'; readonly result: RunResult };
 
 /** ランの状態 */
@@ -102,9 +124,6 @@ export interface RunState {
   /** 次に使う乱数の状態 */
   readonly rng: RngState;
 }
-
-/** 戦闘になるマス */
-const BATTLE_KINDS: ReadonlySet<NodeKind> = new Set(['battle', 'elite', 'boss']);
 
 /** ランを始める。マップを作り、スタートの候補を出す */
 export function startRun(content: RunContent, seed: number): RunState {
@@ -174,8 +193,7 @@ function enemyTeam(
 
 /**
  * 次のマスに進む。index は次の層での位置（runChoices のどれか）。
- * 戦闘・強敵・ボスなら相手のチームを決めて戦闘の段階に入る。
- * 休憩・スカウト・イベントは、いまは通るだけ（中身は M4-4 で入れる）。
+ * 戦闘・強敵・ボスなら相手のチームを決めて戦闘の段階に入る。休憩・スカウト・イベントは、そのマスの段階に入る。
  */
 export function enterNode(run: RunState, index: number, content: RunContent): RunState {
   if (!runChoices(run).includes(index)) {
@@ -183,8 +201,9 @@ export function enterNode(run: RunState, index: number, content: RunContent): Ru
   }
   const position: MapPosition = { layer: run.position === null ? 0 : run.position.layer + 1, index };
   const node = nodeAt(run.map, position);
-  if (!BATTLE_KINDS.has(node.kind)) {
-    return { ...run, position };
+  if (node.kind === 'rest' || node.kind === 'scout' || node.kind === 'event') {
+    const phase = nodePhase(node.kind, run, content, run.rng);
+    return { ...run, position, phase: phase.value, rng: phase.rng };
   }
   const enemy = enemyTeam(node.kind, position.layer, content, run.rng);
   const seed = nextSeed(enemy.rng);
@@ -202,19 +221,6 @@ export function createRunBattle(run: RunState): BattleState {
     phase.enemy,
     { playerHp: run.team.map((member) => member.hp), playerCharms: run.charms.map((charm) => charm.effect) },
   );
-}
-
-/** 能力強化の候補（チームのだれの、どの能力か） */
-const STAT_BOOST_KEYS: readonly StatBoostKey[] = ['hp', 'attack', 'defense', 'speed'];
-
-/** 能力強化で上がる量（いまの値の STAT_BOOST_PERCENT %、四捨五入、最低1） */
-export function statBoostAmount(value: number): number {
-  return Math.max(1, Math.round((value * STAT_BOOST_PERCENT) / 100));
-}
-
-/** そのキャラがまだ覚えていない技か */
-function canLearn(fighter: FighterDef, move: MoveDef): boolean {
-  return !fighter.moves.some((known) => known.id === move.id);
 }
 
 /**
@@ -285,48 +291,6 @@ export function finishBattle(run: RunState, battle: BattleState, content: RunCon
     return { ...run, team, phase: { kind: 'ended', result: 'cleared' } };
   }
   return enterReward({ ...run, team }, content, 1, kind === 'elite' ? ELITE_REWARD_PICKS : 1);
-}
-
-/** 技を覚えさせたキャラ。4つ覚えていれば forget の技と入れ替える */
-function learnMove(fighter: FighterDef, move: MoveDef, forget: number | undefined): FighterDef {
-  if (!canLearn(fighter, move)) {
-    throw new Error(`${fighter.id} は ${move.id} をもう覚えています`);
-  }
-  let moves: readonly MoveDef[];
-  if (fighter.moves.length < MAX_MOVES) {
-    if (forget !== undefined) {
-      throw new Error('技の枠が空いているので、忘れる技は選べません');
-    }
-    moves = [...fighter.moves, move];
-  } else {
-    if (forget === undefined || fighter.moves[forget] === undefined) {
-      throw new Error(`技が ${MAX_MOVES} つ埋まっているので、忘れる技を選んでください`);
-    }
-    moves = fighter.moves.with(forget, move);
-  }
-  // 大技が使えない間に、選べる技がなくならないようにする（3.6）
-  if (moves.every((known) => known.kind === 'big')) {
-    throw new Error('大技以外の技を1つ以上残してください');
-  }
-  return { ...fighter, moves };
-}
-
-/** 能力を上げたキャラ。HPを上げたときは、いまのHPも同じだけ増える */
-function boostStat(member: RunMember, stat: StatBoostKey, amount: number): RunMember {
-  const { fighter } = member;
-  return {
-    fighter: { ...fighter, stats: { ...fighter.stats, [stat]: fighter.stats[stat] + amount } },
-    hp: stat === 'hp' ? member.hp + amount : member.hp,
-  };
-}
-
-/** チームの1体を取り出す。いなければエラー */
-function memberOf(run: RunState, index: number | undefined): RunMember {
-  const member = index === undefined ? undefined : run.team[index];
-  if (!member) {
-    throw new Error(`チームの ${index} 番目のキャラはいません`);
-  }
-  return member;
 }
 
 /**

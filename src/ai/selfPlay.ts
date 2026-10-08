@@ -2,6 +2,7 @@
  * CPU 同士の対戦や、CPU が遊ぶランを最後まで進める（バランス確認用。scripts/simulate.ts から使う）。
  */
 import { createBattle, resolveTurn, submitReplacements } from '../engine/battle';
+import { chooseEventOption, leaveEvent, restHeal, scoutSkip } from '../engine/nodes';
 import { createRng, nextInt, type RngState } from '../engine/rng';
 import {
   chooseTeam,
@@ -75,7 +76,8 @@ export interface CpuRunResult {
 
 /**
  * CPU にランを1回遊ばせる。チームは候補の先頭3体、次のマスは乱数で選び、戦闘は段階1の CPU どうしで進める。
- * 報酬は、能力強化の選択肢の先頭を選ぶ（いつも1つ以上ある）。
+ * 報酬は、能力強化の選択肢の先頭を選ぶ（いつも1つ以上ある）。休憩はHPの回復、スカウトは入れ替えない、
+ * イベントは最初の選択肢を選ぶ。
  * マスの選び方は、ランの乱数とは別の乱数（choiceSeed から作る）で決める。
  */
 export function playCpuRun(content: RunContent, seed: number, choiceSeed: number): CpuRunResult {
@@ -96,6 +98,18 @@ export function playCpuRun(content: RunContent, seed: number, choiceSeed: number
     if (run.phase.kind === 'reward') {
       const offer = run.phase.offers.findIndex((candidate) => candidate.kind === 'stat');
       run = takeReward(run, { offer }, content);
+      continue;
+    }
+    if (run.phase.kind === 'rest') {
+      run = restHeal(run);
+      continue;
+    }
+    if (run.phase.kind === 'scout') {
+      run = scoutSkip(run);
+      continue;
+    }
+    if (run.phase.kind === 'event') {
+      run = leaveEvent(chooseEventOption(run, 0));
       continue;
     }
     const choices = runChoices(run);

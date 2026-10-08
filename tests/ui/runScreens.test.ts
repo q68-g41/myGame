@@ -57,6 +57,35 @@ function finishBattle(): string {
   return result;
 }
 
+/**
+ * いまの画面を1つ進める：マップは先頭の選択肢、バトルは決着まで、休憩は回復、スカウトは入れ替えない、
+ * イベントは最初の選択肢を選んで結果を見る。進めた画面の種類を返す
+ */
+function playStep(): string {
+  const primary = () => root.querySelector<HTMLButtonElement>('.screen__controls .button--primary')!;
+  if (root.querySelector('.map-screen')) {
+    root.querySelector<HTMLButtonElement>('.map-choice')!.click();
+    return 'map';
+  }
+  if (root.querySelector('.rest')) {
+    root.querySelector<HTMLButtonElement>('.node-option')!.click();
+    primary().click();
+    return 'rest';
+  }
+  if (root.querySelector('.scout')) {
+    root.querySelector<HTMLButtonElement>('.screen__controls .button--secondary')!.click();
+    return 'scout';
+  }
+  if (root.querySelector('.event')) {
+    root.querySelector<HTMLButtonElement>('.node-option')!.click();
+    primary().click();
+    primary().click();
+    return 'event';
+  }
+  finishBattle();
+  return 'battle';
+}
+
 describe('チーム選択の画面', () => {
   beforeEach(() => start());
 
@@ -142,18 +171,7 @@ describe('ランを最後まで', () => {
       const seen = new Set<string>();
       for (let step = 0; step < 50 && root.querySelector('.run-end') === null; step += 1) {
         onlyBottomIsInteractive();
-        if (root.querySelector('.map-screen')) {
-          seen.add('map');
-          root.querySelector<HTMLButtonElement>('.map-choice')!.click();
-          if (root.querySelector('.map-screen')) {
-            // 休憩・スカウト・イベントは、いまは通るだけ
-            expect(root.querySelector('.map__message')?.textContent).toMatch(/のマスを通った（中身は準備中）$/);
-            seen.add('pass');
-          }
-          continue;
-        }
-        seen.add('battle');
-        finishBattle();
+        seen.add(playStep());
       }
       expect(root.querySelector('.run-end')).not.toBeNull();
       expect(root.querySelector('.run-end__title')?.textContent).toMatch(/^(クリア！|全滅…)$/);
@@ -166,11 +184,7 @@ describe('ランを最後まで', () => {
     start(1);
     pickTeam();
     for (let step = 0; step < 50 && root.querySelector('.run-end') === null; step += 1) {
-      if (root.querySelector('.map-screen')) {
-        root.querySelector<HTMLButtonElement>('.map-choice')!.click();
-      } else {
-        finishBattle();
-      }
+      playStep();
     }
     root.querySelector<HTMLButtonElement>('.run-end .button--primary')!.click();
     expect(root.querySelector('.draft')).not.toBeNull();
@@ -178,11 +192,7 @@ describe('ランを最後まで', () => {
 
     pickTeam();
     for (let step = 0; step < 50 && root.querySelector('.run-end') === null; step += 1) {
-      if (root.querySelector('.map-screen')) {
-        root.querySelector<HTMLButtonElement>('.map-choice')!.click();
-      } else {
-        finishBattle();
-      }
+      playStep();
     }
     root.querySelector<HTMLButtonElement>('.run-end .button--secondary')!.click();
     expect(root.querySelector('h1')?.textContent).toBe('ローグライト対戦コマンドゲーム');

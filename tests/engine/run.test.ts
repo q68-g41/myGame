@@ -151,17 +151,19 @@ describe('マップを進む', () => {
     expect(enemy.stats.hp).toBe(Math.round(base.hp * BOSS_STAT_MULTIPLIER));
   });
 
-  it('休憩・スカウト・イベントは、いまは通るだけ（M4-4 で中身を入れる）', () => {
-    for (const position of [
-      { from: { layer: 0, index: 1 }, to: 1 },
-      { from: { layer: 1, index: 0 }, to: 0 },
-      { from: { layer: 4, index: 0 }, to: 0 },
-    ]) {
-      const before = runAt(position.from);
-      const run = enterNode(before, position.to, CONTENT);
-      expect(run.position).toEqual({ layer: position.from.layer + 1, index: position.to });
-      expect(run.phase).toEqual({ kind: 'map' });
+  it('休憩・スカウト・イベントのマスに入ると、それぞれの段階になる（チームはそのまま）', () => {
+    const cases = [
+      { from: { layer: 0, index: 1 }, to: 1, kind: 'event' },
+      { from: { layer: 1, index: 0 }, to: 0, kind: 'scout' },
+      { from: { layer: 4, index: 0 }, to: 0, kind: 'rest' },
+    ] as const;
+    for (const { from, to, kind } of cases) {
+      const before = runAt(from);
+      const run = enterNode(before, to, CONTENT);
+      expect(run.position).toEqual({ layer: from.layer + 1, index: to });
+      expect(run.phase.kind).toBe(kind);
       expect(run.team).toEqual(before.team);
+      expect(runChoices(run)).toEqual([]);
     }
   });
 
