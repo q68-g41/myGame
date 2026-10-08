@@ -12,8 +12,8 @@ import type { Combatant, Side } from '../engine/types';
 import { describeEvents } from './messages';
 import { needsPlayerReplacement, type BattleSession } from './session';
 
-/** command：技を選ぶ、replacement：倒れたので控えから選ぶ、ended：決着 */
-export type BattlePhase = 'command' | 'replacement' | 'ended';
+/** command：技を選ぶ、replacement：倒れたので控えから選ぶ、playing：演出中、ended：決着 */
+export type BattlePhase = 'command' | 'replacement' | 'playing' | 'ended';
 
 /** 場に出ているキャラの表示 */
 export interface FighterPanelView {
@@ -63,9 +63,18 @@ export interface ConfirmView {
 export interface UiState {
   /** 選んでいる控えの位置。選んでいなければ null */
   readonly selectedBench: number | null;
+  /** 演出の速さ（1倍・2倍） */
+  readonly speed: 1 | 2;
 }
 
-export const INITIAL_UI_STATE: UiState = { selectedBench: null };
+/** 演出中に見せるコマ（playback.ts の PlaybackFrame と同じ形） */
+export interface FrameOverlay {
+  readonly state: BattleSession['state'];
+  readonly log: string;
+  readonly hit: Side | null;
+}
+
+export const INITIAL_UI_STATE: UiState = { selectedBench: null, speed: 1 };
 
 export interface BattleView {
   readonly phase: BattlePhase;
@@ -77,6 +86,10 @@ export interface BattleView {
   readonly bench: readonly BenchView[];
   /** 控えを選んで確定を待っているとき、その確認。なければ null */
   readonly confirm: ConfirmView | null;
+  /** 演出でダメージを受けて光らせる陣営。なければ null */
+  readonly hit: Side | null;
+  /** 演出の速さ（メニューの表示に使う） */
+  readonly speed: 1 | 2;
   /** 決着したときの結果。決着前は null */
   readonly result: 'win' | 'lose' | null;
 }
@@ -88,8 +101,8 @@ function phaseOf(session: BattleSession): BattlePhase {
   return needsPlayerReplacement(session) ? 'replacement' : 'command';
 }
 
-function panel(session: BattleSession, side: Side): FighterPanelView {
-  const sideState = session.state.sides[side];
+function panel(state: BattleSession['state'], side: Side): FighterPanelView {
+  const sideState = state.sides[side];
   const active = activeOf(sideState);
   return {
     name: getFighter(active.id).name,
@@ -113,8 +126,8 @@ function moveButtons(active: Combatant, phase: BattlePhase): MoveButtonView[] {
   });
 }
 
-function benchViews(session: BattleSession, phase: BattlePhase, ui: UiState): BenchView[] {
-  const sideState = session.state.sides.player;
+function benchViews(state: BattleSession['state'], phase: BattlePhase, ui: UiState): BenchView[] {
+  const sideState = state.sides.player;
   // 技を選ぶときは交代先として、倒れたときは次に出すキャラとして選べる
   const canSelect = phase === 'command' || phase === 'replacement';
   return sideState.team.flatMap((member, index) =>
@@ -159,19 +172,29 @@ function confirmView(session: BattleSession, phase: BattlePhase, bench: readonly
   };
 }
 
-/** セッションと画面の状態から、バトル画面に出す内容を作る */
-export function buildBattleView(session: BattleSession, ui: UiState = INITIAL_UI_STATE): BattleView {
-  const phase = phaseOf(session);
+/**
+ * セッションと画面の状態から、バトル画面に出す内容を作る。
+ * 演出中は frame（そのコマの状態とログ）を見せ、ボタンはすべて押せなくする。
+ */
+export function buildBattleView(
+  session: BattleSession,
+  ui: UiState = INITIAL_UI_STATE,
+  frame: FrameOverlay | null = null,
+): BattleView {
+  const phase = frame !== null ? 'playing' : phaseOf(session);
+  const state = frame?.state ?? session.state;
   const { winner } = session.state;
-  const bench = benchViews(session, phase, ui);
+  const bench = benchViews(state, phase, ui);
   return {
     phase,
-    enemy: panel(session, 'enemy'),
-    player: panel(session, 'player'),
-    log: logLine(session, phase),
-    moves: moveButtons(activeOf(session.state.sides.player), phase),
+    enemy: panel(state, 'enemy'),
+    player: panel(state, 'player'),
+    log: frame?.log ?? logLine(session, phase),
+    moves: moveButtons(activeOf(state.sides.player), phase),
     bench,
-    confirm: confirmView(session, phase, bench, ui),
-    result: winner === null ? null : winner === 'player' ? 'win' : 'lose',
+    confirm: phase === 'playing' ? null : confirmView(session, phase, bench, ui),
+    hit: frame?.hit ?? null,
+    speed: ui.speed,
+    result: phase === 'ended' ? (winner === 'player' ? 'win' : 'lose') : null,
   };
 }

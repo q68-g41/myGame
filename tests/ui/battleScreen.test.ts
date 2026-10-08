@@ -16,16 +16,23 @@ function startBattle(seed = 1): void {
 const enabled = (selector: string) =>
   [...root.querySelectorAll<HTMLButtonElement>(selector)].filter((button) => !button.disabled);
 
+/** 演出中なら早送りして、最終的な画面にする */
+function finishPlayback(): void {
+  root.querySelector<HTMLElement>('.playback-skip')?.click();
+}
+
 /**
  * 1手進める：確認が出ていれば確定、そうでなければ選べる技の先頭、なければ選べる控えの先頭をタップする。
- * 押せるものがなければ false
+ * 押したあとの演出は早送りする。押せるものがなければ false
  */
 function tapSomething(): boolean {
+  finishPlayback();
   const target =
     root.querySelector<HTMLButtonElement>('.confirm .button--primary') ??
     enabled('.move-button')[0] ??
     enabled('.bench-button')[0];
   target?.click();
+  finishPlayback();
   return target !== undefined && target !== null;
 }
 
@@ -58,9 +65,9 @@ describe('バトル画面', () => {
   });
 
   it('技をタップするとターンが進み、ログが変わる', () => {
-    const before = root.querySelector('[role="status"]')?.textContent;
+    const before = logText();
     enabled('.move-button')[0]!.click();
-    expect(root.querySelector('[role="status"]')?.textContent).not.toBe(before);
+    expect(logText()).not.toBe(before);
   });
 
   it('控えをタップすると、技ボタンの代わりに交代の確認が出る（1タップ目）', () => {
@@ -91,8 +98,9 @@ describe('バトル画面', () => {
     bench.click();
     root.querySelector<HTMLButtonElement>('.confirm .button--primary')!.click();
     expect(root.querySelector('.confirm')).toBeNull();
+    // 演出の最初のコマが交代
     expect(playerName()).toBe(benchName);
-    expect(logText()).not.toBe('バトル開始！ 技を選んでください');
+    expect(logText()).toMatch(/を戻して .+を出した$/);
   });
 
   it('最後まで遊ぶと勝敗が出て、「もう一度」と「タイトルへ」が押せる', () => {
@@ -119,6 +127,7 @@ describe('バトル画面', () => {
       startBattle(seed);
       for (let i = 0; i < 300 && !root.querySelector('.battle--replacement') && !root.querySelector('.result'); i += 1) {
         enabled('.move-button')[0]!.click();
+        finishPlayback();
       }
       if (!root.querySelector('.battle--replacement')) {
         continue;
@@ -130,6 +139,7 @@ describe('バトル画面', () => {
       bench.click();
       expect(root.querySelector('.confirm__question')?.textContent).toBe(`${benchName}を出しますか？`);
       root.querySelector<HTMLButtonElement>('.confirm .button--primary')!.click();
+      finishPlayback();
       expect(root.querySelector('.battle--command')).not.toBeNull();
       expect(playerName()).toBe(benchName);
       return;

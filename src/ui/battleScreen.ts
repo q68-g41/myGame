@@ -14,6 +14,10 @@ export interface BattleScreenHandlers {
   onCancel(): void;
   onRetry(): void;
   onTitle(): void;
+  /** 演出の速さを 1倍 ⇔ 2倍 に切り替える */
+  onToggleSpeed(): void;
+  /** 演出を最後まで早送りする */
+  onSkip(): void;
 }
 
 function hpLevel(hp: number, maxHp: number): 'high' | 'middle' | 'low' {
@@ -21,8 +25,8 @@ function hpLevel(hp: number, maxHp: number): 'high' | 'middle' | 'low' {
   return ratio > 0.5 ? 'high' : ratio > 0.2 ? 'middle' : 'low';
 }
 
-function fighterPanel(doc: Document, view: FighterPanelView, side: 'enemy' | 'player'): HTMLElement {
-  const panel = el(doc, 'div', `fighter fighter--${side}`);
+function fighterPanel(doc: Document, view: FighterPanelView, side: 'enemy' | 'player', hit: boolean): HTMLElement {
+  const panel = el(doc, 'div', `fighter fighter--${side}${hit ? ' fighter--hit' : ''}`);
   panel.dataset.side = side;
 
   // 仮素材：属性の色の四角（M4 でドット絵に差し替える）
@@ -124,6 +128,19 @@ function resultPanel(doc: Document, view: BattleView, handlers: BattleScreenHand
   return result;
 }
 
+function menu(doc: Document, view: BattleView, handlers: BattleScreenHandlers): HTMLElement {
+  const row = el(doc, 'div', 'menu');
+  const speed = el(doc, 'button', 'menu__button', `速さ ×${view.speed}`);
+  speed.type = 'button';
+  speed.setAttribute('aria-label', `演出の速さ（いまは ${view.speed} 倍）`);
+  speed.addEventListener('click', () => handlers.onToggleSpeed());
+  row.append(speed);
+  if (view.phase === 'playing') {
+    row.append(el(doc, 'span', 'menu__hint', 'タップで早送り'));
+  }
+  return row;
+}
+
 /** バトル画面を描く（毎回まるごと描き直す） */
 export function renderBattleScreen(root: HTMLElement, view: BattleView, handlers: BattleScreenHandlers): void {
   const doc = root.ownerDocument;
@@ -133,7 +150,11 @@ export function renderBattleScreen(root: HTMLElement, view: BattleView, handlers
   display.setAttribute('aria-label', '表示');
   const log = el(doc, 'p', 'battle__log', view.log);
   log.setAttribute('role', 'status');
-  display.append(fighterPanel(doc, view.enemy, 'enemy'), fighterPanel(doc, view.player, 'player'), log);
+  display.append(
+    fighterPanel(doc, view.enemy, 'enemy', view.hit === 'enemy'),
+    fighterPanel(doc, view.player, 'player', view.hit === 'player'),
+    log,
+  );
 
   // 下半分：操作
   const controls = el(doc, 'section', 'screen__controls battle__controls');
@@ -150,9 +171,16 @@ export function renderBattleScreen(root: HTMLElement, view: BattleView, handlers
   }
   const bench = el(doc, 'div', 'bench');
   bench.append(...view.bench.map((member) => benchButton(doc, member, handlers)));
-  controls.append(bench);
+  controls.append(bench, menu(doc, view, handlers));
 
   const screen = el(doc, 'div', `screen battle battle--${view.phase}`);
   screen.append(display, controls);
+  if (view.phase === 'playing') {
+    // 演出中は画面全体を覆い、どこをタップしても早送りする（速さの切り替えだけはこの上に出す）
+    const skip = el(doc, 'div', 'playback-skip');
+    skip.setAttribute('aria-label', 'タップで早送り');
+    skip.addEventListener('click', () => handlers.onSkip());
+    screen.append(skip);
+  }
   root.replaceChildren(screen);
 }
