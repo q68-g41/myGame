@@ -1,13 +1,25 @@
 /**
  * CPU の段階ごとに、コマンドと控えから出すキャラを選ぶ（仕様書 6）。
  */
-import type { BattleState, Command, CpuLevel, Side } from '../engine/types';
+import { activeCombatant } from '../engine/team';
+import type { BattleState, BossPattern, Command, CpuLevel, Side } from '../engine/types';
+import { chooseBossCommand } from './boss';
 import { chooseCommandStage1, chooseReplacementStage1 } from './cpu';
 import { chooseCommandStage2, chooseReplacementStage2 } from './stage2';
 import { chooseCommandStage3 } from './stage3';
 
-/** 段階に合わせてコマンドを選ぶ */
-export function chooseCommand(state: BattleState, side: Side, level: CpuLevel): Command {
+/**
+ * 段階に合わせてコマンドを選ぶ。boss を渡すと、場のキャラがそのボスのときは行動パターンで選ぶ
+ */
+export function chooseCommand(
+  state: BattleState,
+  side: Side,
+  level: CpuLevel,
+  boss: BossPattern | null = null,
+): Command {
+  if (boss !== null && activeCombatant(state, side).id === boss.fighterId) {
+    return chooseBossCommand(state, side, boss);
+  }
   switch (level) {
     case 1:
       return chooseCommandStage1(state, side);

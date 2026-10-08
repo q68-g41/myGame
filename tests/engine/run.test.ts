@@ -5,8 +5,6 @@ import { createBattle, resolveTurn } from '../../src/engine/battle';
 import {
   AREA_STAT_MULTIPLIER,
   BATTLE_ENEMY_COUNT,
-  BOSS_ENEMY_COUNT,
-  BOSS_STAT_MULTIPLIER,
   DRAFT_CANDIDATE_COUNT,
   ELITE_ENEMY_COUNT,
   ELITE_STAT_MULTIPLIER,
@@ -141,15 +139,18 @@ describe('マップを進む', () => {
     }
   });
 
-  it('ボスは3体で、強敵より強い', () => {
-    const run = enterNode(runAt({ layer: 5, index: 0 }), 0, CONTENT);
-    if (run.phase.kind !== 'battle') {
-      throw new Error('戦闘の段階のはず');
+  it('ボスのマスでは、そのエリアのボスが1体で出て、行動パターンで動く', () => {
+    for (const area of [0, 1, 2]) {
+      const run = enterNode({ ...runAt({ layer: 5, index: 0 }), area }, 0, CONTENT);
+      if (run.phase.kind !== 'battle') {
+        throw new Error('戦闘の段階のはず');
+      }
+      const boss = CONTENT.bosses[area]!;
+      expect(run.phase.enemy).toEqual([boss.fighter]);
+      expect(run.phase.boss).toEqual(boss.pattern);
     }
-    expect(run.phase.enemy).toHaveLength(BOSS_ENEMY_COUNT[0]!);
-    const enemy = run.phase.enemy[0]!;
-    const base = FIGHTERS.find((fighter) => fighter.id === enemy.id)!.stats;
-    expect(enemy.stats.hp).toBe(Math.round(base.hp * BOSS_STAT_MULTIPLIER));
+    // ボス以外の戦闘には、行動パターンはない
+    expect(enterNode(runAt(null), 0, CONTENT).phase).toMatchObject({ kind: 'battle', boss: null });
   });
 
   it('休憩・スカウト・イベントのマスに入ると、それぞれの段階になる（チームはそのまま）', () => {

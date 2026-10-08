@@ -85,22 +85,20 @@ export const BATTLE_ENEMY_COUNT: readonly (readonly number[])[] = [
   [2, 2, 2, 3, 3],
 ];
 
-/** 強敵マス・ボスの相手の人数（仮）。添字はエリア */
+/** 強敵マスの相手の人数（仮）。添字はエリア。ボスはエリアごとのボス1体（データ側で決める） */
 export const ELITE_ENEMY_COUNT: readonly number[] = [2, 3, 3];
-export const BOSS_ENEMY_COUNT: readonly number[] = [3, 3, 3];
 
 /** エリアごとに、相手全員の能力にかける倍率（仮）。添字はエリア。強敵・ボスの倍率とかけ合わせる */
 export const AREA_STAT_MULTIPLIER: readonly number[] = [1, 1.1, 1.2];
 
-/** 相手の CPU の段階（仕様書 6）。添字はエリア。ボスもエリアの段階を使う（ボスの行動パターンは M5-4） */
+/** 相手の CPU の段階（仕様書 6）。添字はエリア。ボスは段階ではなく行動パターンで動く */
 export const CPU_LEVEL_BY_AREA: readonly CpuLevel[] = [1, 2, 3];
 
 /** 強敵の CPU の段階（仕様書 6：強敵はどのエリアでも段階3） */
 export const ELITE_CPU_LEVEL: CpuLevel = 3;
 
-/** 強敵・ボスの能力の倍率（仮）。HP・攻撃・防御にかけて四捨五入する（素早さは変えない） */
+/** 強敵の能力の倍率（仮）。HP・攻撃・防御にかけて四捨五入する（素早さは変えない）。ボスの能力はデータで決める */
 export const ELITE_STAT_MULTIPLIER = 1.1;
-export const BOSS_STAT_MULTIPLIER = 1.2;
 
 /** 戦闘に勝ったあと、倒れていたキャラが戻るときのHP。最大HPの%（切り捨て、最低1）（8. 未決の仮決め） */
 export const REVIVE_HP_PERCENT = 10;

@@ -9,7 +9,7 @@ import { saveSession, type BattleSession, type SavedBattle } from './session';
 export const SAVE_KEY = 'mygame.save';
 
 /** 保存の形の版。形を変えて古いセーブが読めなくなるときに上げる（古い版のセーブは捨てる） */
-export const SAVE_VERSION = 3;
+export const SAVE_VERSION = 4;
 
 /** 保存したゲーム：ランの状態と、戦闘中ならバトルの状態 */
 export interface SavedGame {

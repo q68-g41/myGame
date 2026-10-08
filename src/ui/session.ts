@@ -6,7 +6,7 @@ import { chooseCommand, chooseReplacement } from '../ai/policy';
 import { resolveTurn, submitReplacements } from '../engine/battle';
 import { memberAt } from '../engine/team';
 import { createRng, type RngState } from '../engine/rng';
-import type { BattleEvent, BattleState, Command, CpuLevel, Replacements } from '../engine/types';
+import type { BattleEvent, BattleState, BossPattern, Command, CpuLevel, Replacements } from '../engine/types';
 
 /** 1戦の状態 */
 export interface BattleSession {
@@ -23,11 +23,18 @@ export interface BattleSession {
   readonly knownEnemySpeeds: ReadonlySet<string>;
   /** 相手の CPU の段階 */
   readonly cpu: CpuLevel;
+  /** ボス戦なら、ボスの行動パターン。それ以外は null */
+  readonly boss: BossPattern | null;
 }
 
-/** 始まったバトルと、そのバトルで使う乱数のシード、相手の CPU の段階から、1戦の流れを始める */
-export function createSession(state: BattleState, seed: number, cpu: CpuLevel = 1): BattleSession {
-  return { state, rng: createRng(seed), lastEvents: [], previousState: state, knownEnemySpeeds: new Set(), cpu };
+/** 始まったバトルと、そのバトルで使う乱数のシード、相手の CPU の段階（とボスの行動パターン）から、1戦の流れを始める */
+export function createSession(
+  state: BattleState,
+  seed: number,
+  cpu: CpuLevel = 1,
+  boss: BossPattern | null = null,
+): BattleSession {
+  return { state, rng: createRng(seed), lastEvents: [], previousState: state, knownEnemySpeeds: new Set(), cpu, boss };
 }
 
 /** 保存したバトル（毎ターンの自動保存用。乱数の状態と、素早さが分かった相手も残す） */
@@ -43,7 +50,7 @@ export function saveSession(session: BattleSession): SavedBattle {
 }
 
 /** 保存したバトルから、1戦の流れを再開する（直前に起きたことは残らない） */
-export function restoreSession(saved: SavedBattle, cpu: CpuLevel): BattleSession {
+export function restoreSession(saved: SavedBattle, cpu: CpuLevel, boss: BossPattern | null = null): BattleSession {
   return {
     state: saved.state,
     rng: saved.rng,
@@ -51,6 +58,7 @@ export function restoreSession(saved: SavedBattle, cpu: CpuLevel): BattleSession
     previousState: saved.state,
     knownEnemySpeeds: new Set(saved.knownEnemySpeeds),
     cpu,
+    boss,
   };
 }
 
@@ -94,7 +102,7 @@ export function comparedEnemySpeed(before: BattleState, events: readonly BattleE
 
 /** 自分のコマンドでターンを進める。相手のコマンドは、そのバトルの段階の CPU が選ぶ */
 export function playCommand(session: BattleSession, command: Command): BattleSession {
-  const commands = { player: command, enemy: chooseCommand(session.state, 'enemy', session.cpu) };
+  const commands = { player: command, enemy: chooseCommand(session.state, 'enemy', session.cpu, session.boss) };
   const turn = resolveTurn(session.state, commands, session.rng);
   const replaced = replaceEnemyIfNeeded(turn.state, session.cpu);
   const compared = comparedEnemySpeed(session.state, turn.events);

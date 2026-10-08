@@ -16,7 +16,7 @@ import {
   type RunResult,
   type RunState,
 } from '../engine/run';
-import type { BattleState, CpuLevel, FighterDef, Side } from '../engine/types';
+import type { BattleState, BossPattern, CpuLevel, FighterDef, Side } from '../engine/types';
 import { chooseCommand, chooseReplacement } from './policy';
 
 /** 決着しないまま打ち切るターン数（無限ループを防ぐため） */
@@ -46,8 +46,13 @@ export function playCpuBattle(
   return playCpuBattleFrom(createBattle(player, enemy), rng, levels);
 }
 
-/** 始まっているバトルを、CPU どうしで決着するまで進める */
-export function playCpuBattleFrom(start: BattleState, rng: RngState, levels: CpuLevels = STAGE1_BOTH): SelfPlayResult {
+/** 始まっているバトルを、CPU どうしで決着するまで進める。enemyBoss を渡すと、相手のボスは行動パターンで動く */
+export function playCpuBattleFrom(
+  start: BattleState,
+  rng: RngState,
+  levels: CpuLevels = STAGE1_BOTH,
+  enemyBoss: BossPattern | null = null,
+): SelfPlayResult {
   let state = start;
   let currentRng = rng;
   let turns = 0;
@@ -63,7 +68,7 @@ export function playCpuBattleFrom(start: BattleState, rng: RngState, levels: Cpu
     }
     const commands = {
       player: chooseCommand(state, 'player', levels.player),
-      enemy: chooseCommand(state, 'enemy', levels.enemy),
+      enemy: chooseCommand(state, 'enemy', levels.enemy, enemyBoss),
     };
     const result = resolveTurn(state, commands, currentRng);
     state = result.state;
@@ -97,10 +102,12 @@ export function playCpuRun(content: RunContent, seed: number, choiceSeed: number
 
   while (run.phase.kind !== 'ended') {
     if (run.phase.kind === 'battle') {
-      const played = playCpuBattleFrom(createRunBattle(run), createRng(run.phase.seed), {
-        player: 1,
-        enemy: run.phase.cpu,
-      });
+      const played = playCpuBattleFrom(
+        createRunBattle(run),
+        createRng(run.phase.seed),
+        { player: 1, enemy: run.phase.cpu },
+        run.phase.boss,
+      );
       battles += 1;
       if (played.winner === null) {
         return { result: null, battles, run };

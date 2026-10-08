@@ -9,9 +9,7 @@ import {
   AREA_COUNT,
   AREA_STAT_MULTIPLIER,
   BATTLE_ENEMY_COUNT,
-  BOSS_ENEMY_COUNT,
   BOSS_REWARD_PICKS,
-  BOSS_STAT_MULTIPLIER,
   CPU_LEVEL_BY_AREA,
   DRAFT_CANDIDATE_COUNT,
   ELITE_CPU_LEVEL,
@@ -32,10 +30,10 @@ import {
   statBoostAmount,
   type StatBoostKey,
 } from './growth';
-import { generateAreaMap, nextChoices, nodeAt, type AreaMap, type MapPosition, type NodeKind } from './map';
+import { generateAreaMap, nextChoices, nodeAt, type AreaMap, type MapPosition } from './map';
 import { nodePhase, type EventDef, type EventOutcome } from './nodes';
 import { createRng, nextSeed, pickDistinct, type RngResult, type RngState } from './rng';
-import type { BattleState, CharmEffect, CpuLevel, FighterDef, MoveDef } from './types';
+import type { BattleState, BossPattern, CharmEffect, CpuLevel, FighterDef, MoveDef } from './types';
 
 export { statBoostAmount, type StatBoostKey } from './growth';
 
@@ -43,6 +41,12 @@ export { statBoostAmount, type StatBoostKey } from './growth';
 export interface CharmDef {
   readonly id: string;
   readonly effect: CharmEffect;
+}
+
+/** ボス（仕様書 4.2・6）：エリアの最後に1体で出て、行動パターンで動く */
+export interface BossDef {
+  readonly fighter: FighterDef;
+  readonly pattern: BossPattern;
 }
 
 /** ランで使うデータ。エンジンはデータを直接読まず、ここで受け取る */
@@ -55,6 +59,8 @@ export interface RunContent {
   readonly charms: readonly CharmDef[];
   /** イベントのマスで起きるイベント */
   readonly events: readonly EventDef[];
+  /** エリアごとのボス（添字はエリア） */
+  readonly bosses: readonly BossDef[];
 }
 
 /** チームの1体 */
@@ -92,7 +98,7 @@ export interface RewardChoice {
  * ランの段階。
  * - draft：候補からチームを選ぶ
  * - map：次のマスを選ぶ
- * - battle：戦闘中（相手のチーム・CPU の段階・バトルのシードは、マスに入ったときに決まる）
+ * - battle：戦闘中（相手のチーム・CPU の段階・ボスの行動パターン・バトルのシードは、マスに入ったときに決まる）
  * - reward：戦闘に勝って、報酬を選ぶ（強敵とボスなら2回。pick は何回目か、picks は全部で何回か）
  * - rest：休憩（HPを回復するか、技を強化するか）
  * - scout：スカウト（候補の1体とチームの1体を入れ替えるか、入れ替えずに進む）
@@ -102,7 +108,14 @@ export interface RewardChoice {
 export type RunPhase =
   | { readonly kind: 'draft'; readonly candidates: readonly FighterDef[] }
   | { readonly kind: 'map' }
-  | { readonly kind: 'battle'; readonly enemy: readonly FighterDef[]; readonly cpu: CpuLevel; readonly seed: number }
+  | {
+      readonly kind: 'battle';
+      readonly enemy: readonly FighterDef[];
+      readonly cpu: CpuLevel;
+      /** ボス戦なら、ボスの行動パターン。それ以外は null */
+      readonly boss: BossPattern | null;
+      readonly seed: number;
+    }
   | { readonly kind: 'reward'; readonly offers: readonly RewardOffer[]; readonly pick: number; readonly picks: number }
   | { readonly kind: 'rest' }
   | { readonly kind: 'scout'; readonly candidates: readonly FighterDef[] }
@@ -182,26 +195,21 @@ function strengthen(fighter: FighterDef, multiplier: number): FighterDef {
   };
 }
 
-/** マスの種類・層・エリアから、相手のチームを決める。能力はエリアの倍率と、強敵・ボスの倍率をかけ合わせて強くする */
+/** 戦闘・強敵のマスの種類・層・エリアから、相手のチームを決める。能力はエリアの倍率と、強敵の倍率をかけ合わせて強くする */
 function enemyTeam(
-  kind: NodeKind,
+  kind: 'battle' | 'elite',
   layer: number,
   area: number,
   content: RunContent,
   rng: RngState,
 ): RngResult<readonly FighterDef[]> {
-  const count =
-    kind === 'boss'
-      ? BOSS_ENEMY_COUNT[area]
-      : kind === 'elite'
-        ? ELITE_ENEMY_COUNT[area]
-        : BATTLE_ENEMY_COUNT[area]?.[layer];
+  const count = kind === 'elite' ? ELITE_ENEMY_COUNT[area] : BATTLE_ENEMY_COUNT[area]?.[layer];
   const areaMultiplier = AREA_STAT_MULTIPLIER[area];
   if (count === undefined || areaMultiplier === undefined) {
     throw new Error(`エリア${area + 1}・${layer + 1} 層目の相手の人数か強さが決まっていません`);
   }
   const picked = pickDistinct(content.fighters, count, rng);
-  const kindMultiplier = kind === 'boss' ? BOSS_STAT_MULTIPLIER : kind === 'elite' ? ELITE_STAT_MULTIPLIER : 1;
+  const kindMultiplier = kind === 'elite' ? ELITE_STAT_MULTIPLIER : 1;
   const multiplier = areaMultiplier * kindMultiplier;
   const team = multiplier === 1 ? picked.value : picked.value.map((fighter) => strengthen(fighter, multiplier));
   return { value: team, rng: picked.rng };
@@ -209,7 +217,7 @@ function enemyTeam(
 
 /**
  * 次のマスに進む。index は次の層での位置（runChoices のどれか）。
- * 戦闘・強敵・ボスなら相手のチームを決めて戦闘の段階に入る。休憩・スカウト・イベントは、そのマスの段階に入る。
+ * 戦闘・強敵なら相手のチームを決めて、ボスならそのエリアのボスと、戦闘の段階に入る。休憩・スカウト・イベントは、そのマスの段階に入る。
  */
 export function enterNode(run: RunState, index: number, content: RunContent): RunState {
   if (!runChoices(run).includes(index)) {
@@ -221,13 +229,23 @@ export function enterNode(run: RunState, index: number, content: RunContent): Ru
     const phase = nodePhase(node.kind, run, content, run.rng);
     return { ...run, position, phase: phase.value, rng: phase.rng };
   }
-  const enemy = enemyTeam(node.kind, position.layer, run.area, content, run.rng);
-  const seed = nextSeed(enemy.rng);
   const cpu = node.kind === 'elite' ? ELITE_CPU_LEVEL : CPU_LEVEL_BY_AREA[run.area];
   if (cpu === undefined) {
     throw new Error(`エリア${run.area + 1} の CPU の段階が決まっていません`);
   }
-  return { ...run, position, phase: { kind: 'battle', enemy: enemy.value, cpu, seed: seed.value }, rng: seed.rng };
+  if (node.kind === 'boss') {
+    const boss = content.bosses[run.area];
+    if (!boss) {
+      throw new Error(`エリア${run.area + 1} のボスが決まっていません`);
+    }
+    const seed = nextSeed(run.rng);
+    const phase: RunPhase = { kind: 'battle', enemy: [boss.fighter], cpu, boss: boss.pattern, seed: seed.value };
+    return { ...run, position, phase, rng: seed.rng };
+  }
+  const enemy = enemyTeam(node.kind, position.layer, run.area, content, run.rng);
+  const seed = nextSeed(enemy.rng);
+  const phase: RunPhase = { kind: 'battle', enemy: enemy.value, cpu, boss: null, seed: seed.value };
+  return { ...run, position, phase, rng: seed.rng };
 }
 
 /** いまの戦闘を始める。チームは並び順のまま、持ち越したHPで出る */
