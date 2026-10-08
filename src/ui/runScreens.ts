@@ -15,7 +15,7 @@ import type {
 
 const SVG_NS = 'http://www.w3.org/2000/svg';
 
-function screen(doc: Document, className: string, view: HTMLElement, controls: HTMLElement): HTMLElement {
+export function screen(doc: Document, className: string, view: HTMLElement, controls: HTMLElement): HTMLElement {
   view.classList.add('screen__view');
   view.setAttribute('aria-label', '表示');
   controls.classList.add('screen__controls');
@@ -25,14 +25,14 @@ function screen(doc: Document, className: string, view: HTMLElement, controls: H
   return root;
 }
 
-function button(doc: Document, className: string, text: string, onClick: () => void): HTMLButtonElement {
+export function button(doc: Document, className: string, text: string, onClick: () => void): HTMLButtonElement {
   const element = el(doc, 'button', className, text);
   element.type = 'button';
   element.addEventListener('click', onClick);
   return element;
 }
 
-function swatch(doc: Document, className: string, color: string | null): HTMLElement {
+export function swatch(doc: Document, className: string, color: string | null): HTMLElement {
   const element = el(doc, 'span', className);
   element.style.background = color ?? 'transparent';
   element.setAttribute('aria-hidden', 'true');
@@ -57,7 +57,7 @@ function memberCard(doc: Document, member: TeamMemberView): HTMLElement {
   return card;
 }
 
-function teamRow(doc: Document, team: readonly TeamMemberView[]): HTMLElement {
+export function teamRow(doc: Document, team: readonly TeamMemberView[]): HTMLElement {
   const row = el(doc, 'div', 'team-status');
   row.setAttribute('aria-label', 'チーム');
   row.append(...team.map((member) => memberCard(doc, member)));
@@ -65,7 +65,7 @@ function teamRow(doc: Document, team: readonly TeamMemberView[]): HTMLElement {
 }
 
 /** 持っているお守り（なければ「なし」） */
-function charmLine(doc: Document, charms: readonly string[]): HTMLElement {
+export function charmLine(doc: Document, charms: readonly string[]): HTMLElement {
   return el(doc, 'p', 'charm-line', `お守り：${charms.length === 0 ? 'なし' : charms.join('・')}`);
 }
 

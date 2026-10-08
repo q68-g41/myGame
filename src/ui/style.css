@@ -1073,3 +1073,105 @@ body {
   font-size: 14px;
   color: var(--color-muted);
 }
+
+/* ===== 休憩・スカウト・イベント（M4-4） ===== */
+
+.node__view {
+  justify-content: flex-start;
+  align-items: stretch;
+  gap: 12px;
+  text-align: left;
+}
+
+.node__title {
+  margin: 0;
+  font-size: 20px;
+}
+
+.node__text {
+  margin: 0;
+  font-size: 14px;
+  color: var(--color-muted);
+}
+
+.event-result {
+  margin: 0;
+  padding: 8px 12px 8px 2em;
+  border: 2px solid var(--color-accent);
+  border-radius: 8px;
+  background: var(--color-panel);
+  font-size: 14px;
+}
+
+.node__controls {
+  justify-content: flex-start;
+  gap: 12px;
+}
+
+.node__prompt {
+  margin: 0;
+  font-size: 14px;
+}
+
+.node-options {
+  display: grid;
+  gap: 8px;
+}
+
+.node-members {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 8px;
+}
+
+.node-moves {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 8px;
+}
+
+.node-option,
+.node-pick {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  justify-content: center;
+  gap: 2px;
+  min-height: 64px;
+  padding: 8px 12px;
+  border: 2px solid var(--color-border);
+  border-left-width: 8px;
+  border-radius: 8px;
+  background: var(--color-bg);
+  color: var(--color-text);
+  font: inherit;
+  text-align: left;
+  touch-action: manipulation;
+  -webkit-tap-highlight-color: transparent;
+  user-select: none;
+  cursor: pointer;
+}
+
+.node-option--selected,
+.node-pick--selected {
+  border-top-color: var(--color-accent);
+  border-right-color: var(--color-accent);
+  border-bottom-color: var(--color-accent);
+  background: rgba(240, 180, 69, 0.15);
+}
+
+.node-pick:disabled {
+  opacity: 0.45;
+  cursor: default;
+}
+
+.node-option__title,
+.node-pick__name {
+  font-weight: bold;
+}
+
+.node-option__detail,
+.node-pick__note {
+  font-size: 14px;
+  color: var(--color-muted);
+}

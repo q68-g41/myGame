@@ -1,10 +1,10 @@
 /**
- * 画面の切り替え（トップ → チーム選択 → マップ ⇔ バトル → ランの結果）と、ターンの演出の再生。
+ * 画面の切り替え（トップ → チーム選択 → マップ ⇔ 各マス（バトル・報酬・休憩・スカウト・イベント）→ ランの結果）と、
+ * ターンの演出の再生。
  */
 import { RUN_CONTENT } from '../data/content';
-import { NODE_KIND_NAMES } from '../data/labels';
-import { nodeAt } from '../engine/map';
 import { MAX_MOVES } from '../engine/constants';
+import { chooseEventOption, leaveEvent, restHeal, restPowerUp, scoutRecruit, scoutSkip } from '../engine/nodes';
 import {
   chooseTeam,
   createRunBattle,
@@ -17,6 +17,20 @@ import {
 } from '../engine/run';
 import { renderBattleScreen, type BattleScreenHandlers } from './battleScreen';
 import { buildBattleView, INITIAL_UI_STATE, type UiState } from './battleView';
+import { renderEventScreen, renderRestScreen, renderScoutScreen } from './nodeScreens';
+import {
+  buildEventView,
+  buildRestView,
+  buildScoutView,
+  INITIAL_EVENT_UI,
+  INITIAL_REST_UI,
+  INITIAL_SCOUT_UI,
+  restNotice,
+  scoutNotice,
+  type EventUiState,
+  type RestUiState,
+  type ScoutUiState,
+} from './nodeView';
 import { buildFrames, stepDuration, type PlaybackFrame } from './playback';
 import { renderDraftScreen, renderMapScreen, renderRewardScreen, renderRunEndScreen } from './runScreens';
 import {
@@ -63,6 +77,9 @@ export function startApp(root: HTMLElement, options: AppOptions): void {
   let run: RunState | null = null;
   let draft: DraftUiState = INITIAL_DRAFT_UI;
   let reward: RewardUiState = INITIAL_REWARD_UI;
+  let rest: RestUiState = INITIAL_REST_UI;
+  let scout: ScoutUiState = INITIAL_SCOUT_UI;
+  let event: EventUiState = INITIAL_EVENT_UI;
   /** マップ画面の案内の代わりに出す、直前に起きたこと */
   let notice: string | null = null;
   /** 戦闘中だけ持つ */
@@ -94,6 +111,15 @@ export function startApp(root: HTMLElement, options: AppOptions): void {
       }
       case 'reward':
         renderRewardScreen(root, buildRewardView(run, reward), rewardHandlers);
+        return;
+      case 'rest':
+        renderRestScreen(root, buildRestView(run, rest), restHandlers);
+        return;
+      case 'scout':
+        renderScoutScreen(root, buildScoutView(run, scout), scoutHandlers);
+        return;
+      case 'event':
+        renderEventScreen(root, buildEventView(run, event), eventHandlers);
         return;
       case 'ended':
         renderRunEndScreen(root, buildRunEndView(run), runEndHandlers);
@@ -176,13 +202,13 @@ export function startApp(root: HTMLElement, options: AppOptions): void {
         return;
       }
       run = enterNode(run, index, RUN_CONTENT);
+      notice = null;
+      rest = INITIAL_REST_UI;
+      scout = INITIAL_SCOUT_UI;
+      event = INITIAL_EVENT_UI;
       if (run.phase.kind === 'battle') {
         session = createSession(createRunBattle(run), run.phase.seed);
         ui = { ...INITIAL_UI_STATE, speed: ui.speed };
-        notice = null;
-      } else if (run.position !== null) {
-        // 休憩・スカウト・イベントは、いまは通るだけ（中身は M4-4 で入れる）
-        notice = `${NODE_KIND_NAMES[nodeAt(run.map, run.position).kind]}のマスを通った（中身は準備中）`;
       }
       render();
     },
@@ -284,6 +310,96 @@ export function startApp(root: HTMLElement, options: AppOptions): void {
     },
     onBack: () => {
       reward = reward.step === 'forget' ? { ...reward, step: 'member', member: null } : { ...reward, step: 'offer' };
+      render();
+    },
+  };
+
+  const restHandlers = {
+    onSelect: (option: 'heal' | 'power') => {
+      rest = { ...rest, selected: option };
+      render();
+    },
+    // 2タップ目：回復ならそのまま、技の強化ならキャラを選びに進む
+    onConfirm: () => {
+      if (run === null || rest.selected === null) {
+        return;
+      }
+      if (rest.selected === 'heal') {
+        notice = restNotice(run, 'heal');
+        run = restHeal(run);
+      } else {
+        rest = { ...rest, step: 'member' };
+      }
+      render();
+    },
+    onMember: (index: number) => {
+      rest = { ...rest, step: 'move', member: index };
+      render();
+    },
+    onMove: (index: number) => {
+      if (run === null || rest.member === null) {
+        return;
+      }
+      notice = restNotice(run, { member: rest.member, move: index });
+      run = restPowerUp(run, rest.member, index);
+      render();
+    },
+    onBack: () => {
+      rest = rest.step === 'move' ? { ...rest, step: 'member', member: null } : { ...rest, step: 'choose' };
+      render();
+    },
+  };
+
+  const scoutHandlers = {
+    onCandidate: (index: number) => {
+      scout = { ...scout, selected: index };
+      render();
+    },
+    onConfirm: () => {
+      if (scout.selected !== null) {
+        scout = { ...scout, step: 'member' };
+        render();
+      }
+    },
+    onMember: (index: number) => {
+      if (run === null || scout.selected === null) {
+        return;
+      }
+      notice = scoutNotice(run, { candidate: scout.selected, member: index });
+      run = scoutRecruit(run, scout.selected, index);
+      render();
+    },
+    onSkip: () => {
+      if (run === null) {
+        return;
+      }
+      notice = scoutNotice(run, 'skip');
+      run = scoutSkip(run);
+      render();
+    },
+    onBack: () => {
+      scout = { ...scout, step: 'candidate' };
+      render();
+    },
+  };
+
+  const eventHandlers = {
+    onSelect: (index: number) => {
+      event = { selected: index };
+      render();
+    },
+    onConfirm: () => {
+      if (run === null || event.selected === null) {
+        return;
+      }
+      run = chooseEventOption(run, event.selected);
+      render();
+    },
+    onLeave: () => {
+      if (run === null) {
+        return;
+      }
+      run = leaveEvent(run);
       render();
     },
   };
