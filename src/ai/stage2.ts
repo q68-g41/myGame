@@ -42,7 +42,7 @@ export function duelValue(
 }
 
 /** 対面の見込み。selfHp を省くと、いまのHPで考える */
-function matchup(
+export function matchup(
   self: Combatant,
   opponent: Combatant,
   charms: readonly CharmEffect[],

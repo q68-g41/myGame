@@ -14,6 +14,7 @@ import {
   BOSS_STAT_MULTIPLIER,
   CPU_LEVEL_BY_AREA,
   DRAFT_CANDIDATE_COUNT,
+  ELITE_CPU_LEVEL,
   ELITE_ENEMY_COUNT,
   ELITE_REWARD_PICKS,
   ELITE_STAT_MULTIPLIER,
@@ -222,7 +223,7 @@ export function enterNode(run: RunState, index: number, content: RunContent): Ru
   }
   const enemy = enemyTeam(node.kind, position.layer, run.area, content, run.rng);
   const seed = nextSeed(enemy.rng);
-  const cpu = CPU_LEVEL_BY_AREA[run.area];
+  const cpu = node.kind === 'elite' ? ELITE_CPU_LEVEL : CPU_LEVEL_BY_AREA[run.area];
   if (cpu === undefined) {
     throw new Error(`エリア${run.area + 1} の CPU の段階が決まっていません`);
   }
