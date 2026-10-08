@@ -2,12 +2,16 @@
  * バトル画面（M3）。上半分は表示だけ（相手・自分・ログ1行）、下半分に操作（技ボタン 2×2・控え）。
  * 表示する内容は battleView.ts で組み立て、ここでは描くだけにする。
  */
-import type { BattleView, BenchView, FighterPanelView, MoveButtonView } from './battleView';
+import type { BattleView, BenchView, ConfirmView, FighterPanelView, MoveButtonView } from './battleView';
 import { el } from './dom';
 
 export interface BattleScreenHandlers {
   onMove(moveId: string): void;
   onBench(index: number): void;
+  /** 選んだ控えで確定する（2タップ目） */
+  onConfirm(): void;
+  /** 控えの選択をやめる */
+  onCancel(): void;
   onRetry(): void;
   onTitle(): void;
 }
@@ -66,7 +70,15 @@ function moveButton(doc: Document, view: MoveButtonView, handlers: BattleScreenH
 }
 
 function benchButton(doc: Document, view: BenchView, handlers: BattleScreenHandlers): HTMLButtonElement {
-  const button = el(doc, 'button', `bench-button${view.selectable ? ' bench-button--selectable' : ''}`);
+  const classes = ['bench-button'];
+  if (view.selectable) {
+    classes.push('bench-button--selectable');
+  }
+  if (view.selected) {
+    classes.push('bench-button--selected');
+  }
+  const button = el(doc, 'button', classes.join(' '));
+  button.setAttribute('aria-pressed', String(view.selected));
   button.type = 'button';
   button.disabled = !view.selectable;
   button.dataset.index = String(view.index);
@@ -82,6 +94,21 @@ function benchButton(doc: Document, view: BenchView, handlers: BattleScreenHandl
   button.append(icon, label);
   button.addEventListener('click', () => handlers.onBench(view.index));
   return button;
+}
+
+function confirmPanel(doc: Document, view: ConfirmView, handlers: BattleScreenHandlers): HTMLElement {
+  const panel = el(doc, 'div', 'confirm');
+  panel.append(el(doc, 'p', 'confirm__question', view.question));
+  const actions = el(doc, 'div', 'confirm__actions');
+  const ok = el(doc, 'button', 'button button--primary', view.confirmLabel);
+  ok.type = 'button';
+  ok.addEventListener('click', () => handlers.onConfirm());
+  const cancel = el(doc, 'button', 'button button--secondary', 'やめる');
+  cancel.type = 'button';
+  cancel.addEventListener('click', () => handlers.onCancel());
+  actions.append(cancel, ok);
+  panel.append(actions);
+  return panel;
 }
 
 function resultPanel(doc: Document, view: BattleView, handlers: BattleScreenHandlers): HTMLElement {
@@ -113,6 +140,9 @@ export function renderBattleScreen(root: HTMLElement, view: BattleView, handlers
   controls.setAttribute('aria-label', '操作');
   if (view.phase === 'ended') {
     controls.append(resultPanel(doc, view, handlers));
+  } else if (view.confirm !== null) {
+    // 2タップ目：技ボタンの場所に、交代（または次に出す）の確認を出す
+    controls.append(confirmPanel(doc, view.confirm, handlers));
   } else {
     const moves = el(doc, 'div', 'moves');
     moves.append(...view.moves.map((move) => moveButton(doc, move, handlers)));

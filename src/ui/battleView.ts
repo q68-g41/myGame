@@ -46,7 +46,26 @@ export interface BenchView {
   readonly fainted: boolean;
   /** いまタップして選べるか */
   readonly selectable: boolean;
+  /** 選んでいる（確定待ち）か */
+  readonly selected: boolean;
 }
+
+/** 控えを選んだあとの確認（2タップ目） */
+export interface ConfirmView {
+  readonly index: number;
+  /** 確認の文章 */
+  readonly question: string;
+  /** 確定ボタンの文字 */
+  readonly confirmLabel: string;
+}
+
+/** 画面だけが持つ状態（エンジンには渡さない） */
+export interface UiState {
+  /** 選んでいる控えの位置。選んでいなければ null */
+  readonly selectedBench: number | null;
+}
+
+export const INITIAL_UI_STATE: UiState = { selectedBench: null };
 
 export interface BattleView {
   readonly phase: BattlePhase;
@@ -56,6 +75,8 @@ export interface BattleView {
   readonly log: string;
   readonly moves: readonly MoveButtonView[];
   readonly bench: readonly BenchView[];
+  /** 控えを選んで確定を待っているとき、その確認。なければ null */
+  readonly confirm: ConfirmView | null;
   /** 決着したときの結果。決着前は null */
   readonly result: 'win' | 'lose' | null;
 }
@@ -92,8 +113,10 @@ function moveButtons(active: Combatant, phase: BattlePhase): MoveButtonView[] {
   });
 }
 
-function benchViews(session: BattleSession, phase: BattlePhase): BenchView[] {
+function benchViews(session: BattleSession, phase: BattlePhase, ui: UiState): BenchView[] {
   const sideState = session.state.sides.player;
+  // 技を選ぶときは交代先として、倒れたときは次に出すキャラとして選べる
+  const canSelect = phase === 'command' || phase === 'replacement';
   return sideState.team.flatMap((member, index) =>
     index === sideState.active
       ? []
@@ -105,7 +128,8 @@ function benchViews(session: BattleSession, phase: BattlePhase): BenchView[] {
             hp: member.hp,
             maxHp: member.stats.hp,
             fainted: isFainted(member),
-            selectable: phase === 'replacement' && !isFainted(member),
+            selectable: canSelect && !isFainted(member),
+            selected: ui.selectedBench === index,
           },
         ],
   );
@@ -119,17 +143,35 @@ function logLine(session: BattleSession, phase: BattlePhase): string {
   return lines.at(-1) ?? 'バトル開始！ 技を選んでください';
 }
 
-/** セッションから、バトル画面に出す内容を作る */
-export function buildBattleView(session: BattleSession): BattleView {
+function confirmView(session: BattleSession, phase: BattlePhase, bench: readonly BenchView[], ui: UiState): ConfirmView | null {
+  const selected = bench.find((member) => member.index === ui.selectedBench && member.selectable);
+  if (!selected) {
+    return null;
+  }
+  if (phase === 'replacement') {
+    return { index: selected.index, question: `${selected.name}を出しますか？`, confirmLabel: '出す' };
+  }
+  const active = getFighter(activeOf(session.state.sides.player).id).name;
+  return {
+    index: selected.index,
+    question: `${active}を戻して ${selected.name}と交代しますか？`,
+    confirmLabel: '交代する',
+  };
+}
+
+/** セッションと画面の状態から、バトル画面に出す内容を作る */
+export function buildBattleView(session: BattleSession, ui: UiState = INITIAL_UI_STATE): BattleView {
   const phase = phaseOf(session);
   const { winner } = session.state;
+  const bench = benchViews(session, phase, ui);
   return {
     phase,
     enemy: panel(session, 'enemy'),
     player: panel(session, 'player'),
     log: logLine(session, phase),
     moves: moveButtons(activeOf(session.state.sides.player), phase),
-    bench: benchViews(session, phase),
+    bench,
+    confirm: confirmView(session, phase, bench, ui),
     result: winner === null ? null : winner === 'player' ? 'win' : 'lose',
   };
 }

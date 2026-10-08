@@ -16,12 +16,21 @@ function startBattle(seed = 1): void {
 const enabled = (selector: string) =>
   [...root.querySelectorAll<HTMLButtonElement>(selector)].filter((button) => !button.disabled);
 
-/** 選べる技の先頭、または選べる控えの先頭をタップする。押せるものがなければ false */
+/**
+ * 1手進める：確認が出ていれば確定、そうでなければ選べる技の先頭、なければ選べる控えの先頭をタップする。
+ * 押せるものがなければ false
+ */
 function tapSomething(): boolean {
-  const target = enabled('.move-button')[0] ?? enabled('.bench-button')[0];
+  const target =
+    root.querySelector<HTMLButtonElement>('.confirm .button--primary') ??
+    enabled('.move-button')[0] ??
+    enabled('.bench-button')[0];
   target?.click();
-  return target !== undefined;
+  return target !== undefined && target !== null;
 }
+
+const logText = () => root.querySelector('[role="status"]')?.textContent;
+const playerName = () => root.querySelector('[data-side="player"] .fighter__name')?.textContent;
 
 describe('バトル画面', () => {
   beforeEach(() => startBattle());
@@ -54,8 +63,36 @@ describe('バトル画面', () => {
     expect(root.querySelector('[role="status"]')?.textContent).not.toBe(before);
   });
 
-  it('控えは、倒れて選ぶとき以外はタップできない', () => {
-    expect(enabled('.bench-button')).toHaveLength(0);
+  it('控えをタップすると、技ボタンの代わりに交代の確認が出る（1タップ目）', () => {
+    const bench = enabled('.bench-button')[0]!;
+    const benchName = bench.querySelector('.bench-button__name')?.textContent;
+    bench.click();
+    expect(root.querySelector('.move-button')).toBeNull();
+    expect(root.querySelector('.confirm__question')?.textContent).toBe(`${playerName()}を戻して ${benchName}と交代しますか？`);
+    expect(root.querySelector('.bench-button--selected .bench-button__name')?.textContent).toBe(benchName);
+    // 操作できる要素は下半分だけ
+    expect(root.querySelector('.screen__view')!.querySelectorAll(INTERACTIVE)).toHaveLength(0);
+  });
+
+  it('［やめる］か、同じ控えをもう一度タップすると、選択をやめて技ボタンに戻る', () => {
+    enabled('.bench-button')[0]!.click();
+    root.querySelector<HTMLButtonElement>('.confirm .button--secondary')!.click();
+    expect(root.querySelector('.confirm')).toBeNull();
+    expect(root.querySelectorAll('.move-button')).toHaveLength(4);
+
+    enabled('.bench-button')[0]!.click();
+    root.querySelector<HTMLButtonElement>('.bench-button--selected')!.click();
+    expect(root.querySelector('.confirm')).toBeNull();
+  });
+
+  it('［交代する］でターンが進み、選んだ控えが場に出る（2タップ目）', () => {
+    const bench = enabled('.bench-button')[1]!;
+    const benchName = bench.querySelector('.bench-button__name')?.textContent;
+    bench.click();
+    root.querySelector<HTMLButtonElement>('.confirm .button--primary')!.click();
+    expect(root.querySelector('.confirm')).toBeNull();
+    expect(playerName()).toBe(benchName);
+    expect(logText()).not.toBe('バトル開始！ 技を選んでください');
   });
 
   it('最後まで遊ぶと勝敗が出て、「もう一度」と「タイトルへ」が押せる', () => {
@@ -77,7 +114,7 @@ describe('バトル画面', () => {
     expect(root.querySelector('h1')?.textContent).toBe('ローグライト対戦コマンドゲーム');
   });
 
-  it('倒れたときは控えを選ぶ案内が出て、技は押せず控えだけ押せる', () => {
+  it('倒れたときは控えを選ぶ案内が出て、技は押せず、控えを2タップで出す', () => {
     for (let seed = 0; seed < 20; seed += 1) {
       startBattle(seed);
       for (let i = 0; i < 300 && !root.querySelector('.battle--replacement') && !root.querySelector('.result'); i += 1) {
@@ -86,11 +123,15 @@ describe('バトル画面', () => {
       if (!root.querySelector('.battle--replacement')) {
         continue;
       }
-      expect(root.querySelector('[role="status"]')?.textContent).toBe('控えから次のキャラを選んでください');
+      expect(logText()).toBe('控えから次のキャラを選んでください');
       expect(enabled('.move-button')).toHaveLength(0);
-      expect(enabled('.bench-button').length).toBeGreaterThan(0);
-      enabled('.bench-button')[0]!.click();
+      const bench = enabled('.bench-button')[0]!;
+      const benchName = bench.querySelector('.bench-button__name')?.textContent;
+      bench.click();
+      expect(root.querySelector('.confirm__question')?.textContent).toBe(`${benchName}を出しますか？`);
+      root.querySelector<HTMLButtonElement>('.confirm .button--primary')!.click();
       expect(root.querySelector('.battle--command')).not.toBeNull();
+      expect(playerName()).toBe(benchName);
       return;
     }
     throw new Error('自分が倒れる場面が見つかりませんでした');
