@@ -8,7 +8,6 @@ import {
   AREA_COUNT,
   AREA_STAT_MULTIPLIER,
   BATTLE_ENEMY_COUNT,
-  BOSS_ENEMY_COUNT,
   DRAFT_CANDIDATE_COUNT,
   ELITE_ENEMY_COUNT,
   MAX_TEAM_SIZE,
@@ -72,10 +71,10 @@ describe('ランに必要なキャラの数', () => {
     expect(FIGHTERS.length).toBeGreaterThanOrEqual(DRAFT_CANDIDATE_COUNT);
     expect(DRAFT_CANDIDATE_COUNT).toBeGreaterThanOrEqual(RUN_TEAM_SIZE);
     // エリアごとの表が、エリアの数だけそろっている
-    for (const table of [BATTLE_ENEMY_COUNT, ELITE_ENEMY_COUNT, BOSS_ENEMY_COUNT, AREA_STAT_MULTIPLIER]) {
+    for (const table of [BATTLE_ENEMY_COUNT, ELITE_ENEMY_COUNT, AREA_STAT_MULTIPLIER]) {
       expect(table).toHaveLength(AREA_COUNT);
     }
-    for (const count of [...BATTLE_ENEMY_COUNT.flat(), ...ELITE_ENEMY_COUNT, ...BOSS_ENEMY_COUNT]) {
+    for (const count of [...BATTLE_ENEMY_COUNT.flat(), ...ELITE_ENEMY_COUNT]) {
       expect(count).toBeGreaterThanOrEqual(1);
       expect(count).toBeLessThanOrEqual(Math.min(MAX_TEAM_SIZE, FIGHTERS.length));
     }

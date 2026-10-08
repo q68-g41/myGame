@@ -1,5 +1,6 @@
 /** ランで使うデータ一式（エンジンにはこれを渡す） */
 import type { RunContent } from '../engine/run';
+import { BOSSES } from './bosses';
 import { CHARMS } from './charms';
 import { EVENTS } from './events';
 import { FIGHTERS } from './fighters';
@@ -10,4 +11,5 @@ export const RUN_CONTENT: RunContent = {
   moves: Object.values(MOVES),
   charms: CHARMS,
   events: EVENTS,
+  bosses: BOSSES,
 };

@@ -8,8 +8,14 @@ import { getMove } from './moves';
 /** 画面に出す名前つきのキャラ */
 export type FighterData = FighterDef & { readonly name: string };
 
-function fighter(attribute: AttributeId, name: string, stats: Stats, moveIds: readonly string[]): FighterData {
-  return { id: `${attribute}-trial`, name, attribute, stats, moves: moveIds.map(getMove) };
+function fighter(
+  attribute: AttributeId,
+  name: string,
+  stats: Stats,
+  moveIds: readonly string[],
+  id = `${attribute}-trial`,
+): FighterData {
+  return { id, name, attribute, stats, moves: moveIds.map(getMove) };
 }
 
 /** 仮のキャラ一覧 */
@@ -52,9 +58,39 @@ export const FIGHTERS: readonly FighterData[] = [
   ]),
 ];
 
-const FIGHTER_BY_ID: ReadonlyMap<string, FighterData> = new Map(FIGHTERS.map((data) => [data.id, data]));
+/**
+ * ボスのキャラ（仮）。エリアごとに1体で、スタートの候補・スカウト・ふつうの相手には出ない。
+ * 1体で3体のチームと戦うので、能力は目安（3.2）より大きい。行動パターンは bosses.ts
+ */
+export const BOSS_FIGHTERS: readonly FighterData[] = [
+  fighter(
+    'crimson',
+    '仮・ボス1（紅）',
+    { hp: 320, attack: 65, defense: 50, speed: 55 },
+    ['crimson-strike', 'crimson-burst', 'quick-jab', 'focus'],
+    'crimson-boss',
+  ),
+  fighter(
+    'blue',
+    '仮・ボス2（蒼）',
+    { hp: 290, attack: 62, defense: 65, speed: 45 },
+    ['blue-strike', 'blue-burst', 'corrode', 'mend'],
+    'blue-boss',
+  ),
+  fighter(
+    'violet',
+    '仮・ボス3（紫）',
+    { hp: 360, attack: 78, defense: 65, speed: 65 },
+    ['violet-strike', 'violet-burst', 'quick-dart', 'hinder'],
+    'violet-boss',
+  ),
+];
 
-/** ID からキャラを取り出す。なければエラー */
+const FIGHTER_BY_ID: ReadonlyMap<string, FighterData> = new Map(
+  [...FIGHTERS, ...BOSS_FIGHTERS].map((data) => [data.id, data]),
+);
+
+/** ID からキャラ（ボスも含む）を取り出す。なければエラー */
 export function getFighter(id: string): FighterData {
   const data = FIGHTER_BY_ID.get(id);
   if (!data) {

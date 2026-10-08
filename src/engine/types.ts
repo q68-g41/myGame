@@ -114,6 +114,36 @@ export type Side = 'player' | 'enemy';
 export type CpuLevel = 1 | 2 | 3;
 
 /**
+ * ボスの行動の条件（仕様書 6：決まった行動パターン＋条件分岐）。
+ * - selfHpBelow：自分のHPが最大HPの percent % 未満
+ * - turnEvery：every ターンごと（ターン番号が every で割り切れる）
+ * - opponentHasNoStatus：相手の場のキャラに状態異常がない
+ * - selfStageBelow：自分の能力変化が stage 未満
+ */
+export type BossCondition =
+  | { readonly type: 'selfHpBelow'; readonly percent: number }
+  | { readonly type: 'turnEvery'; readonly every: number }
+  | { readonly type: 'opponentHasNoStatus' }
+  | { readonly type: 'selfStageBelow'; readonly stat: StatKey; readonly stage: number };
+
+/** 条件分岐：when の条件がすべて当てはまれば、use の技を使う（使えなければ次の条件を見る） */
+export interface BossRule {
+  readonly when: readonly BossCondition[];
+  readonly use: string;
+}
+
+/**
+ * ボスの行動パターン。上の条件分岐から順に見て、当てはまったものを使う。
+ * どれも当てはまらなければ、rotation の技をターンごとに順番に使う（使えない技は飛ばす）
+ */
+export interface BossPattern {
+  /** パターンで動くボスのキャラ ID */
+  readonly fighterId: string;
+  readonly rules: readonly BossRule[];
+  readonly rotation: readonly string[];
+}
+
+/**
  * お守りの効果（4.4：チーム全体にかかる常時効果）。
  * - movePower：その種類の技の威力を percent % 上げる（切り捨て）
  * - switchInHeal：交代で場に出たキャラ（倒れたあとに出したときも）のHPを、最大HPの percent % 回復する
