@@ -44,7 +44,7 @@ describe('バトル画面', () => {
   it('上半分にいまのマス・相手・自分・ログ、下半分に技ボタン 2×2 と控え2体がある', () => {
     const view = root.querySelector('.screen__view')!;
     const controls = root.querySelector('.screen__controls')!;
-    expect(view.querySelector('.battle__caption')?.textContent).toBe('1層目・戦闘');
+    expect(view.querySelector('.battle__caption')?.textContent).toBe('エリア1・1層目・戦闘');
     expect(view.querySelector('[data-side="enemy"]')).not.toBeNull();
     expect(view.querySelector('[data-side="player"]')).not.toBeNull();
     expect(view.querySelector('[role="status"]')?.textContent).toBe('バトル開始！ 技を選んでください');

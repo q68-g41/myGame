@@ -3,7 +3,8 @@ import { RUN_CONTENT } from '../../src/data/content';
 import { FIGHTERS } from '../../src/data/fighters';
 import { createBattle, resolveTurn } from '../../src/engine/battle';
 import {
-  BATTLE_ENEMY_COUNT_BY_LAYER,
+  AREA_STAT_MULTIPLIER,
+  BATTLE_ENEMY_COUNT,
   BOSS_ENEMY_COUNT,
   BOSS_STAT_MULTIPLIER,
   DRAFT_CANDIDATE_COUNT,
@@ -51,7 +52,7 @@ const member = (fighter: FighterDef, hp = fighter.stats.hp): RunMember => ({ fig
 
 /** マップの段階のランを作る */
 function runAt(position: MapPosition | null, team: readonly RunMember[] = FIGHTERS.slice(0, 3).map((f) => member(f))): RunState {
-  return { map: TEST_MAP, position, team, charms: [], phase: { kind: 'map' }, rng: createRng(3) };
+  return { area: 0, map: TEST_MAP, position, team, charms: [], phase: { kind: 'map' }, rng: createRng(3) };
 }
 
 /** プレイヤーの HP を決めて、決着したバトルを作る */
@@ -116,7 +117,7 @@ describe('マップを進む', () => {
     if (run.phase.kind !== 'battle') {
       throw new Error('戦闘の段階のはず');
     }
-    expect(run.phase.enemy).toHaveLength(BATTLE_ENEMY_COUNT_BY_LAYER[0]!);
+    expect(run.phase.enemy).toHaveLength(BATTLE_ENEMY_COUNT[0]![0]!);
     for (const enemy of run.phase.enemy) {
       expect(FIGHTERS.find((fighter) => fighter.id === enemy.id)!.stats).toEqual(enemy.stats);
     }
@@ -128,7 +129,7 @@ describe('マップを進む', () => {
     if (run.phase.kind !== 'battle') {
       throw new Error('戦闘の段階のはず');
     }
-    expect(run.phase.enemy).toHaveLength(ELITE_ENEMY_COUNT);
+    expect(run.phase.enemy).toHaveLength(ELITE_ENEMY_COUNT[0]!);
     for (const enemy of run.phase.enemy) {
       const base = FIGHTERS.find((fighter) => fighter.id === enemy.id)!.stats;
       expect(enemy.stats).toEqual({
@@ -145,7 +146,7 @@ describe('マップを進む', () => {
     if (run.phase.kind !== 'battle') {
       throw new Error('戦闘の段階のはず');
     }
-    expect(run.phase.enemy).toHaveLength(BOSS_ENEMY_COUNT);
+    expect(run.phase.enemy).toHaveLength(BOSS_ENEMY_COUNT[0]!);
     const enemy = run.phase.enemy[0]!;
     const base = FIGHTERS.find((fighter) => fighter.id === enemy.id)!.stats;
     expect(enemy.stats.hp).toBe(Math.round(base.hp * BOSS_STAT_MULTIPLIER));
@@ -212,9 +213,34 @@ describe('戦闘とHPの持ち越し', () => {
     expect(runChoices(next)).toEqual([]);
   });
 
-  it('ボスに勝ったらクリア', () => {
-    const run = enterNode(runAt({ layer: 5, index: 0 }), 0, CONTENT);
-    expect(finishBattle(run, decided(run, [10, 0, 30], 'player'), CONTENT).phase).toEqual({ kind: 'ended', result: 'cleared' });
+  it('最後のエリア（エリア3）のボスに勝ったらクリア。それより前のエリアなら報酬を選ぶ', () => {
+    const last = enterNode({ ...runAt({ layer: 5, index: 0 }), area: 2 }, 0, CONTENT);
+    expect(finishBattle(last, decided(last, [10, 0, 30], 'player'), CONTENT).phase).toEqual({ kind: 'ended', result: 'cleared' });
+    const first = enterNode(runAt({ layer: 5, index: 0 }), 0, CONTENT);
+    expect(finishBattle(first, decided(first, [10, 0, 30], 'player'), CONTENT).phase).toMatchObject({ kind: 'reward', picks: 2 });
+  });
+
+  it('エリアが進むほど相手が多く・強くなる（エリアの倍率と、強敵・ボスの倍率をかけ合わせる）', () => {
+    for (const area of [0, 1, 2]) {
+      const battle = enterNode({ ...runAt(null), area }, 1, CONTENT);
+      const elite = enterNode({ ...runAt({ layer: 0, index: 0 }), area }, 0, CONTENT);
+      if (battle.phase.kind !== 'battle' || elite.phase.kind !== 'battle') {
+        throw new Error('戦闘の段階のはず');
+      }
+      expect(battle.phase.enemy).toHaveLength(BATTLE_ENEMY_COUNT[area]![0]!);
+      expect(elite.phase.enemy).toHaveLength(ELITE_ENEMY_COUNT[area]!);
+      const enemy = battle.phase.enemy[0]!;
+      const base = FIGHTERS.find((fighter) => fighter.id === enemy.id)!.stats;
+      expect(enemy.stats).toEqual({
+        hp: Math.round(base.hp * AREA_STAT_MULTIPLIER[area]!),
+        attack: Math.round(base.attack * AREA_STAT_MULTIPLIER[area]!),
+        defense: Math.round(base.defense * AREA_STAT_MULTIPLIER[area]!),
+        speed: base.speed,
+      });
+      const eliteEnemy = elite.phase.enemy[0]!;
+      const eliteBase = FIGHTERS.find((fighter) => fighter.id === eliteEnemy.id)!.stats;
+      expect(eliteEnemy.stats.hp).toBe(Math.round(eliteBase.hp * AREA_STAT_MULTIPLIER[area]! * ELITE_STAT_MULTIPLIER));
+    }
   });
 
   it('決着していないバトルや、戦闘中でないときはエラー', () => {

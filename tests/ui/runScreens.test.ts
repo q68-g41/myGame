@@ -134,7 +134,7 @@ describe('マップの画面', () => {
     expect(root.querySelectorAll('.screen__view .map-node')).toHaveLength(total);
     expect(root.querySelectorAll('.screen__controls .map-choice')).toHaveLength(runChoices(run).length);
     expect(root.querySelectorAll('.screen__controls .member')).toHaveLength(3);
-    expect(root.querySelector('.map__progress')?.textContent).toBe('スタート');
+    expect(root.querySelector('.map__progress')?.textContent).toBe('エリア1・スタート');
     onlyBottomIsInteractive();
   });
 
@@ -147,14 +147,14 @@ describe('マップの画面', () => {
 
   it('戦闘マスを選ぶとバトルになり、勝てば報酬を受け取ってから、HPを持ち越してマップに戻る', () => {
     root.querySelector<HTMLButtonElement>('.map-choice')!.click();
-    expect(root.querySelector('.battle__caption')?.textContent).toBe('1層目・戦闘');
+    expect(root.querySelector('.battle__caption')?.textContent).toBe('エリア1・1層目・戦闘');
 
     const result = finishBattle();
     if (result === 'あなたの負け…') {
       expect(root.querySelector('.run-end')).not.toBeNull();
       return;
     }
-    expect(root.querySelector('.map__progress')?.textContent).toBe('1層目 / 7層');
+    expect(root.querySelector('.map__progress')?.textContent).toBe('エリア1・1層目 / 7層');
     expect(root.querySelector('.map__message')?.textContent).toMatch(/が \d+ 上がった$/);
     expect(root.querySelector('.map-node--current')?.getAttribute('data-layer')).toBe('0');
     // 戦闘のHP（倒れていたら10%で戻る）が、マップのチーム表示に出る

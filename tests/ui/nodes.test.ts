@@ -19,6 +19,7 @@ const INTERACTIVE = 'button, a, input, select, textarea';
 
 const team = FIGHTERS.slice(0, 3).map((fighter) => ({ fighter, hp: 50 }));
 const runIn = (phase: RunState['phase']): RunState => ({
+  area: 0,
   map: { layers: [[{ kind: 'rest', next: [] }]] },
   position: { layer: 0, index: 0 },
   team,

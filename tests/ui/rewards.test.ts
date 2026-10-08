@@ -19,6 +19,7 @@ const OFFERS: readonly RewardOffer[] = [
   { kind: 'charm', charm: CHARMS[0]! },
 ];
 const rewardRun = (pick = 1, picks = 1, members = team): RunState => ({
+  area: 0,
   map: { layers: [[{ kind: 'battle', next: [] }]] },
   position: { layer: 0, index: 0 },
   team: members,

@@ -31,6 +31,7 @@ const MAP: AreaMap = {
 
 const team = FIGHTERS.slice(0, 3).map((fighter) => ({ fighter, hp: fighter.stats.hp }));
 const runAt = (position: RunState['position'], phase: RunState['phase'] = { kind: 'map' }): RunState => ({
+  area: 0,
   map: MAP,
   position,
   team,
@@ -84,7 +85,7 @@ describe('チーム選択', () => {
 describe('マップ', () => {
   it('スタートでは、1層目のマスが A・B の選択肢になり、その先のマスは「この先にある」', () => {
     const view = buildMapView(runAt(null));
-    expect(view.progress).toBe('スタート');
+    expect(view.progress).toBe('エリア1・スタート');
     expect(view.message).toBe('進むマスを選んでください');
     expect(view.choices).toEqual([
       { index: 0, letter: 'A', name: '戦闘' },
@@ -100,7 +101,7 @@ describe('マップ', () => {
 
   it('マスにいるときは、いまのマス・進めるマス・通り過ぎたマス・たどり着けないマスを分ける', () => {
     const view = buildMapView(runAt({ layer: 0, index: 0 }), '戦闘に勝った！');
-    expect(view.progress).toBe('1層目 / 3層');
+    expect(view.progress).toBe('エリア1・1層目 / 3層');
     expect(view.message).toBe('戦闘に勝った！');
     expect(view.layers[0]!.map((node) => node.state)).toEqual(['current', 'passed']);
     expect(view.layers[1]!.map((node) => [node.state, node.letter])).toEqual([
@@ -121,7 +122,8 @@ describe('マップ', () => {
   });
 
   it('バトル画面には、いまのマスの層と種類を出す', () => {
-    expect(battleCaption(runAt({ layer: 1, index: 1 }))).toBe('2層目・強敵');
+    expect(battleCaption(runAt({ layer: 1, index: 1 }))).toBe('エリア1・2層目・強敵');
+    expect(battleCaption({ ...runAt({ layer: 1, index: 1 }), area: 2 })).toBe('エリア3・2層目・強敵');
     expect(battleCaption(runAt(null))).toBeNull();
   });
 });
@@ -129,9 +131,9 @@ describe('マップ', () => {
 describe('ランの結果', () => {
   it('クリアと全滅で、見出しと文章を変える', () => {
     const cleared = buildRunEndView(runAt({ layer: 2, index: 0 }, { kind: 'ended', result: 'cleared' }));
-    expect(cleared).toMatchObject({ result: 'cleared', title: 'クリア！' });
+    expect(cleared).toMatchObject({ result: 'cleared', title: 'クリア！', message: '3つのエリアを突破した！' });
     const defeated = buildRunEndView(runAt({ layer: 1, index: 1 }, { kind: 'ended', result: 'defeated' }));
-    expect(defeated).toMatchObject({ result: 'defeated', title: '全滅…', message: '2層目・強敵で全滅した' });
+    expect(defeated).toMatchObject({ result: 'defeated', title: '全滅…', message: 'エリア1・2層目・強敵で全滅した' });
     expect(defeated.team).toHaveLength(3);
   });
 

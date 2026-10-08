@@ -5,7 +5,9 @@ import { MOVES, getMove } from '../../src/data/moves';
 import { createCombatant } from '../../src/engine/battle';
 import {
   ATTRIBUTE_ORDER,
-  BATTLE_ENEMY_COUNT_BY_LAYER,
+  AREA_COUNT,
+  AREA_STAT_MULTIPLIER,
+  BATTLE_ENEMY_COUNT,
   BOSS_ENEMY_COUNT,
   DRAFT_CANDIDATE_COUNT,
   ELITE_ENEMY_COUNT,
@@ -69,7 +71,11 @@ describe('ランに必要なキャラの数', () => {
   it('スタートの候補と、相手のチームを重ならないように選べるだけのキャラがいる', () => {
     expect(FIGHTERS.length).toBeGreaterThanOrEqual(DRAFT_CANDIDATE_COUNT);
     expect(DRAFT_CANDIDATE_COUNT).toBeGreaterThanOrEqual(RUN_TEAM_SIZE);
-    for (const count of [...BATTLE_ENEMY_COUNT_BY_LAYER, ELITE_ENEMY_COUNT, BOSS_ENEMY_COUNT]) {
+    // エリアごとの表が、エリアの数だけそろっている
+    for (const table of [BATTLE_ENEMY_COUNT, ELITE_ENEMY_COUNT, BOSS_ENEMY_COUNT, AREA_STAT_MULTIPLIER]) {
+      expect(table).toHaveLength(AREA_COUNT);
+    }
+    for (const count of [...BATTLE_ENEMY_COUNT.flat(), ...ELITE_ENEMY_COUNT, ...BOSS_ENEMY_COUNT]) {
       expect(count).toBeGreaterThanOrEqual(1);
       expect(count).toBeLessThanOrEqual(Math.min(MAX_TEAM_SIZE, FIGHTERS.length));
     }

@@ -35,6 +35,7 @@ const team: readonly RunMember[] = [
 ];
 
 const baseRun = (overrides: Partial<RunState> = {}): RunState => ({
+  area: 0,
   map: MAP,
   position: null,
   team,
