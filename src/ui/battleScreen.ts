@@ -2,7 +2,15 @@
  * バトル画面（M3）。上半分は表示だけ（相手・自分・ログ1行）、下半分に操作（技ボタン 2×2・控え）。
  * 表示する内容は battleView.ts で組み立て、ここでは描くだけにする。
  */
-import type { BattleView, BenchView, ConfirmView, FighterPanelView, MoveButtonView } from './battleView';
+import type {
+  BattleView,
+  BenchView,
+  ConfirmView,
+  FighterPanelView,
+  MoveButtonView,
+  MoveDetailView,
+  OrderPreview,
+} from './battleView';
 import { el } from './dom';
 
 export interface BattleScreenHandlers {
@@ -60,17 +68,54 @@ function fighterPanel(doc: Document, view: FighterPanelView, side: 'enemy' | 'pl
   return panel;
 }
 
+const EFFECTIVENESS_MARK = { advantage: '▲有利', neutral: '', disadvantage: '▼不利' } as const;
+
 function moveButton(doc: Document, view: MoveButtonView, handlers: BattleScreenHandlers): HTMLButtonElement {
   const button = el(doc, 'button', 'move-button');
   button.type = 'button';
   button.disabled = view.disabled;
   button.dataset.moveId = view.id;
-  button.append(el(doc, 'span', 'move-button__name', view.name));
-  if (view.note !== null) {
-    button.append(el(doc, 'span', 'move-button__note', view.note));
+  // 属性の色を左の帯で見せる
+  button.style.borderLeftColor = view.color;
+
+  const top = el(doc, 'span', 'move-button__top');
+  top.append(el(doc, 'span', 'move-button__name', view.name));
+  if (view.kindLabel !== null) {
+    top.append(el(doc, 'span', 'move-button__kind', view.kindLabel));
   }
+
+  const bottom = el(doc, 'span', 'move-button__bottom');
+  bottom.append(el(doc, 'span', 'move-button__power', view.power === null ? (view.summary ?? '') : `威力 ${view.power}`));
+  if (view.effectiveness !== null && view.effectiveness !== 'neutral') {
+    bottom.append(
+      el(doc, 'span', `move-button__mark move-button__mark--${view.effectiveness}`, EFFECTIVENESS_MARK[view.effectiveness]),
+    );
+  }
+  if (view.note !== null) {
+    bottom.append(el(doc, 'span', 'move-button__note', view.note));
+  }
+
+  button.append(top, bottom);
   button.addEventListener('click', () => handlers.onMove(view.id));
+  // 長押しでブラウザのメニューが出ないようにする（長押しは技の詳細に使う）
+  button.addEventListener('contextmenu', (event) => event.preventDefault());
   return button;
+}
+
+const ORDER_PREVIEW_TEXT: Readonly<Record<OrderPreview, string>> = {
+  first: '行動順：先に動ける',
+  later: '行動順：後になる',
+  tie: '行動順：同じ速さ（どちらが先かは運）',
+  unknown: '行動順：？（相手の素早さがまだ分からない）',
+};
+
+function moveDetail(doc: Document, view: MoveDetailView): HTMLElement {
+  const card = el(doc, 'div', 'move-detail');
+  card.append(el(doc, 'p', 'move-detail__name', view.name));
+  const list = el(doc, 'ul', 'move-detail__lines');
+  list.append(...view.lines.map((line) => el(doc, 'li', '', line)));
+  card.append(list);
+  return card;
 }
 
 function benchButton(doc: Document, view: BenchView, handlers: BattleScreenHandlers): HTMLButtonElement {
@@ -155,6 +200,10 @@ export function renderBattleScreen(root: HTMLElement, view: BattleView, handlers
     fighterPanel(doc, view.player, 'player', view.hit === 'player'),
     log,
   );
+  if (view.detail !== null) {
+    // 長押し中は、ログの上に技の詳細を重ねる（表示だけ。ほかの表示の位置は動かさない）
+    display.append(moveDetail(doc, view.detail));
+  }
 
   // 下半分：操作
   const controls = el(doc, 'section', 'screen__controls battle__controls');
@@ -165,6 +214,9 @@ export function renderBattleScreen(root: HTMLElement, view: BattleView, handlers
     // 2タップ目：技ボタンの場所に、交代（または次に出す）の確認を出す
     controls.append(confirmPanel(doc, view.confirm, handlers));
   } else {
+    if (view.phase === 'command') {
+      controls.append(el(doc, 'p', `order-preview order-preview--${view.orderPreview}`, ORDER_PREVIEW_TEXT[view.orderPreview]));
+    }
     const moves = el(doc, 'div', 'moves');
     moves.append(...view.moves.map((move) => moveButton(doc, move, handlers)));
     controls.append(moves);

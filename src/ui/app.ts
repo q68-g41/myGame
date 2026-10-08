@@ -21,6 +21,9 @@ export interface AppOptions {
   readonly newSeed: () => number;
 }
 
+/** 技ボタンを長押しして、詳細を出すまでの時間 */
+const LONG_PRESS_MS = 500;
+
 interface Playback {
   readonly frames: readonly PlaybackFrame[];
   index: number;
@@ -32,6 +35,9 @@ export function startApp(root: HTMLElement, options: AppOptions): void {
   let session: BattleSession | null = null;
   let ui: UiState = INITIAL_UI_STATE;
   let playback: Playback | null = null;
+  let pressTimer: ReturnType<typeof setTimeout> | null = null;
+  /** 長押しで詳細を出したあと、指を離したときのタップでは技を使わない */
+  let suppressNextMove = false;
 
   const render = () => {
     if (session === null) {
@@ -93,7 +99,13 @@ export function startApp(root: HTMLElement, options: AppOptions): void {
   };
 
   const handlers: BattleScreenHandlers = {
-    onMove: (moveId) => update((current) => playMove(current, moveId)),
+    onMove: (moveId) => {
+      if (suppressNextMove) {
+        suppressNextMove = false;
+        return;
+      }
+      update((current) => playMove(current, moveId));
+    },
     // 1タップ目：控えを選ぶ（もう一度押すと選択をやめる）
     onBench: (index) => {
       ui = { ...ui, selectedBench: ui.selectedBench === index ? null : index };
@@ -123,6 +135,34 @@ export function startApp(root: HTMLElement, options: AppOptions): void {
       render();
     },
   };
+
+  // 技ボタンの長押し：押してから LONG_PRESS_MS で詳細を出し、指を離したら消す（画面を描き直しても続くよう root で受ける）
+  root.addEventListener('pointerdown', (event) => {
+    suppressNextMove = false;
+    const button = (event.target as Element | null)?.closest<HTMLElement>('[data-move-id]');
+    const moveId = button?.dataset.moveId;
+    if (session === null || playback !== null || moveId === undefined) {
+      return;
+    }
+    pressTimer = setTimeout(() => {
+      pressTimer = null;
+      ui = { ...ui, detailMoveId: moveId };
+      suppressNextMove = true;
+      render();
+    }, LONG_PRESS_MS);
+  });
+  const endPress = () => {
+    if (pressTimer !== null) {
+      clearTimeout(pressTimer);
+      pressTimer = null;
+    }
+    if (ui.detailMoveId !== null) {
+      ui = { ...ui, detailMoveId: null };
+      render();
+    }
+  };
+  root.addEventListener('pointerup', endPress);
+  root.addEventListener('pointercancel', endPress);
 
   showTop();
 }

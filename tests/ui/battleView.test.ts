@@ -2,7 +2,7 @@ import { describe, expect, it } from 'vitest';
 import { getFighter } from '../../src/data/fighters';
 import { selectableMoves } from '../../src/engine/moves';
 import { activeCombatant, memberAt } from '../../src/engine/team';
-import { buildBattleView } from '../../src/ui/battleView';
+import { buildBattleView, INITIAL_UI_STATE } from '../../src/ui/battleView';
 import { needsPlayerReplacement, playMove, startSession, type BattleSession } from '../../src/ui/session';
 
 const nameAt = (session: BattleSession, index: number) =>
@@ -20,7 +20,7 @@ describe('バトル画面に出す内容', () => {
   });
 
   it('技を選ぶ場面では、控えを交代先として選べる。選ぶと確認が出る', () => {
-    const view = buildBattleView(session, { selectedBench: 2, speed: 1 });
+    const view = buildBattleView(session, { ...INITIAL_UI_STATE, selectedBench: 2 });
     expect(view.bench.every((member) => member.selectable)).toBe(true);
     expect(view.bench.find((member) => member.index === 2)?.selected).toBe(true);
     expect(view.confirm).toEqual({
@@ -37,7 +37,7 @@ describe('バトル画面に出す内容', () => {
     }
     expect(needsPlayerReplacement(current)).toBe(true);
     const target = buildBattleView(current).bench.find((member) => member.selectable)!;
-    const view = buildBattleView(current, { selectedBench: target.index, speed: 1 });
+    const view = buildBattleView(current, { ...INITIAL_UI_STATE, selectedBench: target.index });
     expect(view.phase).toBe('replacement');
     expect(view.moves.every((move) => move.disabled)).toBe(true);
     expect(view.confirm).toEqual({ index: target.index, question: `${target.name}を出しますか？`, confirmLabel: '出す' });
@@ -57,7 +57,7 @@ describe('バトル画面に出す内容', () => {
         },
       },
     };
-    const view = buildBattleView(fainted, { selectedBench: 1, speed: 1 });
+    const view = buildBattleView(fainted, { ...INITIAL_UI_STATE, selectedBench: 1 });
     expect(view.bench.find((member) => member.index === 1)?.selectable).toBe(false);
     expect(view.confirm).toBeNull();
   });
