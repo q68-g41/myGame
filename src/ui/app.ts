@@ -46,12 +46,14 @@ import {
   type DraftUiState,
   type RewardUiState,
 } from './runView';
+import { createSaveStore, type SavedGame } from './save';
 import {
   createSession,
   needsPlayerReplacement,
   playMove,
   playReplacement,
   playSwitch,
+  restoreSession,
   type BattleSession,
 } from './session';
 import { renderTopScreen } from './top';
@@ -61,6 +63,8 @@ export interface AppOptions {
   readonly buildId: string;
   /** 新しいランのシードを作る（テストでは固定値にする） */
   readonly newSeed: () => number;
+  /** 自動保存の保存先（ブラウザでは localStorage）。省くと保存しない */
+  readonly storage?: Pick<Storage, 'getItem' | 'setItem' | 'removeItem'> | null;
 }
 
 /** 技ボタンを長押しして、詳細を出すまでの時間 */
@@ -74,6 +78,7 @@ interface Playback {
 
 /** アプリを始める。最初はトップ画面 */
 export function startApp(root: HTMLElement, options: AppOptions): void {
+  const store = createSaveStore(options.storage ?? null);
   let run: RunState | null = null;
   let draft: DraftUiState = INITIAL_DRAFT_UI;
   let reward: RewardUiState = INITIAL_REWARD_UI;
@@ -90,10 +95,23 @@ export function startApp(root: HTMLElement, options: AppOptions): void {
   /** 長押しで詳細を出したあと、指を離したときのタップでは技を使わない */
   let suppressNextMove = false;
 
+  /** 自動保存：画面を描くたびに、いまのランを保存する。ランが終わったら消す */
+  const persist = () => {
+    if (run === null) {
+      return;
+    }
+    if (run.phase.kind === 'ended') {
+      store.clear();
+    } else if (run.phase.kind !== 'battle' || session !== null) {
+      store.save(run, run.phase.kind === 'battle' ? session : null);
+    }
+  };
+
   const render = () => {
     if (run === null) {
       return;
     }
+    persist();
     switch (run.phase.kind) {
       case 'draft':
         renderDraftScreen(root, buildDraftView(run, draft), draftHandlers);
@@ -165,20 +183,49 @@ export function startApp(root: HTMLElement, options: AppOptions): void {
     render();
   };
 
+  /** 画面だけが持つ状態を、最初に戻す（演出の速さは残す） */
+  const resetScreens = () => {
+    draft = INITIAL_DRAFT_UI;
+    reward = INITIAL_REWARD_UI;
+    rest = INITIAL_REST_UI;
+    scout = INITIAL_SCOUT_UI;
+    event = INITIAL_EVENT_UI;
+    ui = { ...INITIAL_UI_STATE, speed: ui.speed };
+    notice = null;
+  };
+
   const startNewRun = () => {
     stopPlayback();
     run = startRun(RUN_CONTENT, options.newSeed());
-    draft = INITIAL_DRAFT_UI;
-    notice = null;
     session = null;
+    resetScreens();
     render();
+  };
+
+  /** 保存したランの続きから遊ぶ。読めないセーブだったら捨てて、トップに戻る */
+  const resume = (saved: SavedGame) => {
+    stopPlayback();
+    resetScreens();
+    try {
+      run = saved.run;
+      session = saved.battle === null ? null : restoreSession(saved.battle);
+      render();
+    } catch {
+      store.clear();
+      showTop();
+    }
   };
 
   const showTop = () => {
     stopPlayback();
     run = null;
     session = null;
-    renderTopScreen(root, { buildId: options.buildId, onStart: startNewRun });
+    const saved = store.load();
+    renderTopScreen(root, {
+      buildId: options.buildId,
+      onStart: startNewRun,
+      ...(saved === null ? {} : { onContinue: () => resume(saved) }),
+    });
   };
 
   const draftHandlers = {

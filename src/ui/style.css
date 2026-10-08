@@ -1175,3 +1175,11 @@ body {
   font-size: 14px;
   color: var(--color-muted);
 }
+
+/* ===== 自動保存と再開（M4-5） ===== */
+
+.top__confirm {
+  margin: 0;
+  font-size: 14px;
+  text-align: center;
+}

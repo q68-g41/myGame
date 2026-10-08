@@ -3,15 +3,26 @@ import { el } from './dom';
 export interface TopScreenOptions {
   /** 画面に出すビルドの識別子（デプロイ後に最新版か確かめるため） */
   buildId: string;
-  /** 「はじめる」を押したとき（新しいランを始める） */
+  /** 新しいランを始める */
   onStart: () => void;
+  /** 保存したランがあれば、その続きから遊ぶ。なければ省く */
+  onContinue?: () => void;
+}
+
+function button(doc: Document, className: string, text: string, onClick: () => void): HTMLButtonElement {
+  const element = el(doc, 'button', className, text);
+  element.type = 'button';
+  element.addEventListener('click', onClick);
+  return element;
 }
 
 /**
  * トップ画面。上半分は表示だけ、下半分に操作できる要素を集める。
+ * 保存したランがあれば「つづきから」と「はじめから」を出す。「はじめから」は保存したランが消えるので、確認してから始める。
  */
-export function renderTopScreen(root: HTMLElement, options: TopScreenOptions): void {
+export function renderTopScreen(root: HTMLElement, options: TopScreenOptions, confirmingNewRun = false): void {
   const doc = root.ownerDocument;
+  const { onContinue } = options;
 
   // 上半分：表示だけ
   const view = el(doc, 'section', 'screen__view');
@@ -29,19 +40,35 @@ export function renderTopScreen(root: HTMLElement, options: TopScreenOptions): v
     team.append(el(doc, 'div', `top__member top__member--${variant}`));
   }
 
-  const message = el(doc, 'p', 'top__message', '1エリア分のランを遊べます（仮素材）');
+  const message = el(
+    doc,
+    'p',
+    'top__message',
+    onContinue ? '前回のランの続きから遊べます' : '1エリア分のランを遊べます（仮素材）',
+  );
   view.append(subtitle, title, team, message);
 
   // 下半分：操作領域
   const controls = el(doc, 'section', 'screen__controls');
   controls.setAttribute('aria-label', '操作');
 
-  const startButton = el(doc, 'button', 'button button--primary', 'はじめる');
-  startButton.type = 'button';
-  startButton.addEventListener('click', () => options.onStart());
+  if (onContinue === undefined) {
+    controls.append(button(doc, 'button button--primary', 'はじめる', () => options.onStart()));
+  } else if (confirmingNewRun) {
+    controls.append(
+      el(doc, 'p', 'top__confirm', 'いまのランは消えます。はじめから遊びますか？'),
+      button(doc, 'button button--primary', 'はじめから遊ぶ', () => options.onStart()),
+      button(doc, 'button button--secondary', 'やめる', () => renderTopScreen(root, options)),
+    );
+  } else {
+    controls.append(
+      button(doc, 'button button--primary', 'つづきから', () => onContinue()),
+      button(doc, 'button button--secondary', 'はじめから', () => renderTopScreen(root, options, true)),
+    );
+  }
 
   const build = el(doc, 'p', 'top__build', `build: ${options.buildId}`);
-  controls.append(startButton, build);
+  controls.append(build);
 
   const screen = el(doc, 'div', 'screen');
   screen.append(view, controls);

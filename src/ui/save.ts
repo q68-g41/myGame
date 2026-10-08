@@ -1,0 +1,98 @@
+/**
+ * 自動保存と再開（仕様書 5：毎ターン自動保存。アプリを閉じても同じターンから再開できる）。
+ * 保存先はブラウザの localStorage。エンジンには持ち込まず、画面の側だけで扱う。
+ */
+import type { RunState } from '../engine/run';
+import { saveSession, type BattleSession, type SavedBattle } from './session';
+
+/** localStorage のキー */
+export const SAVE_KEY = 'mygame.save';
+
+/** 保存の形の版。形を変えて古いセーブが読めなくなるときに上げる（古い版のセーブは捨てる） */
+export const SAVE_VERSION = 1;
+
+/** 保存したゲーム：ランの状態と、戦闘中ならバトルの状態 */
+export interface SavedGame {
+  readonly run: RunState;
+  readonly battle: SavedBattle | null;
+}
+
+interface SaveFile extends SavedGame {
+  readonly version: number;
+}
+
+/** 保存する文字列にする */
+export function serializeGame(run: RunState, session: BattleSession | null): string {
+  const file: SaveFile = { version: SAVE_VERSION, run, battle: session === null ? null : saveSession(session) };
+  return JSON.stringify(file);
+}
+
+const isObject = (value: unknown): value is Record<string, unknown> => typeof value === 'object' && value !== null;
+
+/**
+ * 保存した文字列を読む。読めない・版が違う・形がおかしいときは null。
+ * 中身の細かい正しさまでは見ない（画面を作るときにエラーになったら、呼び出し側でセーブを捨てる）
+ */
+export function parseSavedGame(text: string | null): SavedGame | null {
+  if (text === null) {
+    return null;
+  }
+  let file: unknown;
+  try {
+    file = JSON.parse(text);
+  } catch {
+    return null;
+  }
+  if (!isObject(file) || file.version !== SAVE_VERSION || !isObject(file.run)) {
+    return null;
+  }
+  const { run, battle } = file;
+  if (!isObject(run.map) || !Array.isArray(run.team) || !isObject(run.phase) || typeof run.phase.kind !== 'string') {
+    return null;
+  }
+  if (run.phase.kind === 'ended') {
+    return null;
+  }
+  const inBattle = run.phase.kind === 'battle';
+  if (inBattle !== isObject(battle)) {
+    return null;
+  }
+  if (isObject(battle) && (!isObject(battle.state) || typeof battle.rng !== 'number' || !Array.isArray(battle.knownEnemySpeeds))) {
+    return null;
+  }
+  return { run: run as unknown as RunState, battle: inBattle ? (battle as unknown as SavedBattle) : null };
+}
+
+/** 保存先。使えない環境（プライベートブラウズなど）では何もしない */
+export interface SaveStore {
+  load(): SavedGame | null;
+  save(run: RunState, session: BattleSession | null): void;
+  clear(): void;
+}
+
+/** localStorage（など同じ形のもの）を使う保存先を作る。null なら保存しない */
+export function createSaveStore(storage: Pick<Storage, 'getItem' | 'setItem' | 'removeItem'> | null): SaveStore {
+  return {
+    load: () => {
+      try {
+        return parseSavedGame(storage?.getItem(SAVE_KEY) ?? null);
+      } catch {
+        return null;
+      }
+    },
+    save: (run, session) => {
+      try {
+        storage?.setItem(SAVE_KEY, serializeGame(run, session));
+      } catch {
+        // 保存できなくても遊び続けられるようにする（容量不足・プライベートブラウズなど）
+      }
+    },
+    clear: () => {
+      try {
+        storage?.removeItem(SAVE_KEY);
+      } catch {
+        // 消せなくても続ける
+      }
+    },
+  };
+}
