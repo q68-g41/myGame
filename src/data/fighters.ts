@@ -51,3 +51,14 @@ export const FIGHTERS: readonly FighterData[] = [
     'brace',
   ]),
 ];
+
+const FIGHTER_BY_ID: ReadonlyMap<string, FighterData> = new Map(FIGHTERS.map((data) => [data.id, data]));
+
+/** ID からキャラを取り出す。なければエラー */
+export function getFighter(id: string): FighterData {
+  const data = FIGHTER_BY_ID.get(id);
+  if (!data) {
+    throw new Error(`キャラ ${id} のデータがありません`);
+  }
+  return data;
+}

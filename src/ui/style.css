@@ -145,3 +145,236 @@ body {
   color: var(--color-muted);
   text-align: center;
 }
+
+.button--secondary {
+  background: transparent;
+  color: var(--color-text);
+  border: 2px solid var(--color-border);
+}
+
+/* ===== バトル画面 ===== */
+
+.battle__view {
+  justify-content: space-between;
+  align-items: stretch;
+  gap: 12px;
+  text-align: left;
+}
+
+.fighter {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+/* 相手は右寄せ（四角が右）、自分は左寄せ（四角が左） */
+.fighter--enemy {
+  flex-direction: row-reverse;
+}
+
+.fighter__sprite {
+  flex: none;
+  width: 72px;
+  height: 72px;
+  border-radius: 6px;
+  image-rendering: pixelated;
+}
+
+.fighter__info {
+  flex: 1;
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.fighter__header,
+.fighter__footer {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+}
+
+.fighter__name {
+  font-weight: bold;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.fighter__team {
+  display: flex;
+  gap: 4px;
+}
+
+.team-dot {
+  width: 10px;
+  height: 10px;
+  border-radius: 50%;
+  background: var(--color-text);
+}
+
+.team-dot--fainted {
+  background: transparent;
+  border: 1px solid var(--color-muted);
+}
+
+.fighter__hp {
+  font-size: 14px;
+  color: var(--color-muted);
+}
+
+.fighter__status {
+  font-size: 14px;
+  padding: 0 8px;
+  border-radius: 999px;
+  background: #5b3a7a;
+}
+
+.hp-bar {
+  height: 10px;
+  border-radius: 999px;
+  background: var(--color-border);
+  overflow: hidden;
+}
+
+.hp-bar__fill {
+  height: 100%;
+  transition: width 0.3s ease;
+}
+
+.hp-bar__fill--high {
+  background: #4fb36a;
+}
+
+.hp-bar__fill--middle {
+  background: #e0b13a;
+}
+
+.hp-bar__fill--low {
+  background: #d9473f;
+}
+
+.battle__log {
+  margin: 0;
+  min-height: 3em;
+  padding: 8px 12px;
+  border-radius: 8px;
+  background: var(--color-panel);
+  font-size: 14px;
+}
+
+.battle__controls {
+  justify-content: flex-start;
+  gap: 12px;
+}
+
+.moves {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 8px;
+}
+
+.move-button {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  justify-content: center;
+  gap: 2px;
+  min-height: 64px;
+  padding: 8px 12px;
+  border: 2px solid var(--color-border);
+  border-radius: 8px;
+  background: var(--color-bg);
+  color: var(--color-text);
+  font: inherit;
+  text-align: left;
+  touch-action: manipulation;
+  -webkit-tap-highlight-color: transparent;
+  user-select: none;
+  cursor: pointer;
+}
+
+.move-button:active:not(:disabled) {
+  transform: translateY(2px);
+}
+
+.move-button:disabled {
+  opacity: 0.45;
+  cursor: default;
+}
+
+.move-button__name {
+  font-weight: bold;
+}
+
+.move-button__note {
+  font-size: 14px;
+  color: var(--color-muted);
+}
+
+.bench {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 8px;
+}
+
+.bench-button {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  min-height: 56px;
+  padding: 8px;
+  border: 2px solid var(--color-border);
+  border-radius: 8px;
+  background: transparent;
+  color: var(--color-text);
+  font: inherit;
+  text-align: left;
+  touch-action: manipulation;
+  -webkit-tap-highlight-color: transparent;
+  user-select: none;
+}
+
+.bench-button--selectable {
+  border-color: var(--color-accent);
+  cursor: pointer;
+}
+
+.bench-button__icon {
+  flex: none;
+  width: 28px;
+  height: 28px;
+  border-radius: 4px;
+  border: 1px solid var(--color-border);
+}
+
+.bench-button__label {
+  display: flex;
+  flex-direction: column;
+  min-width: 0;
+}
+
+.bench-button__name,
+.bench-button__hp {
+  font-size: 14px;
+  white-space: nowrap;
+}
+
+.bench-button__hp {
+  color: var(--color-muted);
+}
+
+.result {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.result__text {
+  margin: 0;
+  font-size: 24px;
+  font-weight: bold;
+  text-align: center;
+}
