@@ -12,6 +12,7 @@ import {
   BOSS_ENEMY_COUNT,
   BOSS_REWARD_PICKS,
   BOSS_STAT_MULTIPLIER,
+  CPU_LEVEL_BY_AREA,
   DRAFT_CANDIDATE_COUNT,
   ELITE_ENEMY_COUNT,
   ELITE_REWARD_PICKS,
@@ -33,7 +34,7 @@ import {
 import { generateAreaMap, nextChoices, nodeAt, type AreaMap, type MapPosition, type NodeKind } from './map';
 import { nodePhase, type EventDef, type EventOutcome } from './nodes';
 import { createRng, nextSeed, pickDistinct, type RngResult, type RngState } from './rng';
-import type { BattleState, CharmEffect, FighterDef, MoveDef } from './types';
+import type { BattleState, CharmEffect, CpuLevel, FighterDef, MoveDef } from './types';
 
 export { statBoostAmount, type StatBoostKey } from './growth';
 
@@ -90,7 +91,7 @@ export interface RewardChoice {
  * ランの段階。
  * - draft：候補からチームを選ぶ
  * - map：次のマスを選ぶ
- * - battle：戦闘中（相手のチームとバトルのシードは、マスに入ったときに決まる）
+ * - battle：戦闘中（相手のチーム・CPU の段階・バトルのシードは、マスに入ったときに決まる）
  * - reward：戦闘に勝って、報酬を選ぶ（強敵とボスなら2回。pick は何回目か、picks は全部で何回か）
  * - rest：休憩（HPを回復するか、技を強化するか）
  * - scout：スカウト（候補の1体とチームの1体を入れ替えるか、入れ替えずに進む）
@@ -100,7 +101,7 @@ export interface RewardChoice {
 export type RunPhase =
   | { readonly kind: 'draft'; readonly candidates: readonly FighterDef[] }
   | { readonly kind: 'map' }
-  | { readonly kind: 'battle'; readonly enemy: readonly FighterDef[]; readonly seed: number }
+  | { readonly kind: 'battle'; readonly enemy: readonly FighterDef[]; readonly cpu: CpuLevel; readonly seed: number }
   | { readonly kind: 'reward'; readonly offers: readonly RewardOffer[]; readonly pick: number; readonly picks: number }
   | { readonly kind: 'rest' }
   | { readonly kind: 'scout'; readonly candidates: readonly FighterDef[] }
@@ -221,7 +222,11 @@ export function enterNode(run: RunState, index: number, content: RunContent): Ru
   }
   const enemy = enemyTeam(node.kind, position.layer, run.area, content, run.rng);
   const seed = nextSeed(enemy.rng);
-  return { ...run, position, phase: { kind: 'battle', enemy: enemy.value, seed: seed.value }, rng: seed.rng };
+  const cpu = CPU_LEVEL_BY_AREA[run.area];
+  if (cpu === undefined) {
+    throw new Error(`エリア${run.area + 1} の CPU の段階が決まっていません`);
+  }
+  return { ...run, position, phase: { kind: 'battle', enemy: enemy.value, cpu, seed: seed.value }, rng: seed.rng };
 }
 
 /** いまの戦闘を始める。チームは並び順のまま、持ち越したHPで出る */

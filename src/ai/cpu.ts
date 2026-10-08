@@ -22,7 +22,7 @@ export function expectedDamage(
 }
 
 /** いま選べる攻撃技のうち、予想ダメージが最大のもの。同じなら技の並び順で先のもの */
-function bestAttack(
+export function bestAttack(
   attacker: Combatant,
   defender: Combatant,
   charms: readonly CharmEffect[] = [],
