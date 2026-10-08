@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { createRng, nextFloat, nextInt, type RngState } from '../../src/engine/rng';
+import { createRng, nextFloat, nextInt, nextSeed, pickDistinct, type RngState } from '../../src/engine/rng';
 
 /** 乱数を count 回引いた値の並びを返す */
 function drawFloats(seed: number, count: number): number[] {
@@ -76,5 +76,33 @@ describe('nextInt', () => {
   it('範囲が不正ならエラーにする', () => {
     expect(() => nextInt(createRng(5), 6, 1)).toThrow(RangeError);
     expect(() => nextInt(createRng(5), 0.5, 2)).toThrow(RangeError);
+  });
+});
+
+describe('重ならないように選ぶ', () => {
+  const items = ['a', 'b', 'c', 'd', 'e'];
+
+  it('指定した数だけ、重ならずに選ぶ。同じ状態なら同じ結果', () => {
+    for (let seed = 0; seed < 50; seed += 1) {
+      const { value } = pickDistinct(items, 3, createRng(seed));
+      expect(value).toHaveLength(3);
+      expect(new Set(value).size).toBe(3);
+      expect(value.every((item) => items.includes(item))).toBe(true);
+    }
+    expect(pickDistinct(items, 5, createRng(4))).toEqual(pickDistinct(items, 5, createRng(4)));
+  });
+
+  it('候補より多くは選べない', () => {
+    expect(() => pickDistinct(items, 6, createRng(1))).toThrow(RangeError);
+    expect(() => pickDistinct(items, -1, createRng(1))).toThrow(RangeError);
+  });
+
+  it('次のシードは 32bit の整数', () => {
+    for (let seed = 0; seed < 50; seed += 1) {
+      const { value } = nextSeed(createRng(seed));
+      expect(Number.isInteger(value)).toBe(true);
+      expect(value).toBeGreaterThanOrEqual(0);
+      expect(value).toBeLessThanOrEqual(0xffffffff);
+    }
   });
 });

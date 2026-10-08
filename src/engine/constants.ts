@@ -62,3 +62,29 @@ export const EROSION_DAMAGE_PERCENT = 10;
 
 /** 鈍化：素早さの倍率（3.8） */
 export const SLOW_SPEED_MULTIPLIER = 0.5;
+
+/* ===== ローグライト進行（4章） ===== */
+
+/** スタート時に出す候補の数（4.1） */
+export const DRAFT_CANDIDATE_COUNT = 5;
+
+/** ランで連れて歩くチームの人数（4.1） */
+export const RUN_TEAM_SIZE = 3;
+
+/** マップの1層のマス数（4.3）。休憩とボスの層は全ルートが合流するので1マス */
+export const MAP_LAYER_MIN_WIDTH = 2;
+export const MAP_LAYER_MAX_WIDTH = 3;
+
+/** 戦闘マスの相手の人数（仮）。添字は層（0 が1層目）。戦闘マスがあるのは1〜5層目 */
+export const BATTLE_ENEMY_COUNT_BY_LAYER: readonly number[] = [1, 1, 1, 1, 2];
+
+/** 強敵マス・ボスの相手の人数（仮） */
+export const ELITE_ENEMY_COUNT = 2;
+export const BOSS_ENEMY_COUNT = 3;
+
+/** 強敵・ボスの能力の倍率（仮）。HP・攻撃・防御にかけて四捨五入する（素早さは変えない） */
+export const ELITE_STAT_MULTIPLIER = 1.1;
+export const BOSS_STAT_MULTIPLIER = 1.2;
+
+/** 戦闘に勝ったあと、倒れていたキャラが戻るときのHP。最大HPの%（切り捨て、最低1）（8. 未決の仮決め） */
+export const REVIVE_HP_PERCENT = 10;
