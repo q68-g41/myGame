@@ -5,6 +5,7 @@
  *   npm run sim -- --runs 1000 --seed 1      CPU にランを遊ばせる（クリア率と、倒れた層を見る）
  */
 import { playCpuBattle, playCpuRun } from '../src/ai/selfPlay';
+import { RUN_CONTENT } from '../src/data/content';
 import { FIGHTERS, type FighterData } from '../src/data/fighters';
 import { TEAM_SIZE_FOR_SIM, pickTeams } from '../src/ai/teams';
 import { createRng, nextInt } from '../src/engine/rng';
@@ -46,7 +47,7 @@ function simulateRuns(): void {
     const choiceSeed = nextInt(runSeed.rng, 0, 0xffffffff);
     rng = choiceSeed.rng;
 
-    const result = playCpuRun({ fighters: FIGHTERS }, runSeed.value, choiceSeed.value);
+    const result = playCpuRun(RUN_CONTENT, runSeed.value, choiceSeed.value);
     battles += result.battles;
     if (result.result === null) {
       aborted += 1;
@@ -60,7 +61,7 @@ function simulateRuns(): void {
 
   const layers = [...defeatedAt.keys()].sort((a, b) => a - b);
   const lines = [
-    'CPU が遊ぶラン（自分も相手も段階1の CPU。チームは候補の先頭3体、マスはランダムに選ぶ）',
+    'CPU が遊ぶラン（自分も相手も段階1の CPU。チームは候補の先頭3体、マスはランダム、報酬は能力強化）',
     `ラン数: ${runs}  シード: ${seed}`,
     `クリア率: ${percent(cleared, runs)}`,
     `1ランの戦闘数: 平均 ${(battles / Math.max(1, runs)).toFixed(1)}`,

@@ -1,4 +1,5 @@
 import { describe, expect, it } from 'vitest';
+import { RUN_CONTENT } from '../../src/data/content';
 import { FIGHTERS } from '../../src/data/fighters';
 import { createBattle, resolveTurn } from '../../src/engine/battle';
 import {
@@ -25,7 +26,7 @@ import {
 import type { BattleState, FighterDef } from '../../src/engine/types';
 import { deepFreeze } from '../helpers/fixtures';
 
-const CONTENT: RunContent = { fighters: FIGHTERS };
+const CONTENT: RunContent = RUN_CONTENT;
 
 /** テスト用のマップ（生成の決まりとは関係なく、マスの種類ごとの動きを確かめる） */
 const TEST_MAP: AreaMap = {
@@ -50,7 +51,7 @@ const member = (fighter: FighterDef, hp = fighter.stats.hp): RunMember => ({ fig
 
 /** マップの段階のランを作る */
 function runAt(position: MapPosition | null, team: readonly RunMember[] = FIGHTERS.slice(0, 3).map((f) => member(f))): RunState {
-  return { map: TEST_MAP, position, team, phase: { kind: 'map' }, rng: createRng(3) };
+  return { map: TEST_MAP, position, team, charms: [], phase: { kind: 'map' }, rng: createRng(3) };
 }
 
 /** プレイヤーの HP を決めて、決着したバトルを作る */
@@ -180,17 +181,17 @@ describe('戦闘とHPの持ち越し', () => {
     expect(battle.sides.player.active).toBe(0);
   });
 
-  it('勝ったら、残ったHPを持ち越してマップに戻る', () => {
+  it('勝ったら、残ったHPを持ち越して報酬を選ぶ（1回）', () => {
     const run = inBattle();
-    const next = finishBattle(deepFreeze(run), decided(run, [12, 80, 7], 'player'));
+    const next = finishBattle(deepFreeze(run), decided(run, [12, 80, 7], 'player'), CONTENT);
     expect(next.team.map((m) => m.hp)).toEqual([12, 80, 7]);
-    expect(next.phase).toEqual({ kind: 'map' });
+    expect(next.phase).toMatchObject({ kind: 'reward', pick: 1, picks: 1 });
     expect(next.position).toEqual(run.position);
   });
 
   it('勝ったら、倒れていたキャラは最大HPの10%（切り捨て、最低1）で戻る', () => {
     const run = inBattle();
-    const next = finishBattle(run, decided(run, [0, 50, 0], 'player'));
+    const next = finishBattle(run, decided(run, [0, 50, 0], 'player'), CONTENT);
     expect(next.team.map((m) => m.hp)).toEqual([
       Math.floor(FIGHTERS[0]!.stats.hp / 10),
       50,
@@ -199,25 +200,25 @@ describe('戦闘とHPの持ち越し', () => {
 
     const tiny = { ...FIGHTERS[0]!, stats: { ...FIGHTERS[0]!.stats, hp: 9 } };
     const small = enterNode(runAt(null, [member(tiny), member(FIGHTERS[1]!), member(FIGHTERS[2]!)]), 0, CONTENT);
-    expect(finishBattle(small, decided(small, [0, 50, 50], 'player')).team[0]!.hp).toBe(1);
+    expect(finishBattle(small, decided(small, [0, 50, 50], 'player'), CONTENT).team[0]!.hp).toBe(1);
   });
 
   it('負けたらランは終わり', () => {
     const run = inBattle();
-    const next = finishBattle(run, decided(run, [0, 0, 0], 'enemy'));
+    const next = finishBattle(run, decided(run, [0, 0, 0], 'enemy'), CONTENT);
     expect(next.phase).toEqual({ kind: 'ended', result: 'defeated' });
     expect(runChoices(next)).toEqual([]);
   });
 
   it('ボスに勝ったらクリア', () => {
     const run = enterNode(runAt({ layer: 5, index: 0 }), 0, CONTENT);
-    expect(finishBattle(run, decided(run, [10, 0, 30], 'player')).phase).toEqual({ kind: 'ended', result: 'cleared' });
+    expect(finishBattle(run, decided(run, [10, 0, 30], 'player'), CONTENT).phase).toEqual({ kind: 'ended', result: 'cleared' });
   });
 
   it('決着していないバトルや、戦闘中でないときはエラー', () => {
     const run = inBattle();
-    expect(() => finishBattle(run, createRunBattle(run))).toThrow('決着していません');
-    expect(() => finishBattle(runAt(null), decided(run, [1, 1, 1], 'player'))).toThrow('戦闘の段階ではありません');
+    expect(() => finishBattle(run, createRunBattle(run), CONTENT)).toThrow('決着していません');
+    expect(() => finishBattle(runAt(null), decided(run, [1, 1, 1], 'player'), CONTENT)).toThrow('戦闘の段階ではありません');
     expect(() => createRunBattle(runAt(null))).toThrow('戦闘の段階ではありません');
   });
 
@@ -228,7 +229,7 @@ describe('戦闘とHPの持ち越し', () => {
     const enemyMove = battle.sides.enemy.team[0]!.moves[0]!.id;
     battle = resolveTurn(battle, { player: { type: 'move', moveId }, enemy: { type: 'move', moveId: enemyMove } }, 1).state;
     const won = { ...battle, winner: 'player' as const };
-    const next = finishBattle(run, won);
+    const next = { ...finishBattle(run, won, CONTENT), phase: { kind: 'map' as const } };
     const again = createRunBattle(enterNode(next, 0, CONTENT));
     expect(again.sides.player.team[0]!.cooldowns).toEqual({});
     expect(again.sides.player.team[0]!.stages).toEqual({ attack: 0, defense: 0, speed: 0 });

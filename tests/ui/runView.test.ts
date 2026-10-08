@@ -34,6 +34,7 @@ const runAt = (position: RunState['position'], phase: RunState['phase'] = { kind
   map: MAP,
   position,
   team,
+  charms: [],
   phase,
   rng: 1,
 });

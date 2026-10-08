@@ -5,8 +5,9 @@ import { ATTRIBUTE_NAMES } from '../data/attributes';
 import { STAT_NAMES, STATUS_NAMES } from '../data/labels';
 import { getMove } from '../data/moves';
 import { getEffectiveness, isResonant } from '../engine/affinity';
+import { movePower } from '../engine/charms';
 import { AFFINITY_MULTIPLIER, BIG_MOVE_COOLDOWN_TURNS, RESONANCE_MULTIPLIER } from '../engine/constants';
-import type { Combatant, MoveDef, MoveEffect, MoveKind } from '../engine/types';
+import type { CharmEffect, Combatant, MoveDef, MoveEffect, MoveKind } from '../engine/types';
 
 /** 技の種類の表示名 */
 export const MOVE_KIND_NAMES: Readonly<Record<MoveKind, string>> = {
@@ -49,13 +50,19 @@ export function summarizeEffects(effects: readonly MoveEffect[]): string {
     .join('・');
 }
 
-/** 技の詳細（長押しで出す）。1行目は「属性・種類」、以降に威力・相性・効果などを並べる */
-export function describeMove(move: MoveDef, user: Combatant, opponent: Combatant): { name: string; lines: string[] } {
+/** 技の詳細（長押しで出す）。1行目は「属性・種類」、以降に威力・相性・効果などを並べる。charms は自分の陣営のお守り */
+export function describeMove(
+  move: MoveDef,
+  user: Combatant,
+  opponent: Combatant,
+  charms: readonly CharmEffect[] = [],
+): { name: string; lines: string[] } {
   const lines = [`${ATTRIBUTE_NAMES[move.attribute]}属性・${MOVE_KIND_NAMES[move.kind]}`];
   if (move.kind === 'support') {
     lines.push(...move.effects.map(describeEffect));
   } else {
-    lines.push(`威力 ${move.power}`);
+    const power = movePower(move, charms);
+    lines.push(power === move.power ? `威力 ${power}` : `威力 ${power}（お守りで ${move.power} から上がっている）`);
     const effectiveness = getEffectiveness(move.attribute, opponent.attribute);
     const affinity = { advantage: '有利', neutral: '等倍', disadvantage: '不利' }[effectiveness];
     lines.push(`いまの相手に ${affinity}（×${AFFINITY_MULTIPLIER[effectiveness]}）`);

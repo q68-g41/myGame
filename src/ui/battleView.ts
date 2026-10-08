@@ -7,11 +7,12 @@ import { getFighter } from '../data/fighters';
 import { STATUS_NAMES } from '../data/labels';
 import { getMove } from '../data/moves';
 import { getEffectiveness } from '../engine/affinity';
+import { movePower } from '../engine/charms';
 import { findMove, isAttackMove, isMoveSelectable } from '../engine/moves';
 import { compareSpeeds } from '../engine/order';
 import { effectiveSpeed } from '../engine/stats';
 import { activeOf, isFainted } from '../engine/team';
-import type { Combatant, Effectiveness, Side } from '../engine/types';
+import type { CharmEffect, Combatant, Effectiveness, Side } from '../engine/types';
 import { describeEvents } from './messages';
 import { describeMove, MOVE_KIND_NAMES, summarizeEffects } from './moveInfo';
 import { needsPlayerReplacement, type BattleSession } from './session';
@@ -145,7 +146,12 @@ function panel(state: BattleSession['state'], side: Side): FighterPanelView {
   };
 }
 
-function moveButtons(active: Combatant, opponent: Combatant, phase: BattlePhase): MoveButtonView[] {
+function moveButtons(
+  active: Combatant,
+  opponent: Combatant,
+  phase: BattlePhase,
+  charms: readonly CharmEffect[] = [],
+): MoveButtonView[] {
   return active.moves.map((move) => {
     const cooldown = active.cooldowns[move.id] ?? 0;
     const attack = isAttackMove(move);
@@ -155,7 +161,7 @@ function moveButtons(active: Combatant, opponent: Combatant, phase: BattlePhase)
       disabled: phase !== 'command' || !isMoveSelectable(active, move.id),
       note: cooldown > 0 ? `あと${cooldown}ターン` : null,
       color: ATTRIBUTE_COLORS[move.attribute],
-      power: attack ? move.power : null,
+      power: attack ? movePower(move, charms) : null,
       summary: attack ? null : summarizeEffects(move.effects),
       kindLabel: move.kind === 'normal' ? null : MOVE_KIND_NAMES[move.kind],
       effectiveness: attack ? getEffectiveness(move.attribute, opponent.attribute) : null,
@@ -225,7 +231,7 @@ function detailView(state: BattleSession['state'], ui: UiState): MoveDetailView 
     return null;
   }
   const player = activeOf(state.sides.player);
-  return describeMove(findMove(player, ui.detailMoveId), player, activeOf(state.sides.enemy));
+  return describeMove(findMove(player, ui.detailMoveId), player, activeOf(state.sides.enemy), state.sides.player.charms);
 }
 
 /**
@@ -247,7 +253,7 @@ export function buildBattleView(
     enemy: panel(state, 'enemy'),
     player: panel(state, 'player'),
     log: frame?.log ?? logLine(session, phase),
-    moves: moveButtons(activeOf(state.sides.player), activeOf(state.sides.enemy), phase),
+    moves: moveButtons(activeOf(state.sides.player), activeOf(state.sides.enemy), phase, state.sides.player.charms),
     bench,
     confirm: phase === 'playing' ? null : confirmView(session, phase, bench, ui),
     hit: frame?.hit ?? null,

@@ -29,6 +29,17 @@ function pickTeam(indices: readonly number[] = [0, 1, 2]): void {
   confirmButton().click();
 }
 
+/** 報酬の画面なら、能力強化の選択肢を選んで受け取る（強敵なら2回） */
+function takeStatRewards(): void {
+  while (root.querySelector('.reward') !== null) {
+    const stat = [...root.querySelectorAll<HTMLButtonElement>('.reward-offer')].find(
+      (offer) => offer.querySelector('.reward-offer__kind')?.textContent === '能力',
+    )!;
+    stat.click();
+    root.querySelector<HTMLButtonElement>('.reward__controls .button--primary')!.click();
+  }
+}
+
 /** バトルを決着まで進めて「次へ」を押す（技の先頭か、確認か、控えの先頭をタップし、演出は早送り） */
 function finishBattle(): string {
   for (let i = 0; i < 500 && root.querySelector('.result') === null; i += 1) {
@@ -42,6 +53,7 @@ function finishBattle(): string {
   }
   const result = root.querySelector('.result__text')!.textContent!;
   root.querySelector<HTMLButtonElement>('.result button')!.click();
+  takeStatRewards();
   return result;
 }
 
@@ -104,7 +116,7 @@ describe('マップの画面', () => {
     expect(letters[0]).toBe('A');
   });
 
-  it('戦闘マスを選ぶとバトルになり、勝てばHPを持ち越してマップに戻る', () => {
+  it('戦闘マスを選ぶとバトルになり、勝てば報酬を受け取ってから、HPを持ち越してマップに戻る', () => {
     root.querySelector<HTMLButtonElement>('.map-choice')!.click();
     expect(root.querySelector('.battle__caption')?.textContent).toBe('1層目・戦闘');
 
@@ -114,6 +126,7 @@ describe('マップの画面', () => {
       return;
     }
     expect(root.querySelector('.map__progress')?.textContent).toBe('1層目 / 7層');
+    expect(root.querySelector('.map__message')?.textContent).toMatch(/が \d+ 上がった$/);
     expect(root.querySelector('.map-node--current')?.getAttribute('data-layer')).toBe('0');
     // 戦闘のHP（倒れていたら10%で戻る）が、マップのチーム表示に出る
     const hps = [...root.querySelectorAll('.member__hp')].map((hp) => hp.textContent);

@@ -1,3 +1,4 @@
+import { healOnSwitchIn } from './charms';
 import { BIG_MOVE_COOLDOWN_TURNS, MAX_MOVES, MAX_TEAM_SIZE, SIDES } from './constants';
 import { computeDamage, rollDamagePercent } from './damage';
 import { applySupportMove } from './effects';
@@ -20,6 +21,7 @@ import type {
   AttackMoveDef,
   BattleEvent,
   BattleState,
+  CharmEffect,
   Combatant,
   Command,
   Commands,
@@ -52,6 +54,8 @@ const NO_STAGES = { attack: 0, defense: 0, speed: 0 } as const;
 export interface BattleOptions {
   /** 自分のチームの、いまのHP（ランで持ち越したHP）。チームと同じ並び順。省くと全員満タンで始まる */
   readonly playerHp?: readonly number[];
+  /** 自分の陣営にかかるお守りの効果。省くとなし */
+  readonly playerCharms?: readonly CharmEffect[];
 }
 
 /** キャラの定義から、戦闘に出した状態を作る。hp を省くと満タンで出る */
@@ -102,9 +106,13 @@ export function createBattle(
   enemy: readonly FighterDef[],
   options: BattleOptions = {},
 ): BattleState {
+  const playerSide = createSide(player, options.playerHp);
   return {
     turn: 1,
-    sides: { player: createSide(player, options.playerHp), enemy: createSide(enemy) },
+    sides: {
+      player: options.playerCharms === undefined ? playerSide : { ...playerSide, charms: options.playerCharms },
+      enemy: createSide(enemy),
+    },
     awaitingReplacement: [],
     winner: null,
   };
@@ -195,6 +203,9 @@ export function resolveTurn(state: BattleState, commands: Commands, rng: RngStat
     if (command.type === 'switch') {
       sides = switchActive(sides, side, command.to);
       events.push({ type: 'switched', side, from: sideState.active, to: command.to, reason: 'command' });
+      const healed = healOnSwitchIn(sides, side);
+      sides = healed.sides;
+      events.push(...healed.events);
       continue;
     }
 
@@ -213,7 +224,7 @@ export function resolveTurn(state: BattleState, commands: Commands, rng: RngStat
 
     const roll = rollDamagePercent(currentRng);
     currentRng = roll.rng;
-    const damage = computeDamage(user, target, move, roll.value);
+    const damage = computeDamage(user, target, move, roll.value, sides[side].charms);
     const hp = Math.max(0, target.hp - damage.amount);
 
     sides = withActive(sides, side, afterMoveUsed(user, move));
@@ -283,6 +294,9 @@ export function submitReplacements(state: BattleState, replacements: Replacement
     }
     sides = withSide(sides, side, { ...sideState, active: to });
     events.push({ type: 'switched', side, from: sideState.active, to, reason: 'replacement' });
+    const healed = healOnSwitchIn(sides, side);
+    sides = healed.sides;
+    events.push(...healed.events);
   }
 
   return { state: { ...state, sides, awaitingReplacement: [] }, events };

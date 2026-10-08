@@ -1,6 +1,7 @@
 import { describe, expect, it } from 'vitest';
 import { MAX_SELF_PLAY_TURNS, playCpuBattle, playCpuRun } from '../../src/ai/selfPlay';
 import { pickTeams, TEAM_SIZE_FOR_SIM } from '../../src/ai/teams';
+import { RUN_CONTENT } from '../../src/data/content';
 import { FIGHTERS } from '../../src/data/fighters';
 import { createRng } from '../../src/engine/rng';
 
@@ -46,7 +47,7 @@ describe('CPU 同士の自動対戦（M2 の完了条件）', () => {
 
 describe('CPU が遊ぶラン（M4 の確認用）', () => {
   it('どのシードでも、クリアか全滅で最後まで終わる', () => {
-    const results = Array.from({ length: 100 }, (_, i) => playCpuRun({ fighters: FIGHTERS }, i, i + 1000));
+    const results = Array.from({ length: 100 }, (_, i) => playCpuRun(RUN_CONTENT, i, i + 1000));
     for (const { result, run, battles } of results) {
       expect(result).not.toBeNull();
       expect(run.phase.kind).toBe('ended');
@@ -61,6 +62,6 @@ describe('CPU が遊ぶラン（M4 の確認用）', () => {
   });
 
   it('同じシードなら、同じ結果になる', () => {
-    expect(playCpuRun({ fighters: FIGHTERS }, 3, 4)).toEqual(playCpuRun({ fighters: FIGHTERS }, 3, 4));
+    expect(playCpuRun(RUN_CONTENT, 3, 4)).toEqual(playCpuRun(RUN_CONTENT, 3, 4));
   });
 });

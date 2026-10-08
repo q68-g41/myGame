@@ -1,9 +1,17 @@
 /**
- * ランの画面（チーム選択・マップ・ランの結果）。上半分は表示だけ、操作は下半分に集める。
+ * ランの画面（チーム選択・マップ・報酬・ランの結果）。上半分は表示だけ、操作は下半分に集める。
  * 表示する内容は runView.ts で組み立て、ここでは描くだけにする。
  */
 import { el } from './dom';
-import type { DraftView, FighterDetailView, MapNodeView, MapView, RunEndView, TeamMemberView } from './runView';
+import type {
+  DraftView,
+  FighterDetailView,
+  MapNodeView,
+  MapView,
+  RewardView,
+  RunEndView,
+  TeamMemberView,
+} from './runView';
 
 const SVG_NS = 'http://www.w3.org/2000/svg';
 
@@ -54,6 +62,11 @@ function teamRow(doc: Document, team: readonly TeamMemberView[]): HTMLElement {
   row.setAttribute('aria-label', 'チーム');
   row.append(...team.map((member) => memberCard(doc, member)));
   return row;
+}
+
+/** 持っているお守り（なければ「なし」） */
+function charmLine(doc: Document, charms: readonly string[]): HTMLElement {
+  return el(doc, 'p', 'charm-line', `お守り：${charms.length === 0 ? 'なし' : charms.join('・')}`);
 }
 
 /* ===== チーム選択 ===== */
@@ -219,9 +232,92 @@ export function renderMapScreen(root: HTMLElement, view: MapView, handlers: MapS
     choose.append(el(doc, 'span', 'map-choice__letter', choice.letter), el(doc, 'span', 'map-choice__name', choice.name));
     choices.append(choose);
   }
-  controls.append(message, choices, teamRow(doc, view.team));
+  controls.append(message, choices, teamRow(doc, view.team), charmLine(doc, view.charms));
 
   root.replaceChildren(screen(doc, 'map-screen', display, controls));
+}
+
+/* ===== 戦闘後の報酬 ===== */
+
+export interface RewardScreenHandlers {
+  /** 選択肢をタップした（1タップ目） */
+  onOffer(index: number): void;
+  /** 「決定」（2タップ目） */
+  onConfirm(): void;
+  /** 技を覚えさせるキャラを選んだ */
+  onMember(index: number): void;
+  /** 忘れる技を選んだ */
+  onForget(index: number): void;
+  /** 1つ前に戻る */
+  onBack(): void;
+}
+
+function offerButton(doc: Document, offer: RewardView['offers'][number], handlers: RewardScreenHandlers): HTMLButtonElement {
+  const choose = button(doc, offer.selected ? 'reward-offer reward-offer--selected' : 'reward-offer', '', () =>
+    handlers.onOffer(offer.index),
+  );
+  choose.setAttribute('aria-pressed', String(offer.selected));
+  if (offer.color !== null) {
+    choose.style.borderLeftColor = offer.color;
+  }
+  const top = el(doc, 'span', 'reward-offer__top');
+  top.append(el(doc, 'span', 'reward-offer__kind', offer.kindLabel), el(doc, 'span', 'reward-offer__title', offer.title));
+  choose.append(top, el(doc, 'span', 'reward-offer__detail', offer.detail));
+  return choose;
+}
+
+export function renderRewardScreen(root: HTMLElement, view: RewardView, handlers: RewardScreenHandlers): void {
+  const doc = root.ownerDocument;
+
+  // 上半分：選んでいる報酬の詳細と、チームの状態
+  const display = el(doc, 'section', 'reward__view');
+  display.append(el(doc, 'h2', 'reward__title', view.heading));
+  if (view.detail === null) {
+    display.append(el(doc, 'p', 'reward__placeholder', '戦闘に勝った！ 報酬をタップすると、くわしい内容が出ます'));
+  } else {
+    const card = el(doc, 'div', 'reward-detail');
+    const lines = el(doc, 'ul', 'reward-detail__lines');
+    lines.append(...view.detail.lines.map((line) => el(doc, 'li', '', line)));
+    card.append(el(doc, 'p', 'reward-detail__title', view.detail.title), lines);
+    display.append(card);
+  }
+  display.append(teamRow(doc, view.team), charmLine(doc, view.charms));
+
+  // 下半分：段階ごとの選択肢
+  const controls = el(doc, 'section', 'reward__controls');
+  const prompt = el(doc, 'p', 'reward__prompt', view.prompt);
+  prompt.setAttribute('role', 'status');
+  controls.append(prompt);
+
+  if (view.step === 'offer') {
+    const offers = el(doc, 'div', 'reward-offers');
+    offers.append(...view.offers.map((offer) => offerButton(doc, offer, handlers)));
+    const confirm = button(doc, 'button button--primary', '決定', () => handlers.onConfirm());
+    confirm.disabled = !view.canConfirm;
+    controls.append(offers, confirm);
+  } else {
+    const options = el(doc, 'div', view.step === 'member' ? 'reward-members' : 'reward-forgets');
+    if (view.step === 'member') {
+      for (const member of view.members) {
+        const choose = button(doc, 'reward-option', '', () => handlers.onMember(member.index));
+        choose.disabled = member.disabled;
+        choose.style.borderLeftColor = member.color;
+        choose.append(el(doc, 'span', 'reward-option__name', member.name), el(doc, 'span', 'reward-option__note', member.note ?? ''));
+        options.append(choose);
+      }
+    } else {
+      for (const forget of view.forgets) {
+        const choose = button(doc, 'reward-option', '', () => handlers.onForget(forget.index));
+        choose.disabled = forget.disabled;
+        choose.style.borderLeftColor = forget.color;
+        choose.append(el(doc, 'span', 'reward-option__name', forget.name), el(doc, 'span', 'reward-option__note', forget.detail));
+        options.append(choose);
+      }
+    }
+    controls.append(options, button(doc, 'button button--secondary', '戻る', () => handlers.onBack()));
+  }
+
+  root.replaceChildren(screen(doc, 'reward', display, controls));
 }
 
 /* ===== ランの結果 ===== */

@@ -1,8 +1,9 @@
 import { affinityMultiplier, getEffectiveness, isResonant, resonanceMultiplier } from './affinity';
+import { movePower } from './charms';
 import { DAMAGE_ROLL_MAX_PERCENT, DAMAGE_ROLL_MIN_PERCENT, DAMAGE_SCALE, MIN_DAMAGE } from './constants';
 import { nextInt, type RngResult, type RngState } from './rng';
 import { effectiveAttack, effectiveDefense } from './stats';
-import type { AttackMoveDef, Combatant, Effectiveness } from './types';
+import type { AttackMoveDef, CharmEffect, Combatant, Effectiveness } from './types';
 
 /**
  * 小数の計算誤差で、本来ちょうど整数になる値（例：9）が 8.999… になり、
@@ -44,15 +45,16 @@ export interface DamageResult {
   readonly resonance: boolean;
 }
 
-/** 攻撃側・受ける側・技・乱数から、ダメージと相性・共鳴の結果を出す */
+/** 攻撃側・受ける側・技・乱数から、ダメージと相性・共鳴の結果を出す。charms は攻撃側の陣営のお守り */
 export function computeDamage(
   attacker: Combatant,
   defender: Combatant,
   move: AttackMoveDef,
   rollPercent: number,
+  charms: readonly CharmEffect[] = [],
 ): DamageResult {
   const amount = calcDamage({
-    power: move.power,
+    power: movePower(move, charms),
     attack: effectiveAttack(attacker),
     defense: effectiveDefense(defender),
     affinity: affinityMultiplier(move.attribute, defender.attribute),

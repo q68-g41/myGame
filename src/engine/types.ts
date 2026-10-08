@@ -110,12 +110,23 @@ export interface Combatant {
 /** 陣営 */
 export type Side = 'player' | 'enemy';
 
+/**
+ * お守りの効果（4.4：チーム全体にかかる常時効果）。
+ * - movePower：その種類の技の威力を percent % 上げる（切り捨て）
+ * - switchInHeal：交代で場に出たキャラ（倒れたあとに出したときも）のHPを、最大HPの percent % 回復する
+ */
+export type CharmEffect =
+  | { readonly type: 'movePower'; readonly moveKind: AttackKind; readonly percent: number }
+  | { readonly type: 'switchInHeal'; readonly percent: number };
+
 /** 陣営ごとのチーム */
 export interface SideState {
   /** チームのキャラ（1〜3体）。並び順は変わらない */
   readonly team: readonly Combatant[];
   /** 場に出ているキャラの、チーム内の位置 */
   readonly active: number;
+  /** この陣営にかかっているお守りの効果。なければ省く */
+  readonly charms?: readonly CharmEffect[];
 }
 
 /** バトル全体の状態 */
@@ -191,6 +202,8 @@ export type BattleEvent =
       readonly amount: number;
       /** 回復したあとのHP */
       readonly hp: number;
+      /** お守りの効果で回復したときは 'charm'。技で回復したときは省く */
+      readonly source?: 'charm';
     }
   | {
       readonly type: 'statusApplied';

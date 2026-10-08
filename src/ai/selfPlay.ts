@@ -10,6 +10,7 @@ import {
   finishBattle,
   runChoices,
   startRun,
+  takeReward,
   type RunContent,
   type RunResult,
   type RunState,
@@ -74,6 +75,7 @@ export interface CpuRunResult {
 
 /**
  * CPU にランを1回遊ばせる。チームは候補の先頭3体、次のマスは乱数で選び、戦闘は段階1の CPU どうしで進める。
+ * 報酬は、能力強化の選択肢の先頭を選ぶ（いつも1つ以上ある）。
  * マスの選び方は、ランの乱数とは別の乱数（choiceSeed から作る）で決める。
  */
 export function playCpuRun(content: RunContent, seed: number, choiceSeed: number): CpuRunResult {
@@ -88,7 +90,12 @@ export function playCpuRun(content: RunContent, seed: number, choiceSeed: number
       if (played.winner === null) {
         return { result: null, battles, run };
       }
-      run = finishBattle(run, played.state);
+      run = finishBattle(run, played.state, content);
+      continue;
+    }
+    if (run.phase.kind === 'reward') {
+      const offer = run.phase.offers.findIndex((candidate) => candidate.kind === 'stat');
+      run = takeReward(run, { offer }, content);
       continue;
     }
     const choices = runChoices(run);
