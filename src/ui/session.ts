@@ -28,6 +28,29 @@ export function createSession(state: BattleState, seed: number): BattleSession {
   return { state, rng: createRng(seed), lastEvents: [], previousState: state, knownEnemySpeeds: new Set() };
 }
 
+/** 保存したバトル（毎ターンの自動保存用。乱数の状態と、素早さが分かった相手も残す） */
+export interface SavedBattle {
+  readonly state: BattleState;
+  readonly rng: RngState;
+  readonly knownEnemySpeeds: readonly string[];
+}
+
+/** 保存する形にする */
+export function saveSession(session: BattleSession): SavedBattle {
+  return { state: session.state, rng: session.rng, knownEnemySpeeds: [...session.knownEnemySpeeds] };
+}
+
+/** 保存したバトルから、1戦の流れを再開する（直前に起きたことは残らない） */
+export function restoreSession(saved: SavedBattle): BattleSession {
+  return {
+    state: saved.state,
+    rng: saved.rng,
+    lastEvents: [],
+    previousState: saved.state,
+    knownEnemySpeeds: new Set(saved.knownEnemySpeeds),
+  };
+}
+
 /** 自分が控えから次のキャラを選ぶ必要があるか */
 export function needsPlayerReplacement(session: BattleSession): boolean {
   return session.state.awaitingReplacement.includes('player');

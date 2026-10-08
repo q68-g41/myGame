@@ -207,7 +207,8 @@ function logLine(session: BattleSession, phase: BattlePhase): string {
     return '控えから次のキャラを選んでください';
   }
   const lines = describeEvents(session.lastEvents, session.previousState);
-  return lines.at(-1) ?? 'バトル開始！ 技を選んでください';
+  // 起きたことがないのは、バトルの最初か、保存したところから再開した直後
+  return lines.at(-1) ?? (session.state.turn === 1 ? 'バトル開始！ 技を選んでください' : '続きから。技を選んでください');
 }
 
 function confirmView(session: BattleSession, phase: BattlePhase, bench: readonly BenchView[], ui: UiState): ConfirmView | null {
