@@ -26,7 +26,7 @@ describe('トップ画面', () => {
     expect(controls.querySelectorAll(interactive).length).toBeGreaterThan(0);
   });
 
-  it('「はじめる」をタップするとバトルを始める', () => {
+  it('「はじめる」をタップするとランを始める', () => {
     root.querySelector<HTMLButtonElement>('.screen__controls button')!.click();
     expect(onStart).toHaveBeenCalledTimes(1);
   });
