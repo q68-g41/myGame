@@ -474,3 +474,84 @@ body {
   position: relative;
   z-index: 2;
 }
+
+/* ===== 技ボタンの情報（M3-4） ===== */
+
+.move-button {
+  border-left-width: 8px;
+  -webkit-touch-callout: none;
+}
+
+.move-button__top,
+.move-button__bottom {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  width: 100%;
+}
+
+.move-button__kind {
+  font-size: 14px;
+  padding: 0 6px;
+  border-radius: 4px;
+  background: var(--color-border);
+}
+
+.move-button__power,
+.move-button__note {
+  font-size: 14px;
+  color: var(--color-muted);
+}
+
+.move-button__mark {
+  font-size: 14px;
+  font-weight: bold;
+}
+
+.move-button__mark--advantage {
+  color: #6fdc8c;
+}
+
+.move-button__mark--disadvantage {
+  color: #f08a7a;
+}
+
+.order-preview {
+  margin: 0;
+  font-size: 14px;
+  color: var(--color-muted);
+}
+
+.order-preview--first {
+  color: #6fdc8c;
+}
+
+.order-preview--later {
+  color: #f0b445;
+}
+
+.battle__view {
+  position: relative;
+}
+
+.move-detail {
+  position: absolute;
+  left: 16px;
+  right: 16px;
+  bottom: 16px;
+  padding: 8px 12px;
+  border-radius: 8px;
+  border: 2px solid var(--color-accent);
+  background: var(--color-panel);
+}
+
+.move-detail__name {
+  margin: 0 0 4px;
+  font-weight: bold;
+}
+
+.move-detail__lines {
+  margin: 0;
+  padding-left: 1.2em;
+  font-size: 14px;
+}

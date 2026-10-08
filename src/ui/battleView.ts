@@ -6,10 +6,14 @@ import { ATTRIBUTE_COLORS } from '../data/attributes';
 import { getFighter } from '../data/fighters';
 import { STATUS_NAMES } from '../data/labels';
 import { getMove } from '../data/moves';
-import { isMoveSelectable } from '../engine/moves';
+import { getEffectiveness } from '../engine/affinity';
+import { findMove, isAttackMove, isMoveSelectable } from '../engine/moves';
+import { compareSpeeds } from '../engine/order';
+import { effectiveSpeed } from '../engine/stats';
 import { activeOf, isFainted } from '../engine/team';
-import type { Combatant, Side } from '../engine/types';
+import type { Combatant, Effectiveness, Side } from '../engine/types';
 import { describeEvents } from './messages';
+import { describeMove, MOVE_KIND_NAMES, summarizeEffects } from './moveInfo';
 import { needsPlayerReplacement, type BattleSession } from './session';
 
 /** command：技を選ぶ、replacement：倒れたので控えから選ぶ、playing：演出中、ended：決着 */
@@ -34,7 +38,26 @@ export interface MoveButtonView {
   readonly disabled: boolean;
   /** 補足（大技の使用不可ターンなど）。なければ null */
   readonly note: string | null;
+  /** 属性の色 */
+  readonly color: string;
+  /** 威力。補助技は null */
+  readonly power: number | null;
+  /** 補助技の効果の要約。攻撃技は null */
+  readonly summary: string | null;
+  /** 種類のタグ（大技・先制・補助）。通常の技は null */
+  readonly kindLabel: string | null;
+  /** いまの相手への相性（有利・不利のマーク）。補助技は null */
+  readonly effectiveness: Effectiveness | null;
 }
+
+/** 長押しで出す技の詳細 */
+export interface MoveDetailView {
+  readonly name: string;
+  readonly lines: readonly string[];
+}
+
+/** 行動順の予告（相手の素早さが分からなければ unknown） */
+export type OrderPreview = 'first' | 'later' | 'tie' | 'unknown';
 
 /** 控えのアイコンの表示 */
 export interface BenchView {
@@ -65,6 +88,8 @@ export interface UiState {
   readonly selectedBench: number | null;
   /** 演出の速さ（1倍・2倍） */
   readonly speed: 1 | 2;
+  /** 長押しで詳細を出している技。出していなければ null */
+  readonly detailMoveId: string | null;
 }
 
 /** 演出中に見せるコマ（playback.ts の PlaybackFrame と同じ形） */
@@ -74,7 +99,7 @@ export interface FrameOverlay {
   readonly hit: Side | null;
 }
 
-export const INITIAL_UI_STATE: UiState = { selectedBench: null, speed: 1 };
+export const INITIAL_UI_STATE: UiState = { selectedBench: null, speed: 1, detailMoveId: null };
 
 export interface BattleView {
   readonly phase: BattlePhase;
@@ -90,6 +115,10 @@ export interface BattleView {
   readonly hit: Side | null;
   /** 演出の速さ（メニューの表示に使う） */
   readonly speed: 1 | 2;
+  /** 行動順の予告 */
+  readonly orderPreview: OrderPreview;
+  /** 長押しで出している技の詳細。なければ null */
+  readonly detail: MoveDetailView | null;
   /** 決着したときの結果。決着前は null */
   readonly result: 'win' | 'lose' | null;
 }
@@ -114,16 +143,33 @@ function panel(state: BattleSession['state'], side: Side): FighterPanelView {
   };
 }
 
-function moveButtons(active: Combatant, phase: BattlePhase): MoveButtonView[] {
+function moveButtons(active: Combatant, opponent: Combatant, phase: BattlePhase): MoveButtonView[] {
   return active.moves.map((move) => {
     const cooldown = active.cooldowns[move.id] ?? 0;
+    const attack = isAttackMove(move);
     return {
       id: move.id,
       name: getMove(move.id).name,
       disabled: phase !== 'command' || !isMoveSelectable(active, move.id),
       note: cooldown > 0 ? `あと${cooldown}ターン` : null,
+      color: ATTRIBUTE_COLORS[move.attribute],
+      power: attack ? move.power : null,
+      summary: attack ? null : summarizeEffects(move.effects),
+      kindLabel: move.kind === 'normal' ? null : MOVE_KIND_NAMES[move.kind],
+      effectiveness: attack ? getEffectiveness(move.attribute, opponent.attribute) : null,
     };
   });
+}
+
+/** 行動順の予告（仕様書 5）。相手の素早さが分かっているときだけ、いまの素早さで比べる */
+function orderPreview(session: BattleSession, state: BattleSession['state']): OrderPreview {
+  const player = activeOf(state.sides.player);
+  const enemy = activeOf(state.sides.enemy);
+  if (!session.knownEnemySpeeds.has(enemy.id)) {
+    return 'unknown';
+  }
+  const diff = compareSpeeds(effectiveSpeed(player), effectiveSpeed(enemy));
+  return diff > 0 ? 'first' : diff < 0 ? 'later' : 'tie';
 }
 
 function benchViews(state: BattleSession['state'], phase: BattlePhase, ui: UiState): BenchView[] {
@@ -172,6 +218,14 @@ function confirmView(session: BattleSession, phase: BattlePhase, bench: readonly
   };
 }
 
+function detailView(state: BattleSession['state'], ui: UiState): MoveDetailView | null {
+  if (ui.detailMoveId === null) {
+    return null;
+  }
+  const player = activeOf(state.sides.player);
+  return describeMove(findMove(player, ui.detailMoveId), player, activeOf(state.sides.enemy));
+}
+
 /**
  * セッションと画面の状態から、バトル画面に出す内容を作る。
  * 演出中は frame（そのコマの状態とログ）を見せ、ボタンはすべて押せなくする。
@@ -190,11 +244,13 @@ export function buildBattleView(
     enemy: panel(state, 'enemy'),
     player: panel(state, 'player'),
     log: frame?.log ?? logLine(session, phase),
-    moves: moveButtons(activeOf(state.sides.player), phase),
+    moves: moveButtons(activeOf(state.sides.player), activeOf(state.sides.enemy), phase),
     bench,
     confirm: phase === 'playing' ? null : confirmView(session, phase, bench, ui),
     hit: frame?.hit ?? null,
     speed: ui.speed,
+    orderPreview: orderPreview(session, state),
+    detail: detailView(state, ui),
     result: phase === 'ended' ? (winner === 'player' ? 'win' : 'lose') : null,
   };
 }
