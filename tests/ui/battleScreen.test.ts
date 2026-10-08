@@ -1,5 +1,10 @@
 // @vitest-environment happy-dom
-import { beforeEach, describe, expect, it } from 'vitest';
+import { beforeEach, describe, expect, it, vi } from 'vitest';
+import { getFighter } from '../../src/data/fighters';
+import { createBattle } from '../../src/engine/battle';
+import { renderBattleScreen } from '../../src/ui/battleScreen';
+import { buildBattleView } from '../../src/ui/battleView';
+import { createSession } from '../../src/ui/session';
 import { startAppBattle } from '../helpers/app';
 
 const INTERACTIVE = 'button, a, input, select, textarea';
@@ -145,5 +150,31 @@ describe('バトル画面', () => {
       return;
     }
     throw new Error('自分が倒れる場面が見つかりませんでした');
+  });
+});
+
+describe('補助技のボタン', () => {
+  it('効果が2つ以上なら、語の途中ではなく「・」のところで折り返す', () => {
+    document.body.innerHTML = '<div id="app"></div>';
+    root = document.querySelector<HTMLElement>('#app')!;
+    // アオシャチは「静水」（自分の防御↑1・相手の素早さ↓1）を覚えている
+    const team = ['blue-skirmisher', 'crimson-trial', 'orange-trial'].map(getFighter);
+    const session = createSession(createBattle(team, [getFighter('green-trial')]), 1);
+    const handlers = {
+      onMove: vi.fn(),
+      onBench: vi.fn(),
+      onConfirm: vi.fn(),
+      onCancel: vi.fn(),
+      onContinue: vi.fn(),
+      onToggleSpeed: vi.fn(),
+      onSkip: vi.fn(),
+    };
+    renderBattleScreen(root, buildBattleView(session), handlers);
+    const button = root.querySelector('[data-move-id="stillwater"]')!;
+    expect(button.querySelector('.move-button__power')?.textContent).toBe('防御↑1・相手の素早さ↓1');
+    expect([...button.querySelectorAll('.move-button__effect')].map((part) => part.textContent)).toEqual([
+      '防御↑1・',
+      '相手の素早さ↓1',
+    ]);
   });
 });

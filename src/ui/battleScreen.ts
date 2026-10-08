@@ -85,7 +85,17 @@ function moveButton(doc: Document, view: MoveButtonView, handlers: BattleScreenH
   }
 
   const bottom = el(doc, 'span', 'move-button__bottom');
-  bottom.append(el(doc, 'span', 'move-button__power', view.power === null ? (view.summary ?? '') : `威力 ${view.power}`));
+  const power = el(doc, 'span', 'move-button__power');
+  if (view.power === null) {
+    // 補助技の効果が2つ以上なら、語の途中ではなく「・」のところで折り返す
+    const parts = (view.summary ?? '').split('・');
+    power.append(
+      ...parts.map((part, index) => el(doc, 'span', 'move-button__effect', index < parts.length - 1 ? `${part}・` : part)),
+    );
+  } else {
+    power.textContent = `威力 ${view.power}`;
+  }
+  bottom.append(power);
   if (view.effectiveness !== null && view.effectiveness !== 'neutral') {
     bottom.append(
       el(doc, 'span', `move-button__mark move-button__mark--${view.effectiveness}`, EFFECTIVENESS_MARK[view.effectiveness]),

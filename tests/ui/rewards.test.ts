@@ -33,8 +33,8 @@ describe('報酬の画面に出す内容', () => {
     const view = buildRewardView(rewardRun());
     expect(view.heading).toBe('報酬を選ぶ');
     expect(view.offers.map((offer) => [offer.kindLabel, offer.title, offer.detail])).toEqual([
-      ['技', '蒼の大技', '蒼属性・大技・威力100'],
-      ['能力', '仮・紅の攻撃 +7', '65 → 72'],
+      ['技', '大瀑布', '蒼属性・大技・威力100'],
+      ['能力', 'ベニギツネの攻撃 +7', '65 → 72'],
       ['お守り', '先手のお守り', '先制技の威力 +20%'],
     ]);
     expect(view.canConfirm).toBe(false);
@@ -43,7 +43,7 @@ describe('報酬の画面に出す内容', () => {
     const selected = buildRewardView(rewardRun(), { ...INITIAL_REWARD_UI, selected: 1 });
     expect(selected.canConfirm).toBe(true);
     expect(selected.offers.map((offer) => offer.selected)).toEqual([false, true, false]);
-    expect(selected.detail?.title).toBe('能力強化：仮・紅の攻撃 +7');
+    expect(selected.detail?.title).toBe('能力強化：ベニギツネの攻撃 +7');
   });
 
   it('強敵のときは、何回目かを出す', () => {
@@ -54,11 +54,11 @@ describe('報酬の画面に出す内容', () => {
     const blue = FIGHTERS.find((fighter) => fighter.id === 'blue-trial')!;
     const members = [team[0]!, { fighter: blue, hp: blue.stats.hp }, team[2]!];
     const view = buildRewardView(rewardRun(1, 1, members), { step: 'member', selected: 0, member: null });
-    expect(view.prompt).toBe('蒼の大技を だれに覚えさせますか？');
+    expect(view.prompt).toBe('大瀑布を だれに覚えさせますか？');
     expect(view.members.map((m) => [m.name, m.disabled, m.note])).toEqual([
-      ['仮・紅', false, '技 4/4'],
-      ['仮・蒼', true, 'もう覚えている'],
-      ['仮・黄', false, '技 4/4'],
+      ['ベニギツネ', false, '技 4/4'],
+      ['シズクサギ', true, 'もう覚えている'],
+      ['イナホイタチ', false, '技 4/4'],
     ]);
   });
 
@@ -69,18 +69,18 @@ describe('報酬の画面に出す内容', () => {
     };
     const members = [{ fighter: bigHeavy, hp: 50 }, team[1]!, team[2]!];
     const view = buildRewardView(rewardRun(1, 1, members), { step: 'forget', selected: 0, member: 0 });
-    expect(view.prompt).toBe('仮・紅は 技を4つ覚えています。忘れる技を選んでください');
+    expect(view.prompt).toBe('ベニギツネは 技を4つ覚えています。忘れる技を選んでください');
     expect(view.forgets.map((f) => [f.name, f.disabled])).toEqual([
-      ['紅の大技', false],
-      ['橙の大技', false],
-      ['黄の大技', false],
-      ['紅撃', true],
+      ['紅炎落とし', false],
+      ['大地返し', false],
+      ['鳴神', false],
+      ['緋の爪', true],
     ]);
   });
 
   it('受け取ったあとにマップに出す一言', () => {
-    expect(rewardNotice(rewardRun(), { offer: 0, member: 2 })).toBe('仮・黄が 蒼の大技を覚えた');
-    expect(rewardNotice(rewardRun(), { offer: 1 })).toBe('仮・紅の 攻撃が 7 上がった');
+    expect(rewardNotice(rewardRun(), { offer: 0, member: 2 })).toBe('イナホイタチが 大瀑布を覚えた');
+    expect(rewardNotice(rewardRun(), { offer: 1 })).toBe('ベニギツネの 攻撃が 7 上がった');
     expect(rewardNotice(rewardRun(), { offer: 2 })).toBe('先手のお守りを手に入れた');
   });
 

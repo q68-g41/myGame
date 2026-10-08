@@ -25,8 +25,17 @@ describe('属性の表示名', () => {
 describe('技のデータ（仕様書 3.6 の目安）', () => {
   const moves = Object.values(MOVES);
 
-  it('ID が重ならない', () => {
+  it('ID も名前も重ならない', () => {
     expect(Object.keys(MOVES)).toHaveLength(moves.length);
+    expect(new Set(moves.map((move) => move.name)).size).toBe(moves.length);
+  });
+
+  it('36個で、属性ごとに6個（通常の技2つ・大技・先制技・補助技2つ）ある（仕様書 7 の M5）', () => {
+    expect(moves).toHaveLength(36);
+    for (const attribute of ATTRIBUTE_ORDER) {
+      const kinds = moves.filter((move) => move.attribute === attribute).map((move) => move.kind);
+      expect(kinds.sort()).toEqual(['big', 'normal', 'normal', 'priority', 'support', 'support']);
+    }
   });
 
   it.each(moves)('$id の威力が目安の範囲（通常50〜70、大技90〜110、先制30〜40）', (move) => {
@@ -46,12 +55,16 @@ describe('技のデータ（仕様書 3.6 の目安）', () => {
 });
 
 describe('キャラのデータ（仕様書 3.2 の目安）', () => {
-  it('ID が重ならない', () => {
+  it('ID も名前も重ならない', () => {
     expect(new Set(FIGHTERS.map((fighter) => fighter.id)).size).toBe(FIGHTERS.length);
+    expect(new Set(FIGHTERS.map((fighter) => fighter.name)).size).toBe(FIGHTERS.length);
   });
 
-  it('属性ごとに1体ずついる', () => {
-    expect(FIGHTERS.map((fighter) => fighter.attribute).sort()).toEqual([...ATTRIBUTE_ORDER].sort());
+  it('12体で、属性ごとに2体ずついる（仕様書 7 の M5）', () => {
+    expect(FIGHTERS).toHaveLength(12);
+    expect(FIGHTERS.map((fighter) => fighter.attribute).sort()).toEqual(
+      [...ATTRIBUTE_ORDER, ...ATTRIBUTE_ORDER].sort(),
+    );
   });
 
   it.each(FIGHTERS)('$name の能力値が目安の範囲（HP 80〜120、ほか 30〜70）で、戦闘に出せる', (fighter) => {

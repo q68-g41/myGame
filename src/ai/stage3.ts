@@ -8,11 +8,21 @@
  * 乱数は固定のものを使い、本当の乱数（このあと出るダメージ）は見ない。
  */
 import { resolveTurn, submitReplacements } from '../engine/battle';
-import { MAX_STAGE } from '../engine/constants';
+import { DAMAGE_ROLL_MIN_PERCENT, MAX_STAGE } from '../engine/constants';
+import { computeDamage } from '../engine/damage';
 import { createRng } from '../engine/rng';
-import { selectableMoves } from '../engine/moves';
+import { isAttackMove, selectableMoves } from '../engine/moves';
 import { activeCombatant, opponentOf, switchTargets } from '../engine/team';
-import type { BattleState, Combatant, Command, Commands, MoveDef, Replacements, Side } from '../engine/types';
+import type {
+  BattleState,
+  CharmEffect,
+  Combatant,
+  Command,
+  Commands,
+  MoveDef,
+  Replacements,
+  Side,
+} from '../engine/types';
 import { chooseReplacementStage2, matchup } from './stage2';
 
 /** 見積もりに使う乱数（本当の乱数は使わない） */
@@ -53,12 +63,26 @@ function isWasted(move: MoveDef, self: Combatant, opponent: Combatant): boolean 
   });
 }
 
-/** その陣営が、いま選べるコマンドの一覧（技と交代）。使っても何も起きない補助技は外す（全部外れるときは外さない） */
+/** いま選べる攻撃技のどれかで、相手の場のキャラを確実に（乱数が一番低くても）倒せるか */
+function canSurelyFaint(self: Combatant, opponent: Combatant, charms: readonly CharmEffect[]): boolean {
+  return selectableMoves(self)
+    .filter(isAttackMove)
+    .some((move) => computeDamage(self, opponent, move, DAMAGE_ROLL_MIN_PERCENT, charms).amount >= opponent.hp);
+}
+
+/**
+ * その陣営が、いま選べるコマンドの一覧（技と交代）。使っても何も起きない補助技は外す（全部外れるときは外さない）。
+ * 相手の場のキャラを確実に倒せるときも、補助技は外す。1手先までしか読まないので、倒したあとに出てくる控えとの撃ち合いを
+ * 嫌って、倒さずに回復をくり返し、勝負がつかなくなることがあるため
+ */
 export function commandOptions(state: BattleState, side: Side): readonly Command[] {
   const self = activeCombatant(state, side);
   const opponent = activeCombatant(state, opponentOf(side));
   const selectable = selectableMoves(self);
-  const useful = selectable.filter((move) => !isWasted(move, self, opponent));
+  const finishing = canSurelyFaint(self, opponent, state.sides[side].charms ?? []);
+  const useful = selectable.filter(
+    (move) => !isWasted(move, self, opponent) && !(finishing && move.kind === 'support'),
+  );
   const moves = (useful.length > 0 ? useful : selectable).map((move): Command => ({ type: 'move', moveId: move.id }));
   const switches = switchTargets(state.sides[side]).map((to): Command => ({ type: 'switch', to }));
   return [...moves, ...switches];

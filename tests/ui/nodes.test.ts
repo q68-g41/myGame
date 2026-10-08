@@ -43,23 +43,23 @@ describe('休憩の画面に出す内容', () => {
 
   it('技の強化：キャラ → 技の順に選ぶ。補助技は選べない', () => {
     expect(buildRestView(run, { step: 'member', selected: 'power', member: null }).members.map((m) => m.name)).toEqual([
-      '仮・紅',
-      '仮・橙',
-      '仮・黄',
+      'ベニギツネ',
+      'ユウヒダヌキ',
+      'イナホイタチ',
     ]);
     const moves = buildRestView(run, { step: 'move', selected: 'power', member: 0 });
-    expect(moves.prompt).toBe('仮・紅の どの技を強化しますか？');
+    expect(moves.prompt).toBe('ベニギツネの どの技を強化しますか？');
     expect(moves.moves.map((m) => [m.name, m.detail, m.disabled])).toEqual([
-      ['紅撃', '威力 60 → 70', false],
-      ['紅の大技', '威力 100 → 110', false],
-      ['先手突き', '威力 35 → 45', false],
-      ['集中', '補助技は強化できない', true],
+      ['緋の爪', '威力 60 → 70', false],
+      ['紅炎落とし', '威力 100 → 110', false],
+      ['火花突き', '威力 35 → 45', false],
+      ['闘志', '補助技は強化できない', true],
     ]);
   });
 
   it('マップに出す一言', () => {
     expect(restNotice(run, 'heal')).toBe('全員のHPが回復した');
-    expect(restNotice(run, { member: 0, move: 2 })).toBe('仮・紅の 先手突きの威力が 45 になった');
+    expect(restNotice(run, { member: 0, move: 2 })).toBe('ベニギツネの 火花突きの威力が 45 になった');
   });
 });
 
@@ -69,19 +69,19 @@ describe('スカウトの画面に出す内容', () => {
 
   it('候補3体。選ぶと詳細が出て、入れ替えるキャラを選びに進める', () => {
     const view = buildScoutView(run);
-    expect(view.candidates.map((c) => c.name)).toEqual(['仮・翠', '仮・蒼', '仮・紫']);
+    expect(view.candidates.map((c) => c.name)).toEqual(['ヨモギガエル', 'シズクサギ', 'フジチョウ']);
     expect(view.canConfirm).toBe(false);
     expect(view.detail).toBeNull();
 
     const selected = buildScoutView(run, { step: 'candidate', selected: 1 });
-    expect(selected.detail?.name).toBe('仮・蒼');
+    expect(selected.detail?.name).toBe('シズクサギ');
     const member = buildScoutView(run, { step: 'member', selected: 1 });
-    expect(member.prompt).toBe('仮・蒼と だれを入れ替えますか？（抜けたキャラは戻りません）');
+    expect(member.prompt).toBe('シズクサギと だれを入れ替えますか？（抜けたキャラは戻りません）');
     expect(member.members.map((m) => m.note)).toEqual(['HP 50 / 95', 'HP 50 / 115', 'HP 50 / 85']);
   });
 
   it('マップに出す一言', () => {
-    expect(scoutNotice(run, { candidate: 2, member: 1 })).toBe('仮・紫が仲間になった（仮・橙と入れ替え）');
+    expect(scoutNotice(run, { candidate: 2, member: 1 })).toBe('フジチョウが仲間になった（ユウヒダヌキと入れ替え）');
     expect(scoutNotice(run, 'skip')).toBe('だれも入れ替えずに進んだ');
   });
 });
@@ -97,7 +97,7 @@ describe('イベントの画面に出す内容', () => {
 
     const done = buildEventView(chooseEventOption(run, 0));
     expect(done.prompt).toBe('「きびしく鍛える」を選んだ');
-    expect(done.result).toEqual(['仮・紅は HPが 23 減った', '仮・紅の 攻撃が 7 上がった', '仮・紅の 防御が 5 上がった']);
+    expect(done.result).toEqual(['ベニギツネは HPが 23 減った', 'ベニギツネの 攻撃が 7 上がった', 'ベニギツネの 防御が 5 上がった']);
   });
 
   it('HPが変わらなかったときは、満タンか、これ以上減らないかを書く', () => {
@@ -111,8 +111,8 @@ describe('イベントの画面に出す内容', () => {
       { type: 'hp', member: 1, delta: 0, hp: 1 },
     ] as const;
     expect(buildEventView({ ...run, phase: { kind: 'event', event: spring, outcome, chosen: 0 } }).result).toEqual([
-      '仮・紅の HPは 満タンだ',
-      '仮・橙の HPは これ以上減らない',
+      'ベニギツネの HPは 満タンだ',
+      'ユウヒダヌキの HPは これ以上減らない',
     ]);
   });
 });

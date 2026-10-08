@@ -13,7 +13,7 @@ const one = (event: BattleEvent) => describeEvents([event], state)[0];
 describe('ログの文章', () => {
   it('技を使った・ダメージ（相性）・倒れた', () => {
     expect(one({ type: 'moveUsed', side: 'player', moveId: 'crimson-strike', moveKind: 'normal' })).toBe(
-      `${name('player', 0)}の 紅撃！`,
+      `${name('player', 0)}の 緋の爪！`,
     );
     expect(
       one({ type: 'damage', side: 'enemy', amount: 35, hp: 50, effectiveness: 'advantage', resonance: true }),
@@ -69,6 +69,6 @@ describe('ログの文章', () => {
       ],
       state,
     );
-    expect(lines[1]).toBe(`相手の${name('enemy', 2)}の 蒼撃！`);
+    expect(lines[1]).toBe(`相手の${name('enemy', 2)}の 蒼波！`);
   });
 });

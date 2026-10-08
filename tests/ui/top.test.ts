@@ -14,7 +14,7 @@ describe('トップ画面', () => {
   });
 
   it('タイトルを表示する', () => {
-    expect(root.querySelector('h1')?.textContent).toBe('ローグライト対戦コマンドゲーム');
+    expect(root.querySelector('h1')?.textContent).toBe('彩霊のみち');
   });
 
   it('操作できる要素は下半分（操作領域）にだけ置く', () => {
