@@ -92,11 +92,11 @@ export const BOSS_ENEMY_COUNT: readonly number[] = [3, 3, 3];
 /** エリアごとに、相手全員の能力にかける倍率（仮）。添字はエリア。強敵・ボスの倍率とかけ合わせる */
 export const AREA_STAT_MULTIPLIER: readonly number[] = [1, 1.1, 1.2];
 
-/**
- * 相手の CPU の段階（仕様書 6）。添字はエリア。強敵とボスもエリアの段階を使う。
- * 段階3はまだないので、エリア3も段階2（M5-3 で段階3にする）
- */
-export const CPU_LEVEL_BY_AREA: readonly CpuLevel[] = [1, 2, 2];
+/** 相手の CPU の段階（仕様書 6）。添字はエリア。ボスもエリアの段階を使う（ボスの行動パターンは M5-4） */
+export const CPU_LEVEL_BY_AREA: readonly CpuLevel[] = [1, 2, 3];
+
+/** 強敵の CPU の段階（仕様書 6：強敵はどのエリアでも段階3） */
+export const ELITE_CPU_LEVEL: CpuLevel = 3;
 
 /** 強敵・ボスの能力の倍率（仮）。HP・攻撃・防御にかけて四捨五入する（素早さは変えない） */
 export const ELITE_STAT_MULTIPLIER = 1.1;
