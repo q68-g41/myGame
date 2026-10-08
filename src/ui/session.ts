@@ -3,12 +3,9 @@
  * ルールはエンジンに任せ、ここではコマンドを渡して結果を受け取るだけ。
  */
 import { chooseCommandStage1, chooseReplacementStage1 } from '../ai/cpu';
-import { pickTeams } from '../ai/teams';
-import { FIGHTERS } from '../data/fighters';
-import { createBattle, resolveTurn, submitReplacements } from '../engine/battle';
+import { resolveTurn, submitReplacements } from '../engine/battle';
 import { memberAt } from '../engine/team';
-import { MAX_TEAM_SIZE } from '../engine/constants';
-import { createRng, nextInt, type RngState } from '../engine/rng';
+import { createRng, type RngState } from '../engine/rng';
 import type { BattleEvent, BattleState, Command, Replacements } from '../engine/types';
 
 /** 1戦の状態 */
@@ -26,12 +23,9 @@ export interface BattleSession {
   readonly knownEnemySpeeds: ReadonlySet<string>;
 }
 
-/** シードからチームを決めて、バトルを始める（M3：仮キャラ6体を3対3にランダムに分ける） */
-export function startSession(seed: number): BattleSession {
-  const teams = pickTeams(FIGHTERS, MAX_TEAM_SIZE, createRng(seed));
-  const battleSeed = nextInt(teams.rng, 0, 0xffffffff);
-  const state = createBattle(teams.value.player, teams.value.enemy);
-  return { state, rng: createRng(battleSeed.value), lastEvents: [], previousState: state, knownEnemySpeeds: new Set() };
+/** 始まったバトルと、そのバトルで使う乱数のシードから、1戦の流れを始める */
+export function createSession(state: BattleState, seed: number): BattleSession {
+  return { state, rng: createRng(seed), lastEvents: [], previousState: state, knownEnemySpeeds: new Set() };
 }
 
 /** 自分が控えから次のキャラを選ぶ必要があるか */

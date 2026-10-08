@@ -3,7 +3,7 @@ import { el } from './dom';
 export interface TopScreenOptions {
   /** 画面に出すビルドの識別子（デプロイ後に最新版か確かめるため） */
   buildId: string;
-  /** 「はじめる」を押したとき */
+  /** 「はじめる」を押したとき（新しいランを始める） */
   onStart: () => void;
 }
 
@@ -29,7 +29,7 @@ export function renderTopScreen(root: HTMLElement, options: TopScreenOptions): v
     team.append(el(doc, 'div', `top__member top__member--${variant}`));
   }
 
-  const message = el(doc, 'p', 'top__message', '3対3のバトルを遊べます（仮素材）');
+  const message = el(doc, 'p', 'top__message', '1エリア分のランを遊べます（仮素材）');
   view.append(subtitle, title, team, message);
 
   // 下半分：操作領域

@@ -20,8 +20,8 @@ export interface BattleScreenHandlers {
   onConfirm(): void;
   /** 控えの選択をやめる */
   onCancel(): void;
-  onRetry(): void;
-  onTitle(): void;
+  /** 決着したあと、ランに戻る */
+  onContinue(): void;
   /** 演出の速さを 1倍 ⇔ 2倍 に切り替える */
   onToggleSpeed(): void;
   /** 演出を最後まで早送りする */
@@ -163,13 +163,10 @@ function confirmPanel(doc: Document, view: ConfirmView, handlers: BattleScreenHa
 function resultPanel(doc: Document, view: BattleView, handlers: BattleScreenHandlers): HTMLElement {
   const result = el(doc, 'div', 'result');
   result.append(el(doc, 'p', 'result__text', view.result === 'win' ? 'あなたの勝ち！' : 'あなたの負け…'));
-  const retry = el(doc, 'button', 'button button--primary', 'もう一度');
-  retry.type = 'button';
-  retry.addEventListener('click', () => handlers.onRetry());
-  const title = el(doc, 'button', 'button button--secondary', 'タイトルへ');
-  title.type = 'button';
-  title.addEventListener('click', () => handlers.onTitle());
-  result.append(retry, title);
+  const next = el(doc, 'button', 'button button--primary', '次へ');
+  next.type = 'button';
+  next.addEventListener('click', () => handlers.onContinue());
+  result.append(next);
   return result;
 }
 
@@ -195,6 +192,9 @@ export function renderBattleScreen(root: HTMLElement, view: BattleView, handlers
   display.setAttribute('aria-label', '表示');
   const log = el(doc, 'p', 'battle__log', view.log);
   log.setAttribute('role', 'status');
+  if (view.caption !== null) {
+    display.append(el(doc, 'p', 'battle__caption', view.caption));
+  }
   display.append(
     fighterPanel(doc, view.enemy, 'enemy', view.hit === 'enemy'),
     fighterPanel(doc, view.player, 'player', view.hit === 'player'),

@@ -3,10 +3,11 @@ import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { selectableMoves } from '../../src/engine/moves';
 import { activeCombatant } from '../../src/engine/team';
 import type { BattleEvent } from '../../src/engine/types';
-import { startApp } from '../../src/ui/app';
 import { buildBattleView } from '../../src/ui/battleView';
 import { describeMove, summarizeEffects } from '../../src/ui/moveInfo';
-import { comparedEnemySpeed, playMove, playSwitch, startSession } from '../../src/ui/session';
+import { comparedEnemySpeed, playMove, playSwitch } from '../../src/ui/session';
+import { startAppBattle } from '../helpers/app';
+import { startSession } from '../helpers/session';
 import { makeCombatant, makeMove, makeSupportMove } from '../helpers/fixtures';
 
 describe('技の詳細（長押しで出す文章）', () => {
@@ -154,8 +155,7 @@ describe('画面：長押しで詳細', () => {
     vi.useFakeTimers();
     document.body.innerHTML = '<div id="app"></div>';
     root = document.querySelector<HTMLElement>('#app')!;
-    startApp(root, { buildId: 'test', newSeed: () => 1 });
-    root.querySelector<HTMLButtonElement>('.screen__controls button')!.click();
+    startAppBattle(root);
   });
 
   afterEach(() => vi.useRealTimers());

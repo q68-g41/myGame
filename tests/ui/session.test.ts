@@ -6,9 +6,9 @@ import {
   playMove,
   playReplacement,
   playSwitch,
-  startSession,
   type BattleSession,
 } from '../../src/ui/session';
+import { startSession } from '../helpers/session';
 
 /** 自分は「選べる技の先頭」と「控えの先頭」を選び続けて、決着まで進める */
 function playToEnd(seed: number): { session: BattleSession; steps: number } {

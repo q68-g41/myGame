@@ -2,10 +2,11 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { selectableMoves } from '../../src/engine/moves';
 import { activeCombatant, switchTargets } from '../../src/engine/team';
-import { startApp } from '../../src/ui/app';
 import { describeEvents } from '../../src/ui/messages';
 import { buildFrames, MAX_STEP_MS, stepDuration, TURN_PLAYBACK_BUDGET_MS } from '../../src/ui/playback';
-import { needsPlayerReplacement, playMove, playReplacement, startSession, type BattleSession } from '../../src/ui/session';
+import { needsPlayerReplacement, playMove, playReplacement, type BattleSession } from '../../src/ui/session';
+import { firstBattleSession, startAppBattle } from '../helpers/app';
+import { startSession } from '../helpers/session';
 
 describe('演出のコマ', () => {
   /** 決着までの各操作のセッションを集める */
@@ -73,8 +74,7 @@ describe('バトル画面での演出', () => {
     vi.useFakeTimers();
     document.body.innerHTML = '<div id="app"></div>';
     root = document.querySelector<HTMLElement>('#app')!;
-    startApp(root, { buildId: 'test', newSeed: () => 1 });
-    root.querySelector<HTMLButtonElement>('.screen__controls button')!.click();
+    startAppBattle(root);
   });
 
   afterEach(() => {
@@ -85,7 +85,7 @@ describe('バトル画面での演出', () => {
     [...root.querySelectorAll<HTMLButtonElement>('.move-button')].find((button) => !button.disabled)!.click();
 
   it('技を選ぶと、ログが1行ずつ流れ、2秒以内に終わる。その間は技を選べない', () => {
-    const session = playMove(startSession(1), firstMoveId());
+    const session = playMove(firstBattleSession(), firstMoveId());
     const expected = describeEvents(session.lastEvents, session.previousState);
 
     tapFirstMove();
@@ -119,7 +119,7 @@ describe('バトル画面での演出', () => {
     speed.click();
     expect(root.querySelector('.menu__button')?.textContent).toBe('速さ ×2');
 
-    const session = playMove(startSession(1), firstMoveId());
+    const session = playMove(firstBattleSession(), firstMoveId());
     const count = session.lastEvents.length;
     tapFirstMove();
     vi.advanceTimersByTime(stepDuration(count, 1) * count * 0.5 + 1);
@@ -133,8 +133,8 @@ describe('バトル画面での演出', () => {
     expect(root.querySelector('.battle--playing')).not.toBeNull();
   });
 
-  /** シード1のバトルで、最初に選べる技 */
+  /** 画面で始めたバトルで、最初に選べる技 */
   function firstMoveId(): string {
-    return selectableMoves(activeCombatant(startSession(1).state, 'player'))[0]!.id;
+    return selectableMoves(activeCombatant(firstBattleSession().state, 'player'))[0]!.id;
   }
 });

@@ -555,3 +555,392 @@ body {
   padding-left: 1.2em;
   font-size: 14px;
 }
+
+.button:disabled {
+  opacity: 0.45;
+  cursor: default;
+}
+
+/* ===== ランの画面（M4-2） ===== */
+
+.battle__caption {
+  margin: 0;
+  font-size: 14px;
+  color: var(--color-muted);
+  text-align: center;
+}
+
+/* チームのHP（マップ・ランの結果） */
+.team-status {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 8px;
+}
+
+.member {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  min-width: 0;
+  padding: 8px;
+  border: 2px solid var(--color-border);
+  border-radius: 8px;
+  text-align: left;
+}
+
+.member--fainted {
+  opacity: 0.6;
+}
+
+.member__header {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  min-width: 0;
+}
+
+.member__icon {
+  flex: none;
+  width: 16px;
+  height: 16px;
+  border-radius: 3px;
+}
+
+.member__name {
+  font-size: 14px;
+  font-weight: bold;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.member__hp {
+  font-size: 14px;
+  color: var(--color-muted);
+  white-space: nowrap;
+}
+
+/* チーム選択 */
+.draft__view {
+  justify-content: flex-start;
+  align-items: stretch;
+  gap: 12px;
+  text-align: left;
+}
+
+.draft__title {
+  margin: 0;
+  font-size: 20px;
+}
+
+.draft__hint,
+.draft__placeholder {
+  margin: 0;
+  font-size: 14px;
+  color: var(--color-muted);
+}
+
+.draft__slots {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 8px;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.draft-slot {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  min-width: 0;
+  padding: 6px 8px;
+  border: 2px solid var(--color-accent);
+  border-radius: 8px;
+  font-size: 14px;
+}
+
+.draft-slot--empty {
+  border-style: dashed;
+  border-color: var(--color-border);
+  color: var(--color-muted);
+}
+
+.draft-slot__order {
+  font-weight: bold;
+}
+
+.draft-slot__icon {
+  flex: none;
+  width: 16px;
+  height: 16px;
+  border-radius: 3px;
+}
+
+.draft-slot__name {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.fighter-detail {
+  padding: 8px 12px;
+  border-radius: 8px;
+  background: var(--color-panel);
+}
+
+.fighter-detail__header {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.fighter-detail__icon {
+  flex: none;
+  width: 20px;
+  height: 20px;
+  border-radius: 4px;
+}
+
+.fighter-detail__name {
+  font-weight: bold;
+}
+
+.fighter-detail__attribute,
+.fighter-detail__stats {
+  font-size: 14px;
+  color: var(--color-muted);
+}
+
+.fighter-detail__stats {
+  margin: 4px 0;
+}
+
+.fighter-detail__moves {
+  margin: 0;
+  padding-left: 1.2em;
+  font-size: 14px;
+}
+
+.draft__controls {
+  gap: 12px;
+}
+
+.candidates {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 8px;
+}
+
+.candidate {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  min-height: 56px;
+  padding: 8px 12px;
+  border: 2px solid var(--color-border);
+  border-radius: 8px;
+  background: var(--color-bg);
+  color: var(--color-text);
+  font: inherit;
+  text-align: left;
+  touch-action: manipulation;
+  -webkit-tap-highlight-color: transparent;
+  user-select: none;
+  cursor: pointer;
+}
+
+.candidate--picked {
+  border-color: var(--color-accent);
+  background: rgba(240, 180, 69, 0.15);
+}
+
+.candidate__icon {
+  flex: none;
+  width: 24px;
+  height: 24px;
+  border-radius: 4px;
+}
+
+.candidate__name {
+  flex: 1;
+  font-weight: bold;
+}
+
+.candidate__order {
+  min-width: 1.5em;
+  font-weight: bold;
+  color: var(--color-accent);
+  text-align: center;
+}
+
+/* マップ：下から上へ進む */
+.map__view {
+  justify-content: flex-start;
+  align-items: stretch;
+  gap: 8px;
+}
+
+.map__progress {
+  margin: 0;
+  font-size: 14px;
+  color: var(--color-muted);
+  text-align: left;
+}
+
+.map {
+  position: relative;
+  flex: 1;
+  min-height: 280px;
+}
+
+.map__lines {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  overflow: visible;
+}
+
+.map-line {
+  stroke: var(--color-border);
+  stroke-width: 2;
+}
+
+.map-line--active {
+  stroke: var(--color-muted);
+}
+
+.map-node {
+  position: absolute;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 36px;
+  height: 36px;
+  border: 2px solid var(--color-muted);
+  border-radius: 50%;
+  background: var(--color-panel);
+  color: var(--color-text);
+  font-size: 14px;
+  font-weight: bold;
+  transform: translate(-50%, -50%);
+}
+
+.map-node--elite {
+  border-color: #f08a7a;
+}
+
+.map-node--boss {
+  width: 44px;
+  height: 44px;
+  border-color: #f08a7a;
+}
+
+.map-node--passed,
+.map-node--unreachable {
+  opacity: 0.35;
+}
+
+.map-node--current {
+  border-color: var(--color-accent);
+  background: var(--color-accent);
+  color: var(--color-accent-text);
+}
+
+.map-node--choice {
+  border-color: var(--color-accent);
+  box-shadow: 0 0 0 3px rgba(240, 180, 69, 0.35);
+}
+
+.map-node__letter {
+  position: absolute;
+  top: -10px;
+  right: -12px;
+  min-width: 20px;
+  height: 20px;
+  padding: 0 4px;
+  border-radius: 999px;
+  background: var(--color-accent);
+  color: var(--color-accent-text);
+  font-size: 14px;
+  line-height: 20px;
+  text-align: center;
+}
+
+.map__controls {
+  justify-content: flex-start;
+  gap: 12px;
+}
+
+.map__message {
+  margin: 0;
+  min-height: 1.5em;
+  font-size: 14px;
+}
+
+.map-choices {
+  display: grid;
+  grid-auto-columns: minmax(0, 1fr);
+  grid-auto-flow: column;
+  gap: 8px;
+}
+
+.map-choice {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  min-height: 64px;
+  padding: 8px;
+  border: 2px solid var(--color-accent);
+  border-radius: 8px;
+  background: var(--color-bg);
+  color: var(--color-text);
+  font: inherit;
+  font-weight: bold;
+  touch-action: manipulation;
+  -webkit-tap-highlight-color: transparent;
+  user-select: none;
+  cursor: pointer;
+}
+
+.map-choice:active {
+  transform: translateY(2px);
+}
+
+.map-choice__letter {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 24px;
+  height: 24px;
+  border-radius: 999px;
+  background: var(--color-accent);
+  color: var(--color-accent-text);
+  font-size: 14px;
+}
+
+/* ランの結果 */
+.run-end__title {
+  margin: 0;
+  font-size: 28px;
+}
+
+.run-end__title--cleared {
+  color: var(--color-accent);
+}
+
+.run-end__message {
+  margin: 0;
+  font-size: 14px;
+  color: var(--color-muted);
+}
+
+.run-end__view .team-status {
+  align-self: stretch;
+}
+
+.run-end__controls {
+  gap: 12px;
+}

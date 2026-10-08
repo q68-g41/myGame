@@ -1,6 +1,6 @@
 // @vitest-environment happy-dom
 import { beforeEach, describe, expect, it } from 'vitest';
-import { startApp } from '../../src/ui/app';
+import { startAppBattle } from '../helpers/app';
 
 const INTERACTIVE = 'button, a, input, select, textarea';
 
@@ -9,8 +9,7 @@ let root: HTMLElement;
 function startBattle(seed = 1): void {
   document.body.innerHTML = '<div id="app"></div>';
   root = document.querySelector<HTMLElement>('#app')!;
-  startApp(root, { buildId: 'test', newSeed: () => seed });
-  root.querySelector<HTMLButtonElement>('.screen__controls button')!.click();
+  startAppBattle(root, seed);
 }
 
 const enabled = (selector: string) =>
@@ -42,9 +41,10 @@ const playerName = () => root.querySelector('[data-side="player"] .fighter__name
 describe('バトル画面', () => {
   beforeEach(() => startBattle());
 
-  it('上半分に相手・自分・ログ、下半分に技ボタン 2×2 と控え2体がある', () => {
+  it('上半分にいまのマス・相手・自分・ログ、下半分に技ボタン 2×2 と控え2体がある', () => {
     const view = root.querySelector('.screen__view')!;
     const controls = root.querySelector('.screen__controls')!;
+    expect(view.querySelector('.battle__caption')?.textContent).toBe('1層目・戦闘');
     expect(view.querySelector('[data-side="enemy"]')).not.toBeNull();
     expect(view.querySelector('[data-side="player"]')).not.toBeNull();
     expect(view.querySelector('[role="status"]')?.textContent).toBe('バトル開始！ 技を選んでください');
@@ -103,23 +103,24 @@ describe('バトル画面', () => {
     expect(logText()).toMatch(/を戻して .+を出した$/);
   });
 
-  it('最後まで遊ぶと勝敗が出て、「もう一度」と「タイトルへ」が押せる', () => {
+  it('最後まで遊ぶと勝敗が出て、「次へ」で勝てばマップ、負ければランの結果に進む', () => {
     for (let i = 0; i < 300 && root.querySelector('.result') === null; i += 1) {
       expect(tapSomething()).toBe(true);
       // どの場面でも、操作できる要素は下半分だけ
       expect(root.querySelector('.screen__view')!.querySelectorAll(INTERACTIVE)).toHaveLength(0);
     }
     const result = root.querySelector('.result');
-    expect(result?.querySelector('.result__text')?.textContent).toMatch(/あなたの(勝ち！|負け…)/);
+    const text = result?.querySelector('.result__text')?.textContent;
+    expect(text).toMatch(/あなたの(勝ち！|負け…)/);
+    expect(result!.querySelectorAll('button')).toHaveLength(1);
 
-    result!.querySelectorAll<HTMLButtonElement>('button')[0]!.click();
-    expect(root.querySelector('[role="status"]')?.textContent).toBe('バトル開始！ 技を選んでください');
-
-    for (let i = 0; i < 300 && root.querySelector('.result') === null; i += 1) {
-      tapSomething();
+    result!.querySelector<HTMLButtonElement>('button')!.click();
+    if (text === 'あなたの勝ち！') {
+      expect(root.querySelector('.map-screen')).not.toBeNull();
+      expect(root.querySelector('.map__message')?.textContent).toBe('戦闘に勝った！ 次のマスを選んでください');
+    } else {
+      expect(root.querySelector('.run-end')).not.toBeNull();
     }
-    root.querySelectorAll<HTMLButtonElement>('.result button')[1]!.click();
-    expect(root.querySelector('h1')?.textContent).toBe('ローグライト対戦コマンドゲーム');
   });
 
   it('倒れたときは控えを選ぶ案内が出て、技は押せず、控えを2タップで出す', () => {

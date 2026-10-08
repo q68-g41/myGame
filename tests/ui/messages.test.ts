@@ -1,7 +1,7 @@
 import { describe, expect, it } from 'vitest';
 import type { BattleEvent, BattleState } from '../../src/engine/types';
 import { describeEvents } from '../../src/ui/messages';
-import { startSession } from '../../src/ui/session';
+import { startSession } from '../helpers/session';
 import { getFighter } from '../../src/data/fighters';
 import { memberAt } from '../../src/engine/team';
 

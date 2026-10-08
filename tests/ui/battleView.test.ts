@@ -3,7 +3,8 @@ import { getFighter } from '../../src/data/fighters';
 import { selectableMoves } from '../../src/engine/moves';
 import { activeCombatant, memberAt } from '../../src/engine/team';
 import { buildBattleView, INITIAL_UI_STATE } from '../../src/ui/battleView';
-import { needsPlayerReplacement, playMove, startSession, type BattleSession } from '../../src/ui/session';
+import { needsPlayerReplacement, playMove, type BattleSession } from '../../src/ui/session';
+import { startSession } from '../helpers/session';
 
 const nameAt = (session: BattleSession, index: number) =>
   getFighter(memberAt(session.state.sides.player, index).id).name;

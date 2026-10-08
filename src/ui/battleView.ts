@@ -121,6 +121,8 @@ export interface BattleView {
   readonly detail: MoveDetailView | null;
   /** 決着したときの結果。決着前は null */
   readonly result: 'win' | 'lose' | null;
+  /** いまのマスの説明（例：「3層目・強敵」）。なければ null */
+  readonly caption: string | null;
 }
 
 function phaseOf(session: BattleSession): BattlePhase {
@@ -234,6 +236,7 @@ export function buildBattleView(
   session: BattleSession,
   ui: UiState = INITIAL_UI_STATE,
   frame: FrameOverlay | null = null,
+  caption: string | null = null,
 ): BattleView {
   const phase = frame !== null ? 'playing' : phaseOf(session);
   const state = frame?.state ?? session.state;
@@ -252,5 +255,6 @@ export function buildBattleView(
     orderPreview: orderPreview(session, state),
     detail: detailView(state, ui),
     result: phase === 'ended' ? (winner === 'player' ? 'win' : 'lose') : null,
+    caption,
   };
 }
