@@ -338,8 +338,16 @@ body {
 }
 
 .bench-button--selectable {
-  border-color: var(--color-accent);
   cursor: pointer;
+}
+
+/* 倒れて次を選ぶときは、選べる控えを目立たせる */
+.battle--replacement .bench-button--selectable {
+  border-color: var(--color-accent);
+}
+
+.bench-button:disabled {
+  opacity: 0.6;
 }
 
 .bench-button__icon {
@@ -377,4 +385,29 @@ body {
   font-size: 24px;
   font-weight: bold;
   text-align: center;
+}
+
+.bench-button--selected {
+  border-color: var(--color-accent);
+  background: rgba(240, 180, 69, 0.15);
+}
+
+.confirm {
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  gap: 12px;
+  min-height: 136px;
+}
+
+.confirm__question {
+  margin: 0;
+  font-weight: bold;
+  text-align: center;
+}
+
+.confirm__actions {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 8px;
 }

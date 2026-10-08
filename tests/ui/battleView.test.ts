@@ -1,0 +1,64 @@
+import { describe, expect, it } from 'vitest';
+import { getFighter } from '../../src/data/fighters';
+import { selectableMoves } from '../../src/engine/moves';
+import { activeCombatant, memberAt } from '../../src/engine/team';
+import { buildBattleView } from '../../src/ui/battleView';
+import { needsPlayerReplacement, playMove, startSession, type BattleSession } from '../../src/ui/session';
+
+const nameAt = (session: BattleSession, index: number) =>
+  getFighter(memberAt(session.state.sides.player, index).id).name;
+
+describe('バトル画面に出す内容', () => {
+  const session = startSession(1);
+
+  it('始めは技を選ぶ場面で、控えは2体（場のキャラ以外）', () => {
+    const view = buildBattleView(session);
+    expect(view.phase).toBe('command');
+    expect(view.bench.map((member) => member.index)).toEqual([1, 2]);
+    expect(view.confirm).toBeNull();
+    expect(view.moves.every((move) => !move.disabled)).toBe(true);
+  });
+
+  it('技を選ぶ場面では、控えを交代先として選べる。選ぶと確認が出る', () => {
+    const view = buildBattleView(session, { selectedBench: 2 });
+    expect(view.bench.every((member) => member.selectable)).toBe(true);
+    expect(view.bench.find((member) => member.index === 2)?.selected).toBe(true);
+    expect(view.confirm).toEqual({
+      index: 2,
+      question: `${nameAt(session, 0)}を戻して ${nameAt(session, 2)}と交代しますか？`,
+      confirmLabel: '交代する',
+    });
+  });
+
+  it('倒れたときは「出しますか？」の確認になり、技は選べない', () => {
+    let current = session;
+    for (let i = 0; i < 100 && !needsPlayerReplacement(current); i += 1) {
+      current = playMove(current, selectableMoves(activeCombatant(current.state, 'player'))[0]!.id);
+    }
+    expect(needsPlayerReplacement(current)).toBe(true);
+    const target = buildBattleView(current).bench.find((member) => member.selectable)!;
+    const view = buildBattleView(current, { selectedBench: target.index });
+    expect(view.phase).toBe('replacement');
+    expect(view.moves.every((move) => move.disabled)).toBe(true);
+    expect(view.confirm).toEqual({ index: target.index, question: `${target.name}を出しますか？`, confirmLabel: '出す' });
+  });
+
+  it('倒れている控えは選べず、選んでいても確認は出ない', () => {
+    const fainted: BattleSession = {
+      ...session,
+      state: {
+        ...session.state,
+        sides: {
+          ...session.state.sides,
+          player: {
+            ...session.state.sides.player,
+            team: session.state.sides.player.team.with(1, { ...memberAt(session.state.sides.player, 1), hp: 0 }),
+          },
+        },
+      },
+    };
+    const view = buildBattleView(fainted, { selectedBench: 1 });
+    expect(view.bench.find((member) => member.index === 1)?.selectable).toBe(false);
+    expect(view.confirm).toBeNull();
+  });
+});

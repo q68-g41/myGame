@@ -5,6 +5,7 @@ import {
   needsPlayerReplacement,
   playMove,
   playReplacement,
+  playSwitch,
   startSession,
   type BattleSession,
 } from '../../src/ui/session';
@@ -45,6 +46,14 @@ describe('1戦の流れ', () => {
     expect(next.previousState).toBe(start.state);
     const users = next.lastEvents.filter((event) => event.type === 'moveUsed').map((event) => event.side);
     expect(users).toContain('enemy');
+  });
+
+  it('交代するとターンが進み、交代は相手の行動より先に起きる', () => {
+    const start = startSession(1);
+    const next = playSwitch(start, 2);
+    expect(next.state.turn).toBe(2);
+    expect(next.state.sides.player.active).toBe(2);
+    expect(next.lastEvents[0]).toEqual({ type: 'switched', side: 'player', from: 0, to: 2, reason: 'command' });
   });
 
   it('相手が倒れたら、CPU がすぐに控えを出す（自分は選ばなくてよい）', () => {

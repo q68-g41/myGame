@@ -60,6 +60,11 @@ export function playMove(session: BattleSession, moveId: string): BattleSession 
   return playCommand(session, { type: 'move', moveId });
 }
 
+/** 控えと交代する（ターンを使う） */
+export function playSwitch(session: BattleSession, to: number): BattleSession {
+  return playCommand(session, { type: 'switch', to });
+}
+
 /** 倒れたあとに、控えから次のキャラを出す。相手も選ぶ必要があれば CPU が同時に選ぶ */
 export function playReplacement(session: BattleSession, index: number): BattleSession {
   const { state } = session;
