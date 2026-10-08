@@ -36,3 +36,24 @@ export function nextInt(rng: RngState, min: number, max: number): RngResult<numb
   const { value, rng: next } = nextFloat(rng);
   return { value: min + Math.floor(value * (max - min + 1)), rng: next };
 }
+
+/** 32bit の乱数を1つ引く（別の乱数の列のシードにする） */
+export function nextSeed(rng: RngState): RngResult<number> {
+  return nextInt(rng, 0, 0xffffffff);
+}
+
+/** 候補から重ならないように count 個を選ぶ（選んだ順に並ぶ） */
+export function pickDistinct<T>(items: readonly T[], count: number, rng: RngState): RngResult<readonly T[]> {
+  if (!Number.isInteger(count) || count < 0 || count > items.length) {
+    throw new RangeError(`${items.length} 個の候補から ${count} 個は選べません`);
+  }
+  const pool = [...items];
+  const picked: T[] = [];
+  let current = rng;
+  for (let i = 0; i < count; i += 1) {
+    const draw = nextInt(current, 0, pool.length - 1);
+    current = draw.rng;
+    picked.push(...pool.splice(draw.value, 1));
+  }
+  return { value: picked, rng: current };
+}

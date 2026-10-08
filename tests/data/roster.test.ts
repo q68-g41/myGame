@@ -3,7 +3,15 @@ import { ATTRIBUTE_NAMES } from '../../src/data/attributes';
 import { FIGHTERS } from '../../src/data/fighters';
 import { MOVES, getMove } from '../../src/data/moves';
 import { createCombatant } from '../../src/engine/battle';
-import { ATTRIBUTE_ORDER } from '../../src/engine/constants';
+import {
+  ATTRIBUTE_ORDER,
+  BATTLE_ENEMY_COUNT_BY_LAYER,
+  BOSS_ENEMY_COUNT,
+  DRAFT_CANDIDATE_COUNT,
+  ELITE_ENEMY_COUNT,
+  MAX_TEAM_SIZE,
+  RUN_TEAM_SIZE,
+} from '../../src/engine/constants';
 
 describe('属性の表示名', () => {
   it('6属性すべてに表示名がある', () => {
@@ -54,5 +62,17 @@ describe('キャラのデータ（仕様書 3.2 の目安）', () => {
     }
     // 技は 1〜4 個、重複なし、大技以外が1つ以上（createCombatant が検査する）
     expect(() => createCombatant(fighter)).not.toThrow();
+  });
+});
+
+describe('ランに必要なキャラの数', () => {
+  it('スタートの候補と、相手のチームを重ならないように選べるだけのキャラがいる', () => {
+    expect(FIGHTERS.length).toBeGreaterThanOrEqual(DRAFT_CANDIDATE_COUNT);
+    expect(DRAFT_CANDIDATE_COUNT).toBeGreaterThanOrEqual(RUN_TEAM_SIZE);
+    for (const count of [...BATTLE_ENEMY_COUNT_BY_LAYER, ELITE_ENEMY_COUNT, BOSS_ENEMY_COUNT]) {
+      expect(count).toBeGreaterThanOrEqual(1);
+      expect(count).toBeLessThanOrEqual(Math.min(MAX_TEAM_SIZE, FIGHTERS.length));
+    }
+    expect(RUN_TEAM_SIZE).toBeLessThanOrEqual(MAX_TEAM_SIZE);
   });
 });

@@ -48,8 +48,14 @@ export interface ReplacementResult {
 
 const NO_STAGES = { attack: 0, defense: 0, speed: 0 } as const;
 
-/** キャラの定義から、戦闘に出した状態を作る */
-export function createCombatant(def: FighterDef): Combatant {
+/** バトルを始めるときのオプション */
+export interface BattleOptions {
+  /** 自分のチームの、いまのHP（ランで持ち越したHP）。チームと同じ並び順。省くと全員満タンで始まる */
+  readonly playerHp?: readonly number[];
+}
+
+/** キャラの定義から、戦闘に出した状態を作る。hp を省くと満タンで出る */
+export function createCombatant(def: FighterDef, hp: number = def.stats.hp): Combatant {
   if (def.moves.length === 0 || def.moves.length > MAX_MOVES) {
     throw new Error(`${def.id} の技の数は 1〜${MAX_MOVES} 個にしてください（いま ${def.moves.length} 個）`);
   }
@@ -65,30 +71,40 @@ export function createCombatant(def: FighterDef): Combatant {
       throw new Error(`補助技 ${move.id} に効果がありません`);
     }
   }
+  if (!Number.isInteger(hp) || hp < 1 || hp > def.stats.hp) {
+    throw new Error(`${def.id} のHPは 1〜${def.stats.hp} にしてください（いま ${hp}）`);
+  }
   return {
     id: def.id,
     attribute: def.attribute,
     stats: def.stats,
     moves: def.moves,
-    hp: def.stats.hp,
+    hp,
     stages: NO_STAGES,
     cooldowns: {},
     status: null,
   };
 }
 
-function createSide(team: readonly FighterDef[]): SideState {
+function createSide(team: readonly FighterDef[], hp?: readonly number[]): SideState {
   if (team.length === 0 || team.length > MAX_TEAM_SIZE) {
     throw new Error(`チームは 1〜${MAX_TEAM_SIZE} 体にしてください（いま ${team.length} 体）`);
   }
-  return { team: team.map(createCombatant), active: 0 };
+  if (hp !== undefined && hp.length !== team.length) {
+    throw new Error(`HPの数（${hp.length}）がチームの人数（${team.length}）と合いません`);
+  }
+  return { team: team.map((def, index) => createCombatant(def, hp?.[index])), active: 0 };
 }
 
 /** バトルを始める。チームは 1〜3 体で、先頭のキャラから場に出る */
-export function createBattle(player: readonly FighterDef[], enemy: readonly FighterDef[]): BattleState {
+export function createBattle(
+  player: readonly FighterDef[],
+  enemy: readonly FighterDef[],
+  options: BattleOptions = {},
+): BattleState {
   return {
     turn: 1,
-    sides: { player: createSide(player), enemy: createSide(enemy) },
+    sides: { player: createSide(player, options.playerHp), enemy: createSide(enemy) },
     awaitingReplacement: [],
     winner: null,
   };

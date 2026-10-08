@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { MAX_SELF_PLAY_TURNS, playCpuBattle } from '../../src/ai/selfPlay';
+import { MAX_SELF_PLAY_TURNS, playCpuBattle, playCpuRun } from '../../src/ai/selfPlay';
 import { pickTeams, TEAM_SIZE_FOR_SIM } from '../../src/ai/teams';
 import { FIGHTERS } from '../../src/data/fighters';
 import { createRng } from '../../src/engine/rng';
@@ -41,5 +41,26 @@ describe('CPU 同士の自動対戦（M2 の完了条件）', () => {
     expect(playCpuBattle(value.player, value.enemy, createRng(9))).toEqual(
       playCpuBattle(value.player, value.enemy, createRng(9)),
     );
+  });
+});
+
+describe('CPU が遊ぶラン（M4 の確認用）', () => {
+  it('どのシードでも、クリアか全滅で最後まで終わる', () => {
+    const results = Array.from({ length: 100 }, (_, i) => playCpuRun({ fighters: FIGHTERS }, i, i + 1000));
+    for (const { result, run, battles } of results) {
+      expect(result).not.toBeNull();
+      expect(run.phase.kind).toBe('ended');
+      expect(battles).toBeGreaterThan(0);
+      if (result === 'cleared') {
+        expect(run.position?.layer).toBe(run.map.layers.length - 1);
+        expect(run.team.some((member) => member.hp > 0)).toBe(true);
+      } else {
+        expect(run.team.every((member) => member.hp === 0)).toBe(true);
+      }
+    }
+  });
+
+  it('同じシードなら、同じ結果になる', () => {
+    expect(playCpuRun({ fighters: FIGHTERS }, 3, 4)).toEqual(playCpuRun({ fighters: FIGHTERS }, 3, 4));
   });
 });

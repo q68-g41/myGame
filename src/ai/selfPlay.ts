@@ -1,8 +1,19 @@
 /**
- * CPU 同士の対戦を最後まで進める（バランス確認用。scripts/simulate.ts から使う）。
+ * CPU 同士の対戦や、CPU が遊ぶランを最後まで進める（バランス確認用。scripts/simulate.ts から使う）。
  */
 import { createBattle, resolveTurn, submitReplacements } from '../engine/battle';
-import type { RngState } from '../engine/rng';
+import { createRng, nextInt, type RngState } from '../engine/rng';
+import {
+  chooseTeam,
+  createRunBattle,
+  enterNode,
+  finishBattle,
+  runChoices,
+  startRun,
+  type RunContent,
+  type RunResult,
+  type RunState,
+} from '../engine/run';
 import type { BattleState, FighterDef, Side } from '../engine/types';
 import { chooseCommandStage1, chooseReplacementStage1 } from './cpu';
 
@@ -24,7 +35,12 @@ export function playCpuBattle(
   enemy: readonly FighterDef[],
   rng: RngState,
 ): SelfPlayResult {
-  let state = createBattle(player, enemy);
+  return playCpuBattleFrom(createBattle(player, enemy), rng);
+}
+
+/** 始まっているバトルを、段階1の CPU どうしで決着するまで進める */
+export function playCpuBattleFrom(start: BattleState, rng: RngState): SelfPlayResult {
+  let state = start;
   let currentRng = rng;
   let turns = 0;
 
@@ -45,4 +61,41 @@ export function playCpuBattle(
   }
 
   return { winner: state.winner, turns, state };
+}
+
+/** CPU が遊んだランの結果 */
+export interface CpuRunResult {
+  /** ランの結果。決着しないバトルがあって打ち切ったら null */
+  readonly result: RunResult | null;
+  /** 戦った回数（負けた戦闘も含む） */
+  readonly battles: number;
+  readonly run: RunState;
+}
+
+/**
+ * CPU にランを1回遊ばせる。チームは候補の先頭3体、次のマスは乱数で選び、戦闘は段階1の CPU どうしで進める。
+ * マスの選び方は、ランの乱数とは別の乱数（choiceSeed から作る）で決める。
+ */
+export function playCpuRun(content: RunContent, seed: number, choiceSeed: number): CpuRunResult {
+  let run = chooseTeam(startRun(content, seed), [0, 1, 2]);
+  let choiceRng = createRng(choiceSeed);
+  let battles = 0;
+
+  while (run.phase.kind !== 'ended') {
+    if (run.phase.kind === 'battle') {
+      const played = playCpuBattleFrom(createRunBattle(run), createRng(run.phase.seed));
+      battles += 1;
+      if (played.winner === null) {
+        return { result: null, battles, run };
+      }
+      run = finishBattle(run, played.state);
+      continue;
+    }
+    const choices = runChoices(run);
+    const pick = nextInt(choiceRng, 0, choices.length - 1);
+    choiceRng = pick.rng;
+    run = enterNode(run, choices[pick.value]!, content);
+  }
+
+  return { result: run.phase.result, battles, run };
 }
