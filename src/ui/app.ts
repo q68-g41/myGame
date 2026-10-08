@@ -1,8 +1,9 @@
 /**
- * 画面の切り替え（トップ → バトル → 結果）。
+ * 画面の切り替え（トップ → バトル → 結果）と、ターンの演出の再生。
  */
 import { renderBattleScreen, type BattleScreenHandlers } from './battleScreen';
 import { buildBattleView, INITIAL_UI_STATE, type UiState } from './battleView';
+import { buildFrames, stepDuration, type PlaybackFrame } from './playback';
 import {
   needsPlayerReplacement,
   playMove,
@@ -20,33 +21,73 @@ export interface AppOptions {
   readonly newSeed: () => number;
 }
 
+interface Playback {
+  readonly frames: readonly PlaybackFrame[];
+  index: number;
+  timer: ReturnType<typeof setTimeout> | null;
+}
+
 /** アプリを始める。最初はトップ画面 */
 export function startApp(root: HTMLElement, options: AppOptions): void {
   let session: BattleSession | null = null;
   let ui: UiState = INITIAL_UI_STATE;
+  let playback: Playback | null = null;
 
   const render = () => {
-    if (session !== null) {
-      renderBattleScreen(root, buildBattleView(session, ui), handlers);
+    if (session === null) {
+      return;
     }
+    const frame = playback === null ? null : (playback.frames[playback.index] ?? null);
+    renderBattleScreen(root, buildBattleView(session, ui, frame), handlers);
   };
 
-  /** セッションを進める。控えの選択は解除する */
-  const update = (next: (current: BattleSession) => BattleSession) => {
-    if (session !== null) {
-      session = next(session);
-      ui = INITIAL_UI_STATE;
-      render();
+  const stopPlayback = () => {
+    if (playback?.timer) {
+      clearTimeout(playback.timer);
     }
+    playback = null;
+  };
+
+  /** 次のコマへ進める。最後のコマのあとは、演出を終えて最終的な状態を見せる */
+  const scheduleNextFrame = () => {
+    const current = playback;
+    if (current === null) {
+      return;
+    }
+    current.timer = setTimeout(() => {
+      current.index += 1;
+      if (current.index >= current.frames.length) {
+        playback = null;
+      }
+      render();
+      scheduleNextFrame();
+    }, stepDuration(current.frames.length, ui.speed));
+  };
+
+  /** セッションを進め、起きたことを演出として再生する。控えの選択は解除する */
+  const update = (next: (current: BattleSession) => BattleSession) => {
+    if (session === null || playback !== null) {
+      return;
+    }
+    session = next(session);
+    ui = { ...ui, selectedBench: null };
+    const frames = buildFrames(session.previousState, session.lastEvents, session.state);
+    if (frames.length > 0) {
+      playback = { frames, index: 0, timer: null };
+      scheduleNextFrame();
+    }
+    render();
   };
 
   const startBattle = () => {
+    stopPlayback();
     session = startSession(options.newSeed());
-    ui = INITIAL_UI_STATE;
+    ui = { ...INITIAL_UI_STATE, speed: ui.speed };
     render();
   };
 
   const showTop = () => {
+    stopPlayback();
     session = null;
     renderTopScreen(root, { buildId: options.buildId, onStart: startBattle });
   };
@@ -55,7 +96,7 @@ export function startApp(root: HTMLElement, options: AppOptions): void {
     onMove: (moveId) => update((current) => playMove(current, moveId)),
     // 1タップ目：控えを選ぶ（もう一度押すと選択をやめる）
     onBench: (index) => {
-      ui = { selectedBench: ui.selectedBench === index ? null : index };
+      ui = { ...ui, selectedBench: ui.selectedBench === index ? null : index };
       render();
     },
     // 2タップ目：確定。倒れたあとなら控えから出し、そうでなければ交代のコマンドでターンを進める
@@ -68,11 +109,19 @@ export function startApp(root: HTMLElement, options: AppOptions): void {
       }
     },
     onCancel: () => {
-      ui = INITIAL_UI_STATE;
+      ui = { ...ui, selectedBench: null };
       render();
     },
     onRetry: startBattle,
     onTitle: showTop,
+    onToggleSpeed: () => {
+      ui = { ...ui, speed: ui.speed === 1 ? 2 : 1 };
+      render();
+    },
+    onSkip: () => {
+      stopPlayback();
+      render();
+    },
   };
 
   showTop();

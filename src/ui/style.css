@@ -411,3 +411,66 @@ body {
   grid-template-columns: 1fr 1fr;
   gap: 8px;
 }
+
+/* ダメージを受けたパネルを一瞬光らせる */
+.fighter--hit .fighter__sprite {
+  animation: hit-flash 0.3s ease-out;
+}
+
+@keyframes hit-flash {
+  0%,
+  60% {
+    filter: brightness(2.2);
+    transform: translateX(-4px);
+  }
+  30% {
+    transform: translateX(4px);
+  }
+  100% {
+    filter: none;
+    transform: none;
+  }
+}
+
+.menu {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.menu__button {
+  min-width: 96px;
+  min-height: 44px;
+  padding: 8px 16px;
+  border: 2px solid var(--color-border);
+  border-radius: 999px;
+  background: transparent;
+  color: var(--color-text);
+  font: inherit;
+  font-size: 14px;
+  touch-action: manipulation;
+  -webkit-tap-highlight-color: transparent;
+  cursor: pointer;
+}
+
+.menu__hint {
+  font-size: 14px;
+  color: var(--color-muted);
+}
+
+.battle {
+  position: relative;
+}
+
+.playback-skip {
+  position: absolute;
+  inset: 0;
+  z-index: 1;
+  -webkit-tap-highlight-color: transparent;
+}
+
+/* 演出中でも、速さの切り替えだけは押せるようにする */
+.battle .menu {
+  position: relative;
+  z-index: 2;
+}

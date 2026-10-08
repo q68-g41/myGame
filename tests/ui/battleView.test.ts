@@ -20,7 +20,7 @@ describe('バトル画面に出す内容', () => {
   });
 
   it('技を選ぶ場面では、控えを交代先として選べる。選ぶと確認が出る', () => {
-    const view = buildBattleView(session, { selectedBench: 2 });
+    const view = buildBattleView(session, { selectedBench: 2, speed: 1 });
     expect(view.bench.every((member) => member.selectable)).toBe(true);
     expect(view.bench.find((member) => member.index === 2)?.selected).toBe(true);
     expect(view.confirm).toEqual({
@@ -37,7 +37,7 @@ describe('バトル画面に出す内容', () => {
     }
     expect(needsPlayerReplacement(current)).toBe(true);
     const target = buildBattleView(current).bench.find((member) => member.selectable)!;
-    const view = buildBattleView(current, { selectedBench: target.index });
+    const view = buildBattleView(current, { selectedBench: target.index, speed: 1 });
     expect(view.phase).toBe('replacement');
     expect(view.moves.every((move) => move.disabled)).toBe(true);
     expect(view.confirm).toEqual({ index: target.index, question: `${target.name}を出しますか？`, confirmLabel: '出す' });
@@ -57,7 +57,7 @@ describe('バトル画面に出す内容', () => {
         },
       },
     };
-    const view = buildBattleView(fainted, { selectedBench: 1 });
+    const view = buildBattleView(fainted, { selectedBench: 1, speed: 1 });
     expect(view.bench.find((member) => member.index === 1)?.selectable).toBe(false);
     expect(view.confirm).toBeNull();
   });
