@@ -12,7 +12,7 @@ import type {
   RunEndView,
   TeamMemberView,
 } from './runView';
-import { iconElement, spriteElement } from './sprites';
+import { iconElement, mapIconElement, spriteElement } from './sprites';
 
 const SVG_NS = 'http://www.w3.org/2000/svg';
 
@@ -199,7 +199,11 @@ const NODE_STATE_LABELS: Readonly<Record<MapNodeView['state'], string>> = {
 };
 
 function mapNode(doc: Document, view: MapView, node: MapNodeView): HTMLElement {
-  const element = el(doc, 'div', `map-node map-node--${node.state} map-node--${node.kind}`, node.mark);
+  // アイコンの絵があれば絵を、なければ1文字を出す
+  const element = el(doc, 'div', `map-node map-node--${node.state} map-node--${node.kind}`, node.icon === null ? node.mark : '');
+  if (node.icon !== null) {
+    element.append(mapIconElement(doc, { url: node.icon.url, size: node.icon.size, className: 'map-node__icon' }));
+  }
   const point = nodePoint(view, node.layer, node.index);
   element.style.left = `${point.x}%`;
   element.style.top = `${point.y}%`;
@@ -236,7 +240,11 @@ export function renderMapScreen(root: HTMLElement, view: MapView, handlers: MapS
   const choices = el(doc, 'div', 'map-choices');
   for (const choice of view.choices) {
     const choose = button(doc, 'map-choice', '', () => handlers.onChoose(choice.index));
-    choose.append(el(doc, 'span', 'map-choice__letter', choice.letter), el(doc, 'span', 'map-choice__name', choice.name));
+    choose.append(el(doc, 'span', 'map-choice__letter', choice.letter));
+    if (choice.icon !== null) {
+      choose.append(mapIconElement(doc, { url: choice.icon.url, size: choice.icon.size, className: 'map-choice__icon' }));
+    }
+    choose.append(el(doc, 'span', 'map-choice__name', choice.name));
     choices.append(choose);
   }
   controls.append(message, choices, teamRow(doc, view.team), charmLine(doc, view.charms));

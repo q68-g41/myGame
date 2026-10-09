@@ -2,6 +2,7 @@
  * ランの画面（チーム選択・マップ・ランの結果）に出す内容を、ランの状態から組み立てる（DOM は使わない）。
  */
 import { ATTRIBUTE_COLORS, ATTRIBUTE_NAMES } from '../data/attributes';
+import { BOSSES } from '../data/bosses';
 import { getCharm } from '../data/charms';
 import { getFighter } from '../data/fighters';
 import { NODE_KIND_MARKS, NODE_KIND_NAMES, STAT_NAMES } from '../data/labels';
@@ -20,7 +21,7 @@ import {
 } from '../engine/run';
 import type { FighterDef, MoveDef } from '../engine/types';
 import { MOVE_KIND_NAMES, summarizeEffects } from './moveInfo';
-import { iconUrl, spriteUrl } from './sprites';
+import { iconUrl, MAP_ICON_SIZE, mapIconUrl, SPRITE_SIZE, spriteUrl } from './sprites';
 
 /** チームの1体の表示（HPつき） */
 export interface TeamMemberView {
@@ -170,11 +171,20 @@ export function buildDraftView(run: RunState, ui: DraftUiState = INITIAL_DRAFT_U
  */
 export type MapNodeState = 'current' | 'choice' | 'reachable' | 'passed' | 'unreachable';
 
+/** マップに出すアイコンの絵（等倍で出す） */
+export interface MapIconView {
+  readonly url: string;
+  /** 大きさ（ピクセル）。マスのアイコンは24、ボスのマスはボスのドット絵で48 */
+  readonly size: number;
+}
+
 export interface MapNodeView {
   readonly layer: number;
   readonly index: number;
   readonly kind: NodeKind;
-  /** マスに出す1文字 */
+  /** マスのアイコン。絵がなければ null（代わりに mark の1文字を出す） */
+  readonly icon: MapIconView | null;
+  /** マスに出す1文字（アイコンの絵がないときの代わり） */
   readonly mark: string;
   readonly name: string;
   readonly state: MapNodeState;
@@ -189,6 +199,8 @@ export interface MapChoiceView {
   readonly index: number;
   readonly letter: string;
   readonly name: string;
+  /** マスのアイコン。絵がなければ null */
+  readonly icon: MapIconView | null;
 }
 
 export interface MapView {
@@ -217,6 +229,20 @@ export function teamViews(team: readonly RunMember[]): TeamMemberView[] {
     hp: member.hp,
     maxHp: member.fighter.stats.hp,
   }));
+}
+
+/**
+ * マスのアイコン。ボスのマスは、そのエリアのボスのドット絵（48×48）を等倍で出す（どのボスが待っているか分かるように）。
+ * ボスの絵は暗い色なので、小さく作り直すとつぶれて見分けにくい
+ */
+function mapIcon(run: RunState, kind: NodeKind): MapIconView | null {
+  if (kind === 'boss') {
+    const boss = BOSSES[run.area];
+    const url = boss ? spriteUrl(boss.fighter.id) : null;
+    return url === null ? null : { url, size: SPRITE_SIZE };
+  }
+  const url = mapIconUrl(kind);
+  return url === null ? null : { url, size: MAP_ICON_SIZE };
 }
 
 /** 次に進めるマスから、この先たどり着けるマスを層ごとに集める */
@@ -266,6 +292,7 @@ export function buildMapView(run: RunState, notice: string | null = null): MapVi
         layer: l,
         index,
         kind: node.kind,
+        icon: mapIcon(run, node.kind),
         mark: NODE_KIND_MARKS[node.kind],
         name: NODE_KIND_NAMES[node.kind],
         state: nodeState(run.position, l, index, letter, reachable),
@@ -277,11 +304,10 @@ export function buildMapView(run: RunState, notice: string | null = null): MapVi
 
   return {
     layers,
-    choices: choices.map((index) => ({
-      index,
-      letter: letterOf(index)!,
-      name: NODE_KIND_NAMES[nodeAt(run.map, { layer: nextLayer, index }).kind],
-    })),
+    choices: choices.map((index) => {
+      const kind = nodeAt(run.map, { layer: nextLayer, index }).kind;
+      return { index, letter: letterOf(index)!, name: NODE_KIND_NAMES[kind], icon: mapIcon(run, kind) };
+    }),
     team: teamViews(run.team),
     charms: charmNames(run),
     message: notice ?? '進むマスを選んでください',

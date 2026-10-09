@@ -1,7 +1,8 @@
 /**
  * キャラのドット絵（仕様書 5.1）。1体48×48ピクセル・右向きで、ファイル名はキャラ ID。
  * 画面では整数倍で拡大し、相手側は左右反転して使う。絵がないキャラ（テスト用など）は、属性の色の四角で代わりにする。
- * 小さい表示（候補一覧・選んだ順の枠・控え）には、別に用意した32×32の絵を等倍で使う。
+ * 小さい表示（候補一覧・選んだ順の枠・控え）とマップのボスのマスには、別に用意した32×32の絵を等倍で使う。
+ * マップのマスのアイコンは24×24で、ファイル名はマスの種類（battle など）。
  */
 import { el } from './dom';
 
@@ -11,8 +12,12 @@ export const SPRITE_SIZE = 48;
 /** 小さい絵の大きさ（ピクセル）。等倍で出す */
 export const ICON_SIZE = 32;
 
+/** マップのマスのアイコンの大きさ（ピクセル）。等倍で出す */
+export const MAP_ICON_SIZE = 24;
+
 const FILES = import.meta.glob<string>('../assets/sprites/*.png', { eager: true, query: '?url', import: 'default' });
 const ICON_FILES = import.meta.glob<string>('../assets/icons/*.png', { eager: true, query: '?url', import: 'default' });
+const MAP_FILES = import.meta.glob<string>('../assets/map/*.png', { eager: true, query: '?url', import: 'default' });
 
 /** キャラ ID からドット絵の URL を引く。なければ null */
 export function spriteUrl(fighterId: string): string | null {
@@ -22,6 +27,11 @@ export function spriteUrl(fighterId: string): string | null {
 /** キャラ ID から小さい絵の URL を引く。なければ null */
 export function iconUrl(fighterId: string): string | null {
   return ICON_FILES[`../assets/icons/${fighterId}.png`] ?? null;
+}
+
+/** マスの種類からマップのアイコンの URL を引く。なければ null */
+export function mapIconUrl(kind: string): string | null {
+  return MAP_FILES[`../assets/map/${kind}.png`] ?? null;
 }
 
 /**
@@ -43,6 +53,11 @@ export function iconElement(
   options: { url: string | null; color: string | null; className?: string },
 ): HTMLElement {
   return pixelImage(doc, { url: options.url, color: options.color ?? 'transparent', size: ICON_SIZE, className: options.className });
+}
+
+/** マップのアイコンの要素（等倍）。size はマスのアイコン（24）とボスの絵（32）で変わる */
+export function mapIconElement(doc: Document, options: { url: string; size: number; className?: string }): HTMLElement {
+  return pixelImage(doc, { url: options.url, color: 'transparent', size: options.size, className: options.className });
 }
 
 function pixelImage(

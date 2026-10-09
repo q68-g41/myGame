@@ -1,11 +1,22 @@
 // @vitest-environment happy-dom
 import { describe, expect, it } from 'vitest';
 import { BOSS_FIGHTERS, FIGHTERS } from '../../src/data/fighters';
-import { ICON_SIZE, iconElement, iconUrl, SPRITE_SIZE, spriteElement, spriteUrl } from '../../src/ui/sprites';
+import {
+  ICON_SIZE,
+  iconElement,
+  iconUrl,
+  MAP_ICON_SIZE,
+  mapIconElement,
+  mapIconUrl,
+  SPRITE_SIZE,
+  spriteElement,
+  spriteUrl,
+} from '../../src/ui/sprites';
 
 /** 絵のファイルの中身（data URI）。キーはファイルのパス */
 const FILES = import.meta.glob<string>('../../src/assets/sprites/*.png', { eager: true, query: '?inline', import: 'default' });
 const ICON_FILES = import.meta.glob<string>('../../src/assets/icons/*.png', { eager: true, query: '?inline', import: 'default' });
+const MAP_FILES = import.meta.glob<string>('../../src/assets/map/*.png', { eager: true, query: '?inline', import: 'default' });
 
 /** PNG の幅と高さ（IHDR の値） */
 function pngSize(dataUri: string): { width: number; height: number } {
@@ -48,6 +59,31 @@ describe('小さい絵のファイル（候補一覧・選んだ順の枠・控�
     for (const [path, dataUri] of Object.entries(ICON_FILES)) {
       expect(pngSize(dataUri), path).toEqual({ width: ICON_SIZE, height: ICON_SIZE });
     }
+  });
+});
+
+describe('マップのアイコンのファイル', () => {
+  it('ボス以外のマスの種類すべてにあり、ほかの絵はない（ボスのマスはボスのドット絵を使う）', () => {
+    const kinds = ['battle', 'elite', 'rest', 'scout', 'event'];
+    for (const kind of kinds) {
+      expect(mapIconUrl(kind), kind).toBeTypeOf('string');
+    }
+    const files = Object.keys(MAP_FILES).map((path) => path.split('/').pop()!.replace(/\.png$/, ''));
+    expect(files.sort()).toEqual([...kinds].sort());
+    expect(mapIconUrl('boss')).toBeNull();
+  });
+
+  it('どれも24×24', () => {
+    for (const [path, dataUri] of Object.entries(MAP_FILES)) {
+      expect(pngSize(dataUri), path).toEqual({ width: MAP_ICON_SIZE, height: MAP_ICON_SIZE });
+    }
+  });
+
+  it('アイコンの要素は、指定の大きさで等倍に出す', () => {
+    const img = mapIconElement(document, { url: mapIconUrl('rest')!, size: MAP_ICON_SIZE, className: 'map-node__icon' });
+    expect(img.tagName).toBe('IMG');
+    expect(img.getAttribute('width')).toBe('24');
+    expect(img.classList.contains('map-node__icon')).toBe(true);
   });
 });
 

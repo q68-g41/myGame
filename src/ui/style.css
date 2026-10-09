@@ -836,10 +836,12 @@ body {
   border-color: #f08a7a;
 }
 
+/* ボスのマスは、ボスのドット絵（48×48）を等倍で出す。暗い色の絵なので、後ろを明るくする */
 .map-node--boss {
-  width: 44px;
-  height: 44px;
+  width: 56px;
+  height: 56px;
   border-color: #f08a7a;
+  background: radial-gradient(circle, #5a5368 0 55%, var(--color-panel) 100%);
 }
 
 .map-node--passed,
