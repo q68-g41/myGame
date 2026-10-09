@@ -949,6 +949,10 @@ body {
   text-align: left;
 }
 
+.charm-line__name {
+  display: inline-block;
+}
+
 .reward__view {
   justify-content: flex-start;
   align-items: stretch;

@@ -1,4 +1,5 @@
 import { describe, expect, it } from 'vitest';
+import { getCharm } from '../../src/data/charms';
 import { RUN_CONTENT } from '../../src/data/content';
 import { FIGHTERS } from '../../src/data/fighters';
 import { createBattle, resolveTurn } from '../../src/engine/battle';
@@ -205,6 +206,21 @@ describe('戦闘とHPの持ち越し', () => {
     const tiny = { ...FIGHTERS[0]!, stats: { ...FIGHTERS[0]!.stats, hp: 9 } };
     const small = enterNode(runAt(null, [member(tiny), member(FIGHTERS[1]!), member(FIGHTERS[2]!)]), 0, CONTENT);
     expect(finishBattle(small, decided(small, [0, 50, 50], 'player'), CONTENT).team[0]!.hp).toBe(1);
+  });
+
+  it('勝ったら回復するお守りがあれば、全員が回復する。倒れていたキャラは戻ったあとに回復する（最大HPは超えない）', () => {
+    const triumph = getCharm('triumph-charm');
+    const percent = triumph.effect.type === 'victoryHeal' ? triumph.effect.percent : 0;
+    const heal = (fighter: FighterDef) => Math.floor((fighter.stats.hp * percent) / 100);
+    const revive = (fighter: FighterDef) => Math.floor(fighter.stats.hp / 10);
+    const run = { ...inBattle(), charms: [triumph] };
+    const nearlyFull = FIGHTERS[1]!.stats.hp - 1;
+    const next = finishBattle(run, decided(run, [12, nearlyFull, 0], 'player'), CONTENT);
+    expect(next.team.map((m) => m.hp)).toEqual([
+      12 + heal(FIGHTERS[0]!),
+      FIGHTERS[1]!.stats.hp,
+      revive(FIGHTERS[2]!) + heal(FIGHTERS[2]!),
+    ]);
   });
 
   it('負けたらランは終わり', () => {

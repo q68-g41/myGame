@@ -48,6 +48,9 @@ function describeEvent(event: BattleEvent, state: BattleState, actives: Actives)
     case 'statusApplied':
       return `${subject(event.side)}は ${STATUS_NAMES[event.status]}を受けた`;
     case 'statusBlocked':
+      if (event.reason === 'charm') {
+        return `${subject(event.side)}は お守りで ${STATUS_NAMES[event.status]}を 防いだ`;
+      }
       return `${subject(event.side)}には 効かなかった`;
     case 'statusDamage':
       return `${subject(event.side)}は ${STATUS_NAMES[event.status]}で ${event.amount} のダメージ`;

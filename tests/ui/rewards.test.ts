@@ -7,6 +7,7 @@ import { createBattle } from '../../src/engine/battle';
 import type { RewardOffer, RunState } from '../../src/engine/run';
 import { startApp } from '../../src/ui/app';
 import { buildBattleView } from '../../src/ui/battleView';
+import { charmLine } from '../../src/ui/runScreens';
 import { buildMapView, buildRewardView, INITIAL_REWARD_UI, rewardNotice } from '../../src/ui/runView';
 import { createSession } from '../../src/ui/session';
 
@@ -186,5 +187,17 @@ describe('報酬の画面', () => {
 
     root.querySelector<HTMLButtonElement>('.reward-forgets .reward-option:not([disabled])')!.click();
     expect(root.querySelector('.map__message')?.textContent).toBe(`${memberName}が ${moveName}を覚えた`);
+  });
+});
+
+describe('持っているお守りの行', () => {
+  it('なければ「なし」。複数あれば「・」でつなぎ、名前の途中では折り返さない（名前ごとのかたまり）', () => {
+    expect(charmLine(document, []).textContent).toBe('お守り：なし');
+    const line = charmLine(document, ['先手のお守り', '受け流しのお守り']);
+    expect(line.textContent).toBe('お守り：先手のお守り・受け流しのお守り');
+    expect([...line.querySelectorAll('.charm-line__name')].map((name) => name.textContent)).toEqual([
+      '先手のお守り・',
+      '受け流しのお守り',
+    ]);
   });
 });

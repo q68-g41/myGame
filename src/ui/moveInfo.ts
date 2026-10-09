@@ -5,7 +5,7 @@ import { ATTRIBUTE_NAMES } from '../data/attributes';
 import { STAT_NAMES, STATUS_NAMES } from '../data/labels';
 import { getMove } from '../data/moves';
 import { getEffectiveness, isResonant } from '../engine/affinity';
-import { movePower } from '../engine/charms';
+import { bigMoveCooldown, movePower } from '../engine/charms';
 import { AFFINITY_MULTIPLIER, BIG_MOVE_COOLDOWN_TURNS, RESONANCE_MULTIPLIER } from '../engine/constants';
 import type { CharmEffect, Combatant, MoveDef, MoveEffect, MoveKind } from '../engine/types';
 
@@ -61,7 +61,7 @@ export function describeMove(
   if (move.kind === 'support') {
     lines.push(...move.effects.map(describeEffect));
   } else {
-    const power = movePower(move, charms);
+    const power = movePower(move, charms, user);
     lines.push(power === move.power ? `威力 ${power}` : `威力 ${power}（お守りで ${move.power} から上がっている）`);
     const effectiveness = getEffectiveness(move.attribute, opponent.attribute);
     const affinity = { advantage: '有利', neutral: '等倍', disadvantage: '不利' }[effectiveness];
@@ -70,7 +70,14 @@ export function describeMove(
       lines.push(`共鳴（×${RESONANCE_MULTIPLIER}）`);
     }
     if (move.kind === 'big') {
-      lines.push(`使ったあと ${BIG_MOVE_COOLDOWN_TURNS}ターン 使えない`);
+      const turns = bigMoveCooldown(charms);
+      if (turns === BIG_MOVE_COOLDOWN_TURNS) {
+        lines.push(`使ったあと ${turns}ターン 使えない`);
+      } else if (turns > 0) {
+        lines.push(`使ったあと ${turns}ターン 使えない（お守りで ${BIG_MOVE_COOLDOWN_TURNS} から短くなっている）`);
+      } else {
+        lines.push('お守りで、使ったあとも続けて使える');
+      }
     }
     if (move.kind === 'priority') {
       lines.push('技の中で先に動く');

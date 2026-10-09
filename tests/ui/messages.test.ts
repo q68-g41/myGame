@@ -44,6 +44,9 @@ describe('ログの文章', () => {
     expect(one({ type: 'healed', side: 'player', amount: 0, hp: 100 })).toBe(`${name('player', 0)}の HPは 満タンだ`);
     expect(one({ type: 'statusApplied', side: 'enemy', status: 'erosion' })).toBe(`相手の${name('enemy', 0)}は 侵蝕を受けた`);
     expect(one({ type: 'statusBlocked', side: 'enemy', status: 'slow' })).toBe(`相手の${name('enemy', 0)}には 効かなかった`);
+    expect(one({ type: 'statusBlocked', side: 'player', status: 'erosion', reason: 'charm' })).toBe(
+      `${name('player', 0)}は お守りで 侵蝕を 防いだ`,
+    );
     expect(one({ type: 'statusDamage', side: 'player', status: 'erosion', amount: 9, hp: 80 })).toBe(
       `${name('player', 0)}は 侵蝕で 9 のダメージ`,
     );

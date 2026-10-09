@@ -1,3 +1,4 @@
+import { healOnTurnEnd } from './charms';
 import { EROSION_DAMAGE_PERCENT, SIDES } from './constants';
 import { percentOfMaxHp } from './effects';
 import { compareSpeeds, orderSides } from './order';
@@ -56,7 +57,8 @@ function erosionOrder(sides: Sides, rng: RngState): { order: readonly Side[]; rn
 /**
  * ターン終了処理（3.10 の 4）。場にいて倒れていないキャラだけに行う（控えは止まる）。
  * 1. 侵蝕のダメージ（最大HPの10%、切り捨て、最低1）を素早さ順に1体ずつ
- * 2. 状態異常と大技の使用不可ターンの残りを1減らす
+ * 2. お守りの回復（ターンの終わりに回復する効果があれば。侵蝕で倒れたキャラは回復しない）
+ * 3. 状態異常と大技の使用不可ターンの残りを1減らす
  */
 export function processTurnEnd(sides: Sides, rng: RngState): TurnEndResult {
   let current = sides;
@@ -74,6 +76,12 @@ export function processTurnEnd(sides: Sides, rng: RngState): TurnEndResult {
       events.push({ type: 'fainted', side, index: current[side].active });
       fainted.push(side);
     }
+  }
+
+  for (const side of SIDES) {
+    const healed = healOnTurnEnd(current, side);
+    current = healed.sides;
+    events.push(...healed.events);
   }
 
   for (const side of SIDES) {

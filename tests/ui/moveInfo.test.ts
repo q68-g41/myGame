@@ -34,6 +34,23 @@ describe('技の詳細（長押しで出す文章）', () => {
     ]);
   });
 
+  it('お守りが効くと、威力（HPの条件も見る）と大技の使えないターン数に反映する', () => {
+    const big = makeMove({ id: 'blue-burst', attribute: 'blue', kind: 'big', power: 100 });
+    const charms = [
+      { type: 'lowHpPower', hpPercent: 30, percent: 30 },
+      { type: 'cooldownCut', turns: 1 },
+    ] as const;
+    expect(describeMove(big, makeCombatant({ hp: 30 }), orange, charms).lines).toEqual([
+      '蒼属性・大技',
+      '威力 130（お守りで 100 から上がっている）',
+      'いまの相手に 等倍（×1）',
+      '使ったあと 1ターン 使えない（お守りで 2 から短くなっている）',
+    ]);
+    expect(describeMove(big, user, orange, [{ type: 'cooldownCut', turns: 2 }]).lines).toContain(
+      'お守りで、使ったあとも続けて使える',
+    );
+  });
+
   it('先制技と補助技', () => {
     const quick = makeMove({ id: 'quick-jab', attribute: 'yellow', kind: 'priority', power: 35 });
     expect(describeMove(quick, user, orange).lines).toContain('技の中で先に動く');
