@@ -97,6 +97,14 @@ describe('チーム選択の画面', () => {
     onlyBottomIsInteractive();
   });
 
+  it('候補をタップすると、詳細にそのキャラのドット絵が出る（2倍）', () => {
+    expect(root.querySelector('.fighter-detail__sprite')).toBeNull();
+    candidates()[2]!.click();
+    const sprite = root.querySelector<HTMLImageElement>('.screen__view img.fighter-detail__sprite');
+    expect(sprite?.getAttribute('width')).toBe('96');
+    expect(sprite?.getAttribute('src')).toBeTruthy();
+  });
+
   it('3体選ぶまでは出発できない。タップした順が出る順になり、もう一度タップで外せる', () => {
     expect(confirmButton().disabled).toBe(true);
     candidates()[3]!.click();

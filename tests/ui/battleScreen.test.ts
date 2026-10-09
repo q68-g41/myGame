@@ -57,6 +57,15 @@ describe('バトル画面', () => {
     expect(controls.querySelectorAll('.bench-button')).toHaveLength(2);
   });
 
+  it('場のキャラはドット絵を2倍で出し、相手側だけ左右反転する', () => {
+    const player = root.querySelector<HTMLImageElement>('[data-side="player"] img.sprite')!;
+    const enemy = root.querySelector<HTMLImageElement>('[data-side="enemy"] img.sprite')!;
+    expect(player.getAttribute('width')).toBe('96');
+    expect(enemy.getAttribute('width')).toBe('96');
+    expect(player.classList.contains('sprite--flipped')).toBe(false);
+    expect(enemy.classList.contains('sprite--flipped')).toBe(true);
+  });
+
   it('操作できる要素は下半分（操作領域）にだけ置く', () => {
     expect(root.querySelector('.screen__view')!.querySelectorAll(INTERACTIVE)).toHaveLength(0);
   });

@@ -12,6 +12,7 @@ import {
   INITIAL_DRAFT_UI,
   toggleDraftPick,
 } from '../../src/ui/runView';
+import { spriteUrl } from '../../src/ui/sprites';
 
 /** テスト用のマップ：1層目 2マス → 2層目 3マス → ボス */
 const MAP: AreaMap = {
@@ -75,6 +76,7 @@ describe('チーム選択', () => {
     expect(fighterDetail(crimson)).toEqual({
       name: 'ベニギツネ',
       color: expect.any(String),
+      sprite: spriteUrl('crimson-trial'),
       attributeName: '紅属性',
       stats: 'HP 95・攻撃 65・防御 45・素早さ 60',
       moves: ['緋の爪（通常・威力60）', '紅炎落とし（大技・威力100）', '火花突き（先制・威力35）', '闘志（補助・攻撃↑2）'],

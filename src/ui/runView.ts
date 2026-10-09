@@ -20,6 +20,7 @@ import {
 } from '../engine/run';
 import type { FighterDef, MoveDef } from '../engine/types';
 import { MOVE_KIND_NAMES, summarizeEffects } from './moveInfo';
+import { spriteUrl } from './sprites';
 
 /** チームの1体の表示（HPつき） */
 export interface TeamMemberView {
@@ -55,6 +56,8 @@ export interface CandidateView {
 export interface FighterDetailView {
   readonly name: string;
   readonly color: string;
+  /** ドット絵の URL。絵がなければ null（属性の色の四角を出す） */
+  readonly sprite: string | null;
   /** 例：「紅属性」 */
   readonly attributeName: string;
   /** 例：「HP 95・攻撃 65・防御 45・素早さ 60」 */
@@ -97,6 +100,7 @@ export function fighterDetail(fighter: FighterDef): FighterDetailView {
   return {
     name: getFighter(fighter.id).name,
     color: ATTRIBUTE_COLORS[fighter.attribute],
+    sprite: spriteUrl(fighter.id),
     attributeName: `${ATTRIBUTE_NAMES[fighter.attribute]}属性`,
     stats: [
       `HP ${stats.hp}`,

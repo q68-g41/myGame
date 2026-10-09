@@ -4,7 +4,8 @@
  */
 import { el } from './dom';
 import type { EventView, NodeMemberView, RestView, ScoutView } from './nodeView';
-import { button, charmLine, screen, swatch, teamRow } from './runScreens';
+import { button, charmLine, screen, teamRow } from './runScreens';
+import { spriteElement } from './sprites';
 
 /** 大きめの選択肢（見出しと説明の2行） */
 function optionCard(
@@ -117,10 +118,14 @@ export function renderScoutScreen(root: HTMLElement, view: ScoutView, handlers: 
   } else {
     const card = el(doc, 'div', 'fighter-detail');
     const header = el(doc, 'div', 'fighter-detail__header');
-    header.append(
-      swatch(doc, 'fighter-detail__icon', view.detail.color),
+    const title = el(doc, 'div', 'fighter-detail__title');
+    title.append(
       el(doc, 'span', 'fighter-detail__name', view.detail.name),
       el(doc, 'span', 'fighter-detail__attribute', view.detail.attributeName),
+    );
+    header.append(
+      spriteElement(doc, { url: view.detail.sprite, color: view.detail.color, scale: 2, className: 'fighter-detail__sprite' }),
+      title,
     );
     const moves = el(doc, 'ul', 'fighter-detail__moves');
     moves.append(...view.detail.moves.map((move) => el(doc, 'li', '', move)));

@@ -12,6 +12,7 @@ import type {
   RunEndView,
   TeamMemberView,
 } from './runView';
+import { spriteElement } from './sprites';
 
 const SVG_NS = 'http://www.w3.org/2000/svg';
 
@@ -90,10 +91,14 @@ export interface DraftScreenHandlers {
 function detailCard(doc: Document, detail: FighterDetailView): HTMLElement {
   const card = el(doc, 'div', 'fighter-detail');
   const header = el(doc, 'div', 'fighter-detail__header');
-  header.append(
-    swatch(doc, 'fighter-detail__icon', detail.color),
+  const title = el(doc, 'div', 'fighter-detail__title');
+  title.append(
     el(doc, 'span', 'fighter-detail__name', detail.name),
     el(doc, 'span', 'fighter-detail__attribute', detail.attributeName),
+  );
+  header.append(
+    spriteElement(doc, { url: detail.sprite, color: detail.color, scale: 2, className: 'fighter-detail__sprite' }),
+    title,
   );
   const moves = el(doc, 'ul', 'fighter-detail__moves');
   moves.append(...detail.moves.map((move) => el(doc, 'li', '', move)));

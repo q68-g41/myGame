@@ -17,6 +17,14 @@ describe('トップ画面', () => {
     expect(root.querySelector('h1')?.textContent).toBe('彩霊のみち');
   });
 
+  it('彩霊3体のドット絵を、上半分に並べる', () => {
+    const sprites = root.querySelectorAll<HTMLImageElement>('.screen__view img.top__member');
+    expect(sprites).toHaveLength(3);
+    for (const sprite of sprites) {
+      expect(sprite.getAttribute('src')).toBeTruthy();
+    }
+  });
+
   it('操作できる要素は下半分（操作領域）にだけ置く', () => {
     const view = root.querySelector('.screen__view')!;
     const controls = root.querySelector('.screen__controls')!;
