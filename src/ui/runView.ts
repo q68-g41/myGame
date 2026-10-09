@@ -446,7 +446,7 @@ export function buildRewardView(run: RunState, ui: RewardUiState = INITIAL_REWAR
               name: getFighter(m.fighter.id).name,
               color: ATTRIBUTE_COLORS[m.fighter.attribute],
               disabled: known,
-              note: known ? 'もう覚えている' : `技 ${m.fighter.moves.length}/${MAX_MOVES}`,
+              note: known ? '覚えている' : `技 ${m.fighter.moves.length}/${MAX_MOVES}`,
             };
           })
         : [],

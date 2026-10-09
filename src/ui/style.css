@@ -475,11 +475,13 @@ body {
   -webkit-touch-callout: none;
 }
 
+/* 狭いときは、語の途中ではなく項目ごとに次の行へ送る（例：使えない大技の「あと2ターン」） */
 .move-button__top,
 .move-button__bottom {
   display: flex;
+  flex-wrap: wrap;
   align-items: center;
-  gap: 6px;
+  gap: 0 6px;
   width: 100%;
 }
 
@@ -640,10 +642,12 @@ body {
   list-style: none;
 }
 
+/* 枠が3つ並ぶので、1行目に順番と色、2行目に名前を出す（6文字の名前でも切れないように） */
 .draft-slot {
   display: flex;
+  flex-wrap: wrap;
   align-items: center;
-  gap: 6px;
+  gap: 2px 6px;
   min-width: 0;
   padding: 6px 8px;
   border: 2px solid var(--color-accent);
@@ -668,10 +672,11 @@ body {
   border-radius: 3px;
 }
 
+/* 枠より長い名前は、省略せずに折り返す */
 .draft-slot__name {
-  overflow: hidden;
-  text-overflow: ellipsis;
-  white-space: nowrap;
+  flex-basis: 100%;
+  min-width: 0;
+  overflow-wrap: anywhere;
 }
 
 .fighter-detail {
@@ -878,11 +883,13 @@ body {
   gap: 8px;
 }
 
+/* 3つ並んで狭いときは、名前の途中で折り返さずに、記号の下に名前を出す */
 .map-choice {
   display: flex;
+  flex-wrap: wrap;
   align-items: center;
   justify-content: center;
-  gap: 8px;
+  gap: 4px 8px;
   min-height: 64px;
   padding: 8px;
   border: 2px solid var(--color-accent);
@@ -895,6 +902,10 @@ body {
   -webkit-tap-highlight-color: transparent;
   user-select: none;
   cursor: pointer;
+}
+
+.map-choice__name {
+  white-space: nowrap;
 }
 
 .map-choice:active {

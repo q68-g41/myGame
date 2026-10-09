@@ -60,6 +60,12 @@ describe('キャラのデータ（仕様書 3.2 の目安）', () => {
     expect(new Set(FIGHTERS.map((fighter) => fighter.name)).size).toBe(FIGHTERS.length);
   });
 
+  it('名前は6文字まで（仕様書 5。狭い枠でも省略せずに出せる長さ）', () => {
+    for (const fighter of FIGHTERS) {
+      expect([...fighter.name].length, fighter.name).toBeLessThanOrEqual(6);
+    }
+  });
+
   it('12体で、属性ごとに2体ずついる（仕様書 7 の M5）', () => {
     expect(FIGHTERS).toHaveLength(12);
     expect(FIGHTERS.map((fighter) => fighter.attribute).sort()).toEqual(

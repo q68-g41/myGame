@@ -58,7 +58,7 @@ describe('報酬の画面に出す内容', () => {
     expect(view.prompt).toBe('大瀑布を だれに覚えさせますか？');
     expect(view.members.map((m) => [m.name, m.disabled, m.note])).toEqual([
       ['ベニギツネ', false, '技 4/4'],
-      ['シズクサギ', true, 'もう覚えている'],
+      ['シズクサギ', true, '覚えている'],
       ['イナホイタチ', false, '技 4/4'],
     ]);
   });
