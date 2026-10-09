@@ -1,0 +1,62 @@
+<!doctype html>
+<!--
+  itch.io のカバー画像（630×500）を作るためのページ。
+  ブラウザで開いて .cover の部分を 630×500 で画像にする（docs/itch.md の「カバー画像の作り直し」）。
+  絵はリポジトリのドット絵をそのまま読む。タイトルが決まったら、h1 を書き換えて作り直す。
+-->
+<html lang="ja">
+<head>
+<meta charset="utf-8">
+<title>カバー画像</title>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Zen+Kaku+Gothic+New:wght@500;700&family=Zen+Old+Mincho:wght@700;900&display=swap">
+<style>
+  * { box-sizing: border-box; }
+  html, body { margin: 0; }
+  .cover {
+    position: relative; width: 630px; height: 500px; overflow: hidden;
+    background: radial-gradient(120% 90% at 50% 0%, #2a2840 0%, #16151f 60%, #0f0e16 100%);
+    color: #f2f2f7; font-family: 'Zen Kaku Gothic New', sans-serif;
+  }
+  /* 上の帯：6つの属性の色 */
+  .bands { position: absolute; inset: 0 0 auto 0; height: 10px; display: flex; }
+  .bands span { flex: 1; }
+  .glow { position: absolute; border-radius: 50%; filter: blur(40px); opacity: 0.28; }
+  .title { position: absolute; left: 0; right: 0; top: 78px; text-align: center; }
+  .title h1 {
+    margin: 0; font-family: 'Zen Old Mincho', serif; font-weight: 900; font-size: 76px; letter-spacing: 0.12em;
+    text-shadow: 0 2px 0 #0008, 0 0 24px #0006;
+  }
+  .title p { margin: 14px 0 0; font-size: 19px; font-weight: 700; letter-spacing: 0.08em; color: #e9e4d6; }
+  .row { position: absolute; left: 0; right: 0; bottom: 62px; display: flex; justify-content: center; gap: 2px; }
+  /* ドット絵は2倍（整数倍）で、後ろに属性の色をうすく敷く（ゲームのバトル画面と同じ） */
+  .sp {
+    width: 100px; height: 100px; display: grid; place-items: center; border-radius: 50%;
+    background: radial-gradient(circle at 50% 58%, color-mix(in srgb, var(--c) 45%, transparent) 0 44%, transparent 70%);
+  }
+  .sp img { display: block; image-rendering: pixelated; }
+  .tag { position: absolute; left: 0; right: 0; bottom: 22px; text-align: center; font-size: 15px; font-weight: 500; color: #c9c6d6; letter-spacing: 0.06em; }
+  .tag b { color: #f0b445; font-weight: 700; }
+</style>
+</head>
+<body>
+<div class="cover">
+  <div class="bands"><span style="background: #d9473f"></span><span style="background: #e8873a"></span><span style="background: #e3c23d"></span><span style="background: #4fb36a"></span><span style="background: #3f8fd9"></span><span style="background: #9a6ad9"></span></div>
+  <div class="glow" style="left: -60px; top: 120px; width: 260px; height: 200px; background: #d9473f"></div>
+  <div class="glow" style="right: -60px; top: 110px; width: 260px; height: 200px; background: #3f8fd9"></div>
+  <div class="glow" style="left: 220px; top: 300px; width: 200px; height: 140px; background: #4fb36a"></div>
+  <div class="title">
+    <h1>彩霊のみち</h1>
+    <p>相手の一手を読む、ローグライト・コマンドバトル</p>
+  </div>
+  <div class="row">
+    <div class="sp" style="--c: #d9473f"><img src="../../src/assets/sprites/crimson-trial.png" width="96" height="96" alt=""></div>
+    <div class="sp" style="--c: #e8873a"><img src="../../src/assets/sprites/orange-raider.png" width="96" height="96" alt=""></div>
+    <div class="sp" style="--c: #e3c23d"><img src="../../src/assets/sprites/yellow-trickster.png" width="96" height="96" alt=""></div>
+    <div class="sp" style="--c: #4fb36a"><img src="../../src/assets/sprites/green-charger.png" width="96" height="96" alt=""></div>
+    <div class="sp" style="--c: #3f8fd9"><img src="../../src/assets/sprites/blue-skirmisher.png" width="96" height="96" alt=""></div>
+    <div class="sp" style="--c: #9a6ad9"><img src="../../src/assets/sprites/violet-trial.png" width="96" height="96" alt=""></div>
+  </div>
+  <div class="tag"><b>縦持ち・片手</b>　1回15〜20分　ブラウザで遊べる</div>
+</div>
+</body>
+</html>
