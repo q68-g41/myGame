@@ -109,25 +109,6 @@ body {
   gap: 16px;
 }
 
-/* 仮素材（M4 でドット絵に差し替える） */
-.top__member {
-  width: 48px;
-  height: 48px;
-  border-radius: 4px;
-}
-
-.top__member--a {
-  background: #d9473f;
-}
-
-.top__member--b {
-  background: #3f8fd9;
-}
-
-.top__member--c {
-  background: #4fb36a;
-}
-
 .top__message {
   margin: 0;
   min-height: 3em;
@@ -168,12 +149,28 @@ body {
   flex-direction: row-reverse;
 }
 
+/* ドット絵（48×48 を整数倍で拡大する）。絵がないキャラは属性の色の四角 */
+.sprite {
+  display: block;
+  flex: none;
+  image-rendering: pixelated;
+}
+
+.sprite--flipped {
+  transform: scaleX(-1);
+}
+
+.sprite--placeholder {
+  border-radius: 6px;
+}
+
+/* 場のキャラ：後ろに属性の色をうすく敷く（暗い色のボスも背景に埋もれないように） */
 .fighter__sprite {
   flex: none;
-  width: 72px;
-  height: 72px;
-  border-radius: 6px;
-  image-rendering: pixelated;
+  width: 96px;
+  height: 96px;
+  border-radius: 50%;
+  background: radial-gradient(circle at 50% 58%, var(--sprite-glow, transparent) 0 46%, transparent 70%);
 }
 
 .fighter__info {
@@ -686,14 +683,14 @@ body {
 .fighter-detail__header {
   display: flex;
   align-items: center;
-  gap: 8px;
+  gap: 12px;
 }
 
-.fighter-detail__icon {
-  flex: none;
-  width: 20px;
-  height: 20px;
-  border-radius: 4px;
+.fighter-detail__title {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  min-width: 0;
 }
 
 .fighter-detail__name {

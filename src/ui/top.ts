@@ -1,5 +1,11 @@
+import { ATTRIBUTE_COLORS } from '../data/attributes';
+import { getFighter } from '../data/fighters';
 import { GAME_TITLE } from '../data/labels';
 import { el } from './dom';
+import { spriteElement, spriteUrl } from './sprites';
+
+/** トップ画面に並べる彩霊（紅・蒼・翠の3体） */
+const TOP_TEAM = ['crimson-trial', 'blue-skirmisher', 'green-charger'] as const;
 
 export interface TopScreenOptions {
   /** 画面に出すビルドの識別子（デプロイ後に最新版か確かめるため） */
@@ -32,18 +38,18 @@ export function renderTopScreen(root: HTMLElement, options: TopScreenOptions, co
   const subtitle = el(doc, 'p', 'top__subtitle', '仮題');
   const title = el(doc, 'h1', 'top__title', GAME_TITLE);
 
-  // 仮素材：チーム3体ぶんの色付きの四角
   const team = el(doc, 'div', 'top__team');
   team.setAttribute('aria-hidden', 'true');
-  for (const variant of ['a', 'b', 'c']) {
-    team.append(el(doc, 'div', `top__member top__member--${variant}`));
+  for (const id of TOP_TEAM) {
+    const color = ATTRIBUTE_COLORS[getFighter(id).attribute];
+    team.append(spriteElement(doc, { url: spriteUrl(id), color, scale: 2, className: 'top__member' }));
   }
 
   const message = el(
     doc,
     'p',
     'top__message',
-    onContinue ? '前回のランの続きから遊べます' : '彩霊を3体えらんで、旅に出ます（仮素材）',
+    onContinue ? '前回のランの続きから遊べます' : '彩霊を3体えらんで、旅に出ます',
   );
   view.append(subtitle, title, team, message);
 

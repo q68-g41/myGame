@@ -12,6 +12,7 @@ import type {
   OrderPreview,
 } from './battleView';
 import { el } from './dom';
+import { spriteElement } from './sprites';
 
 export interface BattleScreenHandlers {
   onMove(moveId: string): void;
@@ -37,10 +38,11 @@ function fighterPanel(doc: Document, view: FighterPanelView, side: 'enemy' | 'pl
   const panel = el(doc, 'div', `fighter fighter--${side}${hit ? ' fighter--hit' : ''}`);
   panel.dataset.side = side;
 
-  // 仮素材：属性の色の四角（M4 でドット絵に差し替える）
+  // ドット絵を2倍で出す。後ろに属性の色をうすく敷いて、暗い色の絵（ボス）も背景に埋もれないようにする。相手は左右反転
   const sprite = el(doc, 'div', 'fighter__sprite');
-  sprite.style.background = view.color;
+  sprite.style.setProperty('--sprite-glow', `${view.color}66`);
   sprite.setAttribute('aria-hidden', 'true');
+  sprite.append(spriteElement(doc, { url: view.sprite, color: view.color, scale: 2, flipped: side === 'enemy' }));
 
   const info = el(doc, 'div', 'fighter__info');
   const header = el(doc, 'div', 'fighter__header');
