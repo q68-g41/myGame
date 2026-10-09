@@ -153,6 +153,10 @@ describe('マップの画面', () => {
     expect(root.querySelectorAll('.screen__view .map-node')).toHaveLength(total);
     expect(root.querySelectorAll('.screen__controls .map-choice')).toHaveLength(runChoices(run).length);
     expect(root.querySelectorAll('.screen__controls .member')).toHaveLength(3);
+    // チームの一覧には、キャラの小さい絵（32×32）を出す
+    const icons = [...root.querySelectorAll<HTMLImageElement>('.screen__controls .member img.member__icon')];
+    expect(icons).toHaveLength(3);
+    expect(icons.every((icon) => icon.getAttribute('width') === '32')).toBe(true);
     expect(root.querySelector('.map__progress')?.textContent).toBe('エリア1・スタート');
     onlyBottomIsInteractive();
   });

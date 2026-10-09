@@ -171,6 +171,8 @@ describe('報酬の画面', () => {
     confirm().click();
     expect(root.querySelector('.reward__prompt')?.textContent).toBe(`${moveName}を だれに覚えさせますか？`);
     expect(root.querySelectorAll('.reward-members .reward-option')).toHaveLength(3);
+    // どのキャラか、小さい絵でも分かる
+    expect(root.querySelectorAll('.reward-members img.reward-option__icon')).toHaveLength(3);
     onlyBottomIsInteractive();
 
     // 戻る → 3択に戻る（選んだものはそのまま）

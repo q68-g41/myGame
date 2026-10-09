@@ -27,6 +27,8 @@ import { iconUrl, MAP_ICON_SIZE, mapIconUrl, SPRITE_SIZE, spriteUrl } from './sp
 export interface TeamMemberView {
   readonly name: string;
   readonly color: string;
+  /** 小さい絵の URL。絵がなければ null（属性の色の四角を出す） */
+  readonly icon: string | null;
   readonly hp: number;
   readonly maxHp: number;
 }
@@ -226,6 +228,7 @@ export function teamViews(team: readonly RunMember[]): TeamMemberView[] {
   return team.map((member) => ({
     name: getFighter(member.fighter.id).name,
     color: ATTRIBUTE_COLORS[member.fighter.attribute],
+    icon: iconUrl(member.fighter.id),
     hp: member.hp,
     maxHp: member.fighter.stats.hp,
   }));
@@ -360,6 +363,8 @@ export interface RewardMemberView {
   readonly index: number;
   readonly name: string;
   readonly color: string;
+  /** 小さい絵の URL。絵がなければ null */
+  readonly icon: string | null;
   readonly disabled: boolean;
   /** 選べない理由など。なければ null */
   readonly note: string | null;
@@ -477,6 +482,7 @@ export function buildRewardView(run: RunState, ui: RewardUiState = INITIAL_REWAR
               index,
               name: getFighter(m.fighter.id).name,
               color: ATTRIBUTE_COLORS[m.fighter.attribute],
+              icon: iconUrl(m.fighter.id),
               disabled: known,
               note: known ? '覚えている' : `技 ${m.fighter.moves.length}/${MAX_MOVES}`,
             };

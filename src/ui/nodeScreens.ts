@@ -5,7 +5,7 @@
 import { el } from './dom';
 import type { EventView, NodeMemberView, RestView, ScoutView } from './nodeView';
 import { button, charmLine, screen, teamRow } from './runScreens';
-import { spriteElement } from './sprites';
+import { iconElement, spriteElement } from './sprites';
 
 /** 大きめの選択肢（見出しと説明の2行） */
 function optionCard(
@@ -31,7 +31,11 @@ function memberPicks(doc: Document, members: readonly NodeMemberView[], onPick: 
   for (const member of members) {
     const pick = button(doc, 'node-pick', '', () => onPick(member.index));
     pick.style.borderLeftColor = member.color;
-    pick.append(el(doc, 'span', 'node-pick__name', member.name), el(doc, 'span', 'node-pick__note', member.note));
+    pick.append(
+      iconElement(doc, { url: member.icon, color: member.color, className: 'node-pick__icon' }),
+      el(doc, 'span', 'node-pick__name', member.name),
+      el(doc, 'span', 'node-pick__note', member.note),
+    );
     row.append(pick);
   }
   return row;
@@ -145,6 +149,7 @@ export function renderScoutScreen(root: HTMLElement, view: ScoutView, handlers: 
       pick.setAttribute('aria-pressed', String(candidate.selected));
       pick.style.borderLeftColor = candidate.color;
       pick.append(
+        iconElement(doc, { url: candidate.icon, color: candidate.color, className: 'node-pick__icon' }),
         el(doc, 'span', 'node-pick__name', candidate.name),
         el(doc, 'span', 'node-pick__note', `${candidate.attributeName}属性`),
       );
