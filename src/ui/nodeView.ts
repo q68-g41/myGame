@@ -17,12 +17,15 @@ import {
   type FighterDetailView,
   type TeamMemberView,
 } from './runView';
+import { iconUrl } from './sprites';
 
 /** 選べるキャラ（技を強化するキャラ、入れ替えるキャラ） */
 export interface NodeMemberView {
   readonly index: number;
   readonly name: string;
   readonly color: string;
+  /** 小さい絵の URL。絵がなければ null */
+  readonly icon: string | null;
   readonly note: string;
 }
 
@@ -91,6 +94,7 @@ export function buildRestView(run: RunState, ui: RestUiState = INITIAL_REST_UI):
             index,
             name: getFighter(m.fighter.id).name,
             color: ATTRIBUTE_COLORS[m.fighter.attribute],
+            icon: iconUrl(m.fighter.id),
             note: `HP ${m.hp} / ${m.fighter.stats.hp}`,
           }))
         : [],
@@ -142,6 +146,8 @@ export interface ScoutView {
     readonly index: number;
     readonly name: string;
     readonly color: string;
+    /** 小さい絵の URL。絵がなければ null */
+    readonly icon: string | null;
     readonly attributeName: string;
     readonly selected: boolean;
   }[];
@@ -169,6 +175,7 @@ export function buildScoutView(run: RunState, ui: ScoutUiState = INITIAL_SCOUT_U
       index,
       name: getFighter(fighter.id).name,
       color: ATTRIBUTE_COLORS[fighter.attribute],
+      icon: iconUrl(fighter.id),
       attributeName: ATTRIBUTE_NAMES[fighter.attribute],
       selected: index === ui.selected,
     })),
@@ -180,6 +187,7 @@ export function buildScoutView(run: RunState, ui: ScoutUiState = INITIAL_SCOUT_U
             index,
             name: getFighter(m.fighter.id).name,
             color: ATTRIBUTE_COLORS[m.fighter.attribute],
+            icon: iconUrl(m.fighter.id),
             note: `HP ${m.hp} / ${m.fighter.stats.hp}`,
           }))
         : [],

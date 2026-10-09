@@ -43,7 +43,11 @@ function memberCard(doc: Document, member: TeamMemberView): HTMLElement {
   const card = el(doc, 'div', member.hp === 0 ? 'member member--fainted' : 'member');
   card.style.borderLeftColor = member.color;
   const header = el(doc, 'div', 'member__header');
-  header.append(el(doc, 'span', 'member__name', member.name));
+  // 絵を上に、名前をその下に出す（3つ並ぶので、横に並べると6文字の名前が入らない）
+  header.append(
+    iconElement(doc, { url: member.icon, color: member.color, className: 'member__icon' }),
+    el(doc, 'span', 'member__name', member.name),
+  );
   const bar = el(doc, 'div', 'hp-bar');
   const fill = el(doc, 'div', `hp-bar__fill hp-bar__fill--${hpLevel(member.hp, member.maxHp)}`);
   fill.style.width = `${(member.hp / member.maxHp) * 100}%`;
@@ -317,7 +321,11 @@ export function renderRewardScreen(root: HTMLElement, view: RewardView, handlers
         const choose = button(doc, 'reward-option', '', () => handlers.onMember(member.index));
         choose.disabled = member.disabled;
         choose.style.borderLeftColor = member.color;
-        choose.append(el(doc, 'span', 'reward-option__name', member.name), el(doc, 'span', 'reward-option__note', member.note ?? ''));
+        choose.append(
+          iconElement(doc, { url: member.icon, color: member.color, className: 'reward-option__icon' }),
+          el(doc, 'span', 'reward-option__name', member.name),
+          el(doc, 'span', 'reward-option__note', member.note ?? ''),
+        );
         options.append(choose);
       }
     } else {

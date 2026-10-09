@@ -590,12 +590,13 @@ body {
   gap: 8px;
 }
 
+/* 絵を足した分、上下の余白と行の間を詰める（スカウトの上半分に、詳細とチームが収まるように） */
 .member {
   display: flex;
   flex-direction: column;
-  gap: 4px;
+  gap: 2px;
   min-width: 0;
-  padding: 8px;
+  padding: 6px 8px;
   border: 2px solid var(--color-border);
   border-left-width: 8px;
   border-radius: 8px;
@@ -606,11 +607,23 @@ body {
   opacity: 0.6;
 }
 
+/* チームのカード：上に絵（32×32）、その下に名前 */
 .member__header {
   display: flex;
-  align-items: center;
-  gap: 6px;
+  flex-direction: column;
+  align-items: flex-start;
   min-width: 0;
+}
+
+.member__icon,
+.reward-option__icon,
+.node-pick__icon {
+  flex: none;
+}
+
+/* 倒れたキャラの絵は、色を抜く */
+.member--fainted .member__icon {
+  filter: grayscale(1);
 }
 
 .member__name {
@@ -1203,7 +1216,8 @@ body {
 
 /* 3列のキャラ選び（報酬・休憩・スカウト）：6文字の名前（例：ユウヒダヌキ）が1行に収まるように詰める */
 .reward-members .reward-option,
-.node-members .node-pick {
+.node-members .node-pick,
+.node-moves .node-pick {
   padding: 8px;
 }
 

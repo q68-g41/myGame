@@ -230,11 +230,15 @@ describe('スカウト・イベントの画面', () => {
     reach('スカウト', '.scout');
     onlyBottomIsInteractive();
     expect(primary().disabled).toBe(true);
+    // 候補にも、チームの一覧にも、小さい絵が出る
+    expect(root.querySelectorAll('.node-pick img.node-pick__icon')).toHaveLength(3);
+    expect(root.querySelectorAll('.member img.member__icon')).toHaveLength(3);
     const candidate = root.querySelectorAll<HTMLButtonElement>('.node-pick')[1]!;
     const name = candidate.querySelector('.node-pick__name')?.textContent;
     candidate.click();
     expect(root.querySelector('.fighter-detail__name')?.textContent).toBe(name);
     primary().click();
+    expect(root.querySelectorAll('.node-members img.node-pick__icon')).toHaveLength(3);
     root.querySelectorAll<HTMLButtonElement>('.node-members .node-pick')[2]!.click();
     expect(root.querySelector('.map__message')?.textContent).toMatch(new RegExp(`^${name}が仲間になった`));
     expect(root.querySelectorAll('.member__name')[2]?.textContent).toBe(name);
