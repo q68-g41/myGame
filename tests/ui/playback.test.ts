@@ -82,7 +82,7 @@ describe('バトル画面での演出', () => {
   });
 
   const tapFirstMove = () =>
-    [...root.querySelectorAll<HTMLButtonElement>('.move-button')].find((button) => !button.disabled)!.click();
+    [...root.querySelectorAll<HTMLButtonElement>('.move-button')].find((button) => button.getAttribute('aria-disabled') !== 'true')!.click();
 
   it('技を選ぶと、ログが1行ずつ流れ、2秒以内に終わる。その間は技を選べない', () => {
     const session = playMove(firstBattleSession(), firstMoveId());
@@ -91,7 +91,7 @@ describe('バトル画面での演出', () => {
     tapFirstMove();
     expect(root.querySelector('.battle--playing')).not.toBeNull();
     expect(root.querySelector('.playback-skip')).not.toBeNull();
-    expect([...root.querySelectorAll<HTMLButtonElement>('.move-button')].every((b) => b.disabled)).toBe(true);
+    expect([...root.querySelectorAll<HTMLButtonElement>('.move-button')].every((b) => b.getAttribute('aria-disabled') === 'true')).toBe(true);
 
     const seen = [logText()];
     const step = stepDuration(expected.length, 1);

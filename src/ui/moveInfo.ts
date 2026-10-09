@@ -85,7 +85,7 @@ export function describeMove(
   }
   const cooldown = user.cooldowns[move.id] ?? 0;
   if (cooldown > 0) {
-    lines.push(`あと ${cooldown}ターン 使えない`);
+    lines.push(`いまは使えない（あと ${cooldown}ターン）`);
   }
   return { name: getMove(move.id).name, lines };
 }

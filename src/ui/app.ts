@@ -46,7 +46,7 @@ import {
   type DraftUiState,
   type RewardUiState,
 } from './runView';
-import { createSaveStore, type SavedGame } from './save';
+import { createSaveStore, createSettingsStore, type SavedGame } from './save';
 import {
   createSession,
   needsPlayerReplacement,
@@ -79,6 +79,7 @@ interface Playback {
 /** アプリを始める。最初はトップ画面 */
 export function startApp(root: HTMLElement, options: AppOptions): void {
   const store = createSaveStore(options.storage ?? null);
+  const settings = createSettingsStore(options.storage ?? null);
   let run: RunState | null = null;
   let draft: DraftUiState = INITIAL_DRAFT_UI;
   let reward: RewardUiState = INITIAL_REWARD_UI;
@@ -89,7 +90,8 @@ export function startApp(root: HTMLElement, options: AppOptions): void {
   let notice: string | null = null;
   /** 戦闘中だけ持つ */
   let session: BattleSession | null = null;
-  let ui: UiState = INITIAL_UI_STATE;
+  /** 演出の速さは、前に開いたときの設定から始める */
+  let ui: UiState = { ...INITIAL_UI_STATE, speed: settings.load().speed };
   let playback: Playback | null = null;
   let pressTimer: ReturnType<typeof setTimeout> | null = null;
   /** 長押しで詳細を出したあと、指を離したときのタップでは技を使わない */
@@ -303,6 +305,7 @@ export function startApp(root: HTMLElement, options: AppOptions): void {
     },
     onToggleSpeed: () => {
       ui = { ...ui, speed: ui.speed === 1 ? 2 : 1 };
+      settings.save({ speed: ui.speed });
       render();
     },
     onSkip: () => {
