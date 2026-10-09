@@ -1,10 +1,11 @@
 // @vitest-environment happy-dom
 import { describe, expect, it } from 'vitest';
 import { BOSS_FIGHTERS, FIGHTERS } from '../../src/data/fighters';
-import { SPRITE_SIZE, spriteElement, spriteUrl } from '../../src/ui/sprites';
+import { ICON_SIZE, iconElement, iconUrl, SPRITE_SIZE, spriteElement, spriteUrl } from '../../src/ui/sprites';
 
 /** 絵のファイルの中身（data URI）。キーはファイルのパス */
 const FILES = import.meta.glob<string>('../../src/assets/sprites/*.png', { eager: true, query: '?inline', import: 'default' });
+const ICON_FILES = import.meta.glob<string>('../../src/assets/icons/*.png', { eager: true, query: '?inline', import: 'default' });
 
 /** PNG の幅と高さ（IHDR の値） */
 function pngSize(dataUri: string): { width: number; height: number } {
@@ -32,6 +33,24 @@ describe('ドット絵のファイル（仕様書 5.1）', () => {
   });
 });
 
+describe('小さい絵のファイル（候補一覧・選んだ順の枠・控え）', () => {
+  it('キャラ12体のすべてにあり、キャラにない絵はない（ボスは小さい表示に出ないので、なくてよい）', () => {
+    const ids = FIGHTERS.map((fighter) => fighter.id);
+    for (const id of ids) {
+      expect(iconUrl(id), id).toBeTypeOf('string');
+    }
+    const files = Object.keys(ICON_FILES).map((path) => path.split('/').pop()!.replace(/\.png$/, ''));
+    expect(files.sort()).toEqual([...ids].sort());
+    expect(iconUrl('unknown')).toBeNull();
+  });
+
+  it('どれも32×32', () => {
+    for (const [path, dataUri] of Object.entries(ICON_FILES)) {
+      expect(pngSize(dataUri), path).toEqual({ width: ICON_SIZE, height: ICON_SIZE });
+    }
+  });
+});
+
 describe('ドット絵の要素', () => {
   it('整数倍で拡大し、相手側は左右反転する', () => {
     const img = spriteElement(document, { url: spriteUrl('crimson-trial'), color: '#d9473f', scale: 2, flipped: true });
@@ -51,5 +70,23 @@ describe('ドット絵の要素', () => {
     expect(box.classList.contains('sprite--placeholder')).toBe(true);
     expect(box.style.width).toBe('96px');
     expect(box.style.background).toContain('rgb(217, 71, 63)');
+  });
+});
+
+describe('小さい絵の要素', () => {
+  it('32×32 を等倍で出す', () => {
+    const img = iconElement(document, { url: iconUrl('crimson-trial'), color: '#d9473f', className: 'candidate__icon' });
+    expect(img.tagName).toBe('IMG');
+    expect(img.getAttribute('width')).toBe('32');
+    expect(img.classList.contains('candidate__icon')).toBe(true);
+  });
+
+  it('絵がなければ属性の色の四角、色もなければ（まだ選んでいない枠）空の枠', () => {
+    const box = iconElement(document, { url: null, color: 'rgb(217, 71, 63)' });
+    expect(box.style.width).toBe('32px');
+    expect(box.style.background).toContain('rgb(217, 71, 63)');
+    const empty = iconElement(document, { url: null, color: null });
+    expect(empty.style.width).toBe('32px');
+    expect(empty.style.background).toContain('transparent');
   });
 });

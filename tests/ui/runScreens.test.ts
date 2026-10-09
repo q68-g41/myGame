@@ -97,6 +97,17 @@ describe('チーム選択の画面', () => {
     onlyBottomIsInteractive();
   });
 
+  it('候補の一覧と、選んだ順の枠に、キャラの小さい絵（32×32）が出る', () => {
+    const icons = [...root.querySelectorAll<HTMLImageElement>('.candidate img.candidate__icon')];
+    expect(icons).toHaveLength(5);
+    expect(icons.every((icon) => icon.getAttribute('width') === '32')).toBe(true);
+    // まだ選んでいない枠は、空の枠
+    expect(root.querySelectorAll('.draft-slot img')).toHaveLength(0);
+    candidates()[1]!.click();
+    const slot = root.querySelector<HTMLImageElement>('.draft-slot img.draft-slot__icon');
+    expect(slot?.getAttribute('src')).toBe(icons[1]!.getAttribute('src'));
+  });
+
   it('候補をタップすると、詳細にそのキャラのドット絵が出る（2倍）', () => {
     expect(root.querySelector('.fighter-detail__sprite')).toBeNull();
     candidates()[2]!.click();

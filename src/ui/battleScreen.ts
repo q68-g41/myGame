@@ -12,7 +12,7 @@ import type {
   OrderPreview,
 } from './battleView';
 import { el } from './dom';
-import { spriteElement } from './sprites';
+import { iconElement, spriteElement } from './sprites';
 
 export interface BattleScreenHandlers {
   onMove(moveId: string): void;
@@ -153,9 +153,12 @@ function benchButton(doc: Document, view: BenchView, handlers: BattleScreenHandl
   button.disabled = !view.selectable;
   button.dataset.index = String(view.index);
 
-  const icon = el(doc, 'span', 'bench-button__icon');
-  icon.style.background = view.fainted ? 'transparent' : view.color;
-  icon.setAttribute('aria-hidden', 'true');
+  // 倒れたキャラの絵は、色を抜いてうすく出す（CSS）
+  const icon = iconElement(doc, {
+    url: view.icon,
+    color: view.fainted ? null : view.color,
+    className: view.fainted ? 'bench-button__icon bench-button__icon--fainted' : 'bench-button__icon',
+  });
   const label = el(doc, 'span', 'bench-button__label');
   label.append(
     el(doc, 'span', 'bench-button__name', view.name),

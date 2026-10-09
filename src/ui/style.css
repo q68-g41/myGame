@@ -355,12 +355,14 @@ body {
   opacity: 0.6;
 }
 
+/* 控えの絵（32×32 を等倍）。倒れたキャラは色を抜いてうすく出す */
 .bench-button__icon {
   flex: none;
-  width: 28px;
-  height: 28px;
-  border-radius: 4px;
-  border: 1px solid var(--color-border);
+}
+
+.bench-button__icon--fainted {
+  filter: grayscale(1);
+  opacity: 0.4;
 }
 
 .bench-button__label {
@@ -654,7 +656,7 @@ body {
   list-style: none;
 }
 
-/* 枠が3つ並ぶので、1行目に順番と色、2行目に名前を出す（6文字の名前でも切れないように） */
+/* 枠が3つ並ぶので、1行目に順番と絵、2行目に名前を出す（6文字の名前でも切れないように） */
 .draft-slot {
   display: flex;
   flex-wrap: wrap;
@@ -679,9 +681,6 @@ body {
 
 .draft-slot__icon {
   flex: none;
-  width: 16px;
-  height: 16px;
-  border-radius: 3px;
 }
 
 /* 枠より長い名前は、省略せずに折り返す */
@@ -743,10 +742,10 @@ body {
 .candidate {
   display: flex;
   align-items: center;
-  /* 6文字の名前（例：イナホイタチ）が、選んだ順の数字と並んでも1行に収まるように詰める */
-  gap: 6px;
+  /* 6文字の名前（例：イナホイタチ）が、絵（32px）と選んだ順の数字と並んでも1行に収まるように詰める */
+  gap: 4px;
   min-height: 56px;
-  padding: 8px;
+  padding: 8px 6px;
   border: 2px solid var(--color-border);
   border-radius: 8px;
   background: var(--color-bg);
@@ -766,9 +765,6 @@ body {
 
 .candidate__icon {
   flex: none;
-  width: 24px;
-  height: 24px;
-  border-radius: 4px;
 }
 
 .candidate__name {
@@ -777,7 +773,7 @@ body {
 }
 
 .candidate__order {
-  min-width: 1em;
+  min-width: 0.75em;
   font-weight: bold;
   color: var(--color-accent);
   text-align: center;
