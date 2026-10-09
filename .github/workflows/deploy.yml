@@ -33,6 +33,8 @@ jobs:
       - run: npm ci
       - run: npm test
       - run: npm run build
+      # itch.io にアップロードする zip を作り、Pages の /sairei-itch.zip からダウンロードできるようにする
+      - run: npm run zip:itch
 
       - uses: actions/configure-pages@v6
 

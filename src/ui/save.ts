@@ -6,8 +6,11 @@ import type { RunState } from '../engine/run';
 import type { PlaybackSpeed } from './playback';
 import { saveSession, type BattleSession, type SavedBattle } from './session';
 
-/** localStorage のキー */
-export const SAVE_KEY = 'mygame.save';
+/**
+ * localStorage のキー。itch.io では、ほかの人の HTML ゲームと同じドメインで動くので、ゲームの名前を付けてぶつからないようにする。
+ * （M6 で 'mygame.save' から変えた。前のキーは、ほかのゲームのものかもしれないので読まない・消さない）
+ */
+export const SAVE_KEY = 'sairei-no-michi.save';
 
 /** 保存の形の版。形を変えて古いセーブが読めなくなるときに上げる（古い版のセーブは捨てる） */
 export const SAVE_VERSION = 4;
@@ -106,8 +109,8 @@ export function createSaveStore(storage: Pick<Storage, 'getItem' | 'setItem' | '
 
 /* ===== 設定（演出の速さ） ===== */
 
-/** 設定の localStorage のキー。ランの保存とは別にして、ランが終わっても消さない */
-export const SETTINGS_KEY = 'mygame.settings';
+/** 設定の localStorage のキー。ランの保存とは別にして、ランが終わっても消さない（名前の付け方は SAVE_KEY と同じ） */
+export const SETTINGS_KEY = 'sairei-no-michi.settings';
 
 /** 開き直しても残す設定 */
 export interface Settings {

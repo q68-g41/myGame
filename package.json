@@ -12,6 +12,7 @@
     "test:watch": "vitest",
     "typecheck": "tsc -b",
     "build": "tsc -b && vite build",
+    "zip:itch": "cd dist && rm -f sairei-itch.zip ../sairei-itch.zip && zip -qr ../sairei-itch.zip . && mv ../sairei-itch.zip .",
     "preview": "vite preview --host",
     "sim": "tsx scripts/simulate.ts"
   },
