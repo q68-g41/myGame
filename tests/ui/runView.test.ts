@@ -1,4 +1,5 @@
 import { describe, expect, it } from 'vitest';
+import { BOSSES } from '../../src/data/bosses';
 import { RUN_CONTENT } from '../../src/data/content';
 import { FIGHTERS } from '../../src/data/fighters';
 import type { AreaMap } from '../../src/engine/map';
@@ -12,7 +13,7 @@ import {
   INITIAL_DRAFT_UI,
   toggleDraftPick,
 } from '../../src/ui/runView';
-import { spriteUrl } from '../../src/ui/sprites';
+import { MAP_ICON_SIZE, mapIconUrl, SPRITE_SIZE, spriteUrl } from '../../src/ui/sprites';
 
 /** テスト用のマップ：1層目 2マス → 2層目 3マス → ボス */
 const MAP: AreaMap = {
@@ -89,9 +90,10 @@ describe('マップ', () => {
     const view = buildMapView(runAt(null));
     expect(view.progress).toBe('エリア1・スタート');
     expect(view.message).toBe('進むマスを選んでください');
+    const battleIcon = { url: mapIconUrl('battle'), size: MAP_ICON_SIZE };
     expect(view.choices).toEqual([
-      { index: 0, letter: 'A', name: '戦闘' },
-      { index: 1, letter: 'B', name: '戦闘' },
+      { index: 0, letter: 'A', name: '戦闘', icon: battleIcon },
+      { index: 1, letter: 'B', name: '戦闘', icon: battleIcon },
     ]);
     expect(view.layers[0]!.map((node) => [node.state, node.letter])).toEqual([
       ['choice', 'A'],
@@ -99,6 +101,15 @@ describe('マップ', () => {
     ]);
     expect(view.layers[1]!.every((node) => node.state === 'reachable')).toBe(true);
     expect(view.layers[2]![0]).toMatchObject({ state: 'reachable', mark: 'ボ', name: 'ボス' });
+  });
+
+  it('マスにはアイコンの絵（24×24）を出す。ボスのマスは、そのエリアのボスのドット絵（48×48）', () => {
+    const view = buildMapView(runAt(null));
+    expect(view.layers[0]![0]!.icon).toEqual({ url: mapIconUrl('battle'), size: MAP_ICON_SIZE });
+    expect(view.layers[2]![0]!.icon).toEqual({ url: spriteUrl(BOSSES[0]!.fighter.id), size: SPRITE_SIZE });
+    // エリアが変わると、ボスの絵も変わる
+    const area2 = buildMapView({ ...runAt(null), area: 1 });
+    expect(area2.layers[2]![0]!.icon?.url).toBe(spriteUrl(BOSSES[1]!.fighter.id));
   });
 
   it('マスにいるときは、いまのマス・進めるマス・通り過ぎたマス・たどり着けないマスを分ける', () => {

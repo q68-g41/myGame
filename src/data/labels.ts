@@ -28,7 +28,7 @@ export const NODE_KIND_NAMES: Readonly<Record<NodeKind, string>> = {
   boss: 'ボス',
 };
 
-/** マップのマスに出す1文字（仮素材。M5 でアイコンに差し替える） */
+/** マップのマスに出す1文字（アイコンの絵がないときに、代わりに出す） */
 export const NODE_KIND_MARKS: Readonly<Record<NodeKind, string>> = {
   battle: '戦',
   elite: '強',

@@ -157,6 +157,21 @@ describe('マップの画面', () => {
     onlyBottomIsInteractive();
   });
 
+  it('マスには文字の代わりにアイコンの絵、ボスのマスにはボスのドット絵を出す。次のマスのボタンにも同じ絵が出る', () => {
+    const nodes = [...root.querySelectorAll<HTMLElement>('.map-node')];
+    expect(nodes.every((node) => node.querySelector('img.map-node__icon') !== null)).toBe(true);
+    const boss = root.querySelector('.map-node--boss img.map-node__icon');
+    expect(boss?.getAttribute('width')).toBe('48');
+    const battle = root.querySelector('.map-node--battle img.map-node__icon');
+    expect(battle?.getAttribute('width')).toBe('24');
+    // 絵を出したマスに、代わりの1文字は出さない（選択肢の A・B だけ）
+    expect(root.querySelector('.map-node--boss')?.textContent).toBe('');
+    const choiceIcons = [...root.querySelectorAll<HTMLImageElement>('.map-choice img.map-choice__icon')];
+    expect(choiceIcons).toHaveLength(root.querySelectorAll('.map-choice').length);
+    // 読み上げでは、マスの種類が分かる
+    expect(boss?.closest('.map-node')?.getAttribute('aria-label')).toContain('ボス');
+  });
+
   it('選択肢の文字（A・B…）が、マップの進めるマスにも付いている', () => {
     const letters = [...root.querySelectorAll('.map-choice__letter')].map((l) => l.textContent);
     const marked = [...root.querySelectorAll('.map-node--choice .map-node__letter')].map((l) => l.textContent);

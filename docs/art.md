@@ -95,9 +95,44 @@ no text, no border. {雰囲気} Original design that does not resemble any exist
 - 3. の縮小を 30×30 にし、6. で 32×32 の真ん中に置く（上下左右に1ピクセルの余白）
 - 保存先は `src/assets/icons/<キャラID>.png`
 
+## マップのアイコン（24×24）
+
+マップのマスのアイコンも A案（GPT Image 2.5、quality high、1k、正方形）で描いた。絵柄をそろえるため、参考画像に採用済みの絵（ベニコウラとイナホイタチ）を渡した。
+
+| マス | ファイル | 題材 | 生成のジョブID |
+| --- | --- | --- | --- |
+| 戦闘 | `src/assets/map/battle.png` | 交差した刀 | ca546689-9b7e-4814-914f-a830670c028b |
+| 強敵 | `src/assets/map/elite.png` | 鬼の面 | 941120af-9e6e-4a8a-bce4-dab767b2dc49 |
+| 休憩 | `src/assets/map/rest.png` | 焚き火 | 7b6c4754-c016-47b7-b6a1-90a69ef35d57 |
+| スカウト | `src/assets/map/scout.png` | 色が移り変わる人魂（新しい彩霊） | 2f4287e8-0989-4a14-bf34-ffec30d8d3d7 |
+| イベント | `src/assets/map/event.png` | 道ばたの祠 | 1c1afbf4-38a7-4e96-830d-a94eb2a3fb3e |
+
+- ボスのマスは、アイコンを作らずにボスのドット絵（48×48）を使う。ボス用に「目の光る黒い霧」も描いた（10cd4095-2ba9-4d7d-bf56-712520b335a0）が、24×24 に縮めると暗い背景の上でつぶれて見えなかったので使っていない
+- 組み込みの手順はキャラと同じ。3. の縮小を 22×22 にし、減色は12色以下、6. で 24×24 の真ん中に置いた
+
+指示の文は次の形で、`{題材}` にマスごとの文を入れた（スカウトとボスは「no glow halo」なども足した）。
+
+```
+Pixel art game map icon, a single object only, for a Japanese-style (wafu) fantasy roguelite map. {題材}
+Centered, filling about 85% of a square canvas. Bold, very simple, clearly readable silhouette that still reads
+when shrunk to 24x24 pixels; chunky pixels, limited palette of about 8 colors, dark 1-pixel outline, flat cel
+shading, no blur, no gradients, no glow, no tiny details. Match the outline weight, shading and palette feel of
+the reference images (finished sprites from the same game), but draw only the object described, not a creature.
+Plain solid white background, no ground shadow, no text, no letters, no border. Original design.
+```
+
+| マス | 題材の文 |
+| --- | --- |
+| 戦闘 | Two crossed katana swords with dark red wrapped hilts and round guards, blades pointing up. |
+| 強敵 | A fierce red oni demon mask with two short horns and small fangs, seen from the front. |
+| 休憩 | A small cozy campfire: orange and yellow flames on a few crossed logs, with a ring of grey stones around it. |
+| スカウト | A floating spirit wisp (hitodama): a round soft flame with a short curling tail, its colors shifting through red, orange, yellow, green, blue and violet like a rainbow. |
+| イベント | A small old wooden roadside shrine (hokora) on a stone base, with a little gabled roof and a red cloth hanging in front. |
+
 ## 差し替えるとき
 
 - `src/assets/sprites/<キャラID>.png` を、48×48・右向きの PNG で上書きすれば、コードを変えずに差し替わる
 - 小さい絵は `src/assets/icons/<キャラID>.png`（32×32・右向き）。大きい絵を差し替えたら、小さい絵も同じ元の絵から作り直す
+- マップのアイコンは `src/assets/map/<マスの種類>.png`（24×24）。ファイルがないマスは、これまでの1文字で出る（テスト `tests/ui/sprites.test.ts` は、5種類そろっていることを確かめる）
 - 新しいキャラを足したときは、同じ名前で絵を置く。絵がなくても属性の色の四角で動く（テスト `tests/ui/sprites.test.ts` は、全キャラに絵があることを確かめるので、絵を足すまで失敗する）
 - 差し替えたら、この表のジョブIDも書き換える
