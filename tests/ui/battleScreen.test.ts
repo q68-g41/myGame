@@ -73,6 +73,13 @@ describe('バトル画面', () => {
     expect(root.querySelector('.screen__view')!.querySelectorAll(INTERACTIVE)).toHaveLength(0);
   });
 
+  it('控えのボタンに、キャラの小さい絵（32×32）が出る', () => {
+    const icons = [...root.querySelectorAll<HTMLImageElement>('.bench-button img.bench-button__icon')];
+    expect(icons).toHaveLength(2);
+    expect(icons.every((icon) => icon.getAttribute('width') === '32')).toBe(true);
+    expect(root.querySelector('.bench-button__icon--fainted')).toBeNull();
+  });
+
   it('HP は自分も相手もバーと数字で出す', () => {
     for (const side of ['enemy', 'player']) {
       const panel = root.querySelector(`[data-side="${side}"]`)!;

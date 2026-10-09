@@ -12,7 +12,7 @@ import type {
   RunEndView,
   TeamMemberView,
 } from './runView';
-import { spriteElement } from './sprites';
+import { iconElement, spriteElement } from './sprites';
 
 const SVG_NS = 'http://www.w3.org/2000/svg';
 
@@ -30,13 +30,6 @@ export function button(doc: Document, className: string, text: string, onClick: 
   const element = el(doc, 'button', className, text);
   element.type = 'button';
   element.addEventListener('click', onClick);
-  return element;
-}
-
-export function swatch(doc: Document, className: string, color: string | null): HTMLElement {
-  const element = el(doc, 'span', className);
-  element.style.background = color ?? 'transparent';
-  element.setAttribute('aria-hidden', 'true');
   return element;
 }
 
@@ -117,7 +110,7 @@ export function renderDraftScreen(root: HTMLElement, view: DraftView, handlers: 
     const item = el(doc, 'li', slot.name === null ? 'draft-slot draft-slot--empty' : 'draft-slot');
     item.append(
       el(doc, 'span', 'draft-slot__order', String(slot.order)),
-      swatch(doc, 'draft-slot__icon', slot.color),
+      iconElement(doc, { url: slot.icon, color: slot.color, className: 'draft-slot__icon' }),
       el(doc, 'span', 'draft-slot__name', slot.name ?? '―'),
     );
     slots.append(item);
@@ -141,7 +134,7 @@ export function renderDraftScreen(root: HTMLElement, view: DraftView, handlers: 
     );
     pick.setAttribute('aria-pressed', String(candidate.order !== null));
     pick.append(
-      swatch(doc, 'candidate__icon', candidate.color),
+      iconElement(doc, { url: candidate.icon, color: candidate.color, className: 'candidate__icon' }),
       el(doc, 'span', 'candidate__name', candidate.name),
       el(doc, 'span', 'candidate__order', candidate.order === null ? '' : String(candidate.order)),
     );

@@ -20,7 +20,7 @@ import {
 } from '../engine/run';
 import type { FighterDef, MoveDef } from '../engine/types';
 import { MOVE_KIND_NAMES, summarizeEffects } from './moveInfo';
-import { spriteUrl } from './sprites';
+import { iconUrl, spriteUrl } from './sprites';
 
 /** チームの1体の表示（HPつき） */
 export interface TeamMemberView {
@@ -47,6 +47,8 @@ export interface CandidateView {
   readonly index: number;
   readonly name: string;
   readonly color: string;
+  /** 小さい絵の URL。絵がなければ null（属性の色の四角を出す） */
+  readonly icon: string | null;
   readonly attributeName: string;
   /** 選んだ順番（1〜3）。選んでいなければ null */
   readonly order: number | null;
@@ -72,6 +74,8 @@ export interface DraftSlotView {
   /** 選んだキャラ。まだなら null */
   readonly name: string | null;
   readonly color: string | null;
+  /** 選んだキャラの小さい絵の URL。まだ選んでいない・絵がなければ null */
+  readonly icon: string | null;
 }
 
 export interface DraftView {
@@ -134,6 +138,7 @@ export function buildDraftView(run: RunState, ui: DraftUiState = INITIAL_DRAFT_U
         index,
         name: getFighter(fighter.id).name,
         color: ATTRIBUTE_COLORS[fighter.attribute],
+        icon: iconUrl(fighter.id),
         attributeName: ATTRIBUTE_NAMES[fighter.attribute],
         order: order < 0 ? null : order + 1,
       };
@@ -145,6 +150,7 @@ export function buildDraftView(run: RunState, ui: DraftUiState = INITIAL_DRAFT_U
         order: i + 1,
         name: fighter ? getFighter(fighter.id).name : null,
         color: fighter ? ATTRIBUTE_COLORS[fighter.attribute] : null,
+        icon: fighter ? iconUrl(fighter.id) : null,
       };
     }),
     detail: focused ? fighterDetail(focused) : null,

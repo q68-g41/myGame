@@ -16,7 +16,7 @@ import type { CharmEffect, Combatant, Effectiveness, Side } from '../engine/type
 import { describeEvents } from './messages';
 import { describeMove, MOVE_KIND_NAMES, summarizeEffects } from './moveInfo';
 import { needsPlayerReplacement, type BattleSession } from './session';
-import { spriteUrl } from './sprites';
+import { iconUrl, spriteUrl } from './sprites';
 
 /** command：技を選ぶ、replacement：倒れたので控えから選ぶ、playing：演出中、ended：決着 */
 export type BattlePhase = 'command' | 'replacement' | 'playing' | 'ended';
@@ -70,6 +70,8 @@ export interface BenchView {
   readonly index: number;
   readonly name: string;
   readonly color: string;
+  /** 小さい絵の URL。絵がなければ null（属性の色の四角を出す） */
+  readonly icon: string | null;
   readonly hp: number;
   readonly maxHp: number;
   readonly fainted: boolean;
@@ -199,6 +201,7 @@ function benchViews(state: BattleSession['state'], phase: BattlePhase, ui: UiSta
             index,
             name: getFighter(member.id).name,
             color: ATTRIBUTE_COLORS[member.attribute],
+            icon: iconUrl(member.id),
             hp: member.hp,
             maxHp: member.stats.hp,
             fainted: isFainted(member),
