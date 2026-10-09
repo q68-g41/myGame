@@ -11,14 +11,15 @@ import type { AttackMoveDef, BattleState, CharmEffect, Combatant, Command, Side 
 /** 予想ダメージに使う乱数（0.90〜1.00 の真ん中） */
 const EXPECTED_ROLL_PERCENT = (DAMAGE_ROLL_MIN_PERCENT + DAMAGE_ROLL_MAX_PERCENT) / 2;
 
-/** 予想ダメージ（乱数を真ん中の値にしたダメージ）。charms は攻撃側の陣営のお守り */
+/** 予想ダメージ（乱数を真ん中の値にしたダメージ）。charms は攻撃側、defenderCharms は受ける側の陣営のお守り */
 export function expectedDamage(
   attacker: Combatant,
   defender: Combatant,
   move: AttackMoveDef,
   charms: readonly CharmEffect[] = [],
+  defenderCharms: readonly CharmEffect[] = [],
 ): number {
-  return computeDamage(attacker, defender, move, EXPECTED_ROLL_PERCENT, charms).amount;
+  return computeDamage(attacker, defender, move, EXPECTED_ROLL_PERCENT, charms, defenderCharms).amount;
 }
 
 /** いま選べる攻撃技のうち、予想ダメージが最大のもの。同じなら技の並び順で先のもの */
@@ -26,10 +27,11 @@ export function bestAttack(
   attacker: Combatant,
   defender: Combatant,
   charms: readonly CharmEffect[] = [],
+  defenderCharms: readonly CharmEffect[] = [],
 ): { move: AttackMoveDef; damage: number } | null {
   let best: { move: AttackMoveDef; damage: number } | null = null;
   for (const move of selectableMoves(attacker).filter(isAttackMove)) {
-    const damage = expectedDamage(attacker, defender, move, charms);
+    const damage = expectedDamage(attacker, defender, move, charms, defenderCharms);
     if (best === null || damage > best.damage) {
       best = { move, damage };
     }
@@ -43,7 +45,13 @@ export function bestAttack(
  */
 export function chooseCommandStage1(state: BattleState, side: Side): Command {
   const self = activeCombatant(state, side);
-  const best = bestAttack(self, activeCombatant(state, opponentOf(side)), state.sides[side].charms);
+  const opponentSide = opponentOf(side);
+  const best = bestAttack(
+    self,
+    activeCombatant(state, opponentSide),
+    state.sides[side].charms,
+    state.sides[opponentSide].charms,
+  );
   if (best !== null) {
     return { type: 'move', moveId: best.move.id };
   }
@@ -63,7 +71,9 @@ export function chooseReplacementStage1(state: BattleState, side: Side): number 
   const opponent = activeCombatant(state, opponentOf(side));
   let best: { index: number; damage: number } | null = null;
   for (const index of switchTargets(sideState)) {
-    const damage = bestAttack(memberAt(sideState, index), opponent, sideState.charms)?.damage ?? 0;
+    const damage =
+      bestAttack(memberAt(sideState, index), opponent, sideState.charms, state.sides[opponentOf(side)].charms)?.damage ??
+      0;
     if (best === null || damage > best.damage) {
       best = { index, damage };
     }

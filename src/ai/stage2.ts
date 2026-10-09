@@ -9,13 +9,18 @@ import { compareSpeeds } from '../engine/order';
 import { effectiveSpeed } from '../engine/stats';
 import { isMoveSelectable } from '../engine/moves';
 import { activeCombatant, memberAt, opponentOf, switchTargets } from '../engine/team';
-import { percentOfMaxHp } from '../engine/effects';
+import { healAmount } from '../engine/charms';
 import type { BattleState, CharmEffect, Combatant, Command, Side } from '../engine/types';
 import { bestAttack, chooseCommandStage1 } from './cpu';
 
 /** 撃ち合いの見込みに使う、1ターンの予想ダメージ（攻撃技がなければ 0） */
-function damagePerTurn(attacker: Combatant, defender: Combatant, charms: readonly CharmEffect[]): number {
-  return bestAttack(attacker, defender, charms)?.damage ?? 0;
+function damagePerTurn(
+  attacker: Combatant,
+  defender: Combatant,
+  charms: readonly CharmEffect[],
+  defenderCharms: readonly CharmEffect[],
+): number {
+  return bestAttack(attacker, defender, charms, defenderCharms)?.damage ?? 0;
 }
 
 /**
@@ -51,21 +56,21 @@ export function matchup(
 ): number {
   const selfFirst = compareSpeeds(effectiveSpeed(self), effectiveSpeed(opponent)) > 0;
   return duelValue(
-    { hp: selfHp, maxHp: self.stats.hp, damage: damagePerTurn(self, opponent, charms) },
-    { hp: opponent.hp, maxHp: opponent.stats.hp, damage: damagePerTurn(opponent, self, opponentCharms) },
+    { hp: selfHp, maxHp: self.stats.hp, damage: damagePerTurn(self, opponent, charms, opponentCharms) },
+    { hp: opponent.hp, maxHp: opponent.stats.hp, damage: damagePerTurn(opponent, self, opponentCharms, charms) },
     selfFirst,
   );
 }
 
-/** いま選べる回復技と、その回復量。なければ null */
-function healMove(self: Combatant): { id: string; amount: number } | null {
+/** いま選べる回復技と、その回復量（お守りの分も含める）。なければ null */
+function healMove(self: Combatant, charms: readonly CharmEffect[]): { id: string; amount: number } | null {
   for (const move of self.moves) {
     if (move.kind !== 'support' || !isMoveSelectable(self, move.id)) {
       continue;
     }
     const percent = move.effects.reduce((sum, effect) => (effect.type === 'heal' ? sum + effect.percent : sum), 0);
     if (percent > 0) {
-      return { id: move.id, amount: percentOfMaxHp(self.stats.hp, percent) };
+      return { id: move.id, amount: healAmount(self.stats.hp, percent, charms) };
     }
   }
   return null;
@@ -89,7 +94,7 @@ export function chooseCommandStage2(state: BattleState, side: Side): Command {
   let target: { index: number; value: number } | null = null;
   for (const index of switchTargets(sideState)) {
     const member = memberAt(sideState, index);
-    const hpAfterHit = member.hp - damagePerTurn(opponent, member, opponentCharms);
+    const hpAfterHit = member.hp - damagePerTurn(opponent, member, opponentCharms, charms);
     if (hpAfterHit <= 0) {
       continue;
     }
@@ -103,9 +108,10 @@ export function chooseCommandStage2(state: BattleState, side: Side): Command {
   }
 
   // 2. HPが少なくて、回復すれば撃ち合いに勝てるようになるなら、回復技を使う
-  const heal = healMove(self);
+  const heal = healMove(self, charms);
   if (heal !== null && self.hp < self.stats.hp) {
-    const hpAfterHeal = Math.min(self.stats.hp, self.hp + heal.amount) - damagePerTurn(opponent, self, opponentCharms);
+    const hpAfterHeal =
+      Math.min(self.stats.hp, self.hp + heal.amount) - damagePerTurn(opponent, self, opponentCharms, charms);
     if (hpAfterHeal > 0 && matchup(self, opponent, charms, opponentCharms, hpAfterHeal) > 0) {
       return { type: 'move', moveId: heal.id };
     }

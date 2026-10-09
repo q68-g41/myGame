@@ -1,4 +1,5 @@
 import { describe, expect, it } from 'vitest';
+import { getCharm } from '../../src/data/charms';
 import { RUN_CONTENT } from '../../src/data/content';
 import { EVENTS, getEvent } from '../../src/data/events';
 import { FIGHTERS } from '../../src/data/fighters';
@@ -8,6 +9,7 @@ import {
   chooseEventOption,
   leaveEvent,
   restHeal,
+  restHealPercent,
   restPowerUp,
   scoutRecruit,
   scoutSkip,
@@ -57,6 +59,16 @@ describe('休憩（4.2）', () => {
     const heal = (max: number) => Math.floor((max * REST_HEAL_PERCENT) / 100);
     expect(run.team.map((m) => m.hp)).toEqual([40 + heal(95), orange.stats.hp, 1 + heal(85)]);
     expect(run.phase).toEqual({ kind: 'map' });
+  });
+
+  it('休憩の回復を増やすお守りがあれば、回復する割合が増える', () => {
+    const hotSpring = getCharm('hot-spring-charm');
+    const bonus = hotSpring.effect.type === 'restHeal' ? hotSpring.effect.percent : 0;
+    const charmed = enter(0, { charms: [hotSpring] });
+    expect(restHealPercent(charmed)).toBe(REST_HEAL_PERCENT + bonus);
+    expect(restHealPercent(enter(0))).toBe(REST_HEAL_PERCENT);
+    const heal = (max: number) => Math.floor((max * (REST_HEAL_PERCENT + bonus)) / 100);
+    expect(restHeal(charmed).team.map((m) => m.hp)).toEqual([40 + heal(95), orange.stats.hp, 1 + heal(85)]);
   });
 
   it('技をみがく：選んだキャラの攻撃技の威力が +10。ほかのキャラや技はそのまま', () => {

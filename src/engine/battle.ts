@@ -1,5 +1,5 @@
-import { healOnSwitchIn } from './charms';
-import { BIG_MOVE_COOLDOWN_TURNS, MAX_MOVES, MAX_TEAM_SIZE, SIDES } from './constants';
+import { bigMoveCooldown, healOnSwitchIn } from './charms';
+import { MAX_MOVES, MAX_TEAM_SIZE, SIDES } from './constants';
 import { computeDamage, rollDamagePercent } from './damage';
 import { applySupportMove } from './effects';
 import { findMove, isAttackMove, isMoveSelectable } from './moves';
@@ -140,13 +140,14 @@ function switchActive(sides: Sides, side: Side, to: number): Sides {
   return withSide(sides, side, { ...reset, active: to });
 }
 
-/** 技を使ったあとの状態。大技なら使用不可ターンを設定する */
-function afterMoveUsed(user: Combatant, move: AttackMoveDef): Combatant {
-  if (move.kind !== 'big') {
+/** 技を使ったあとの状態。大技なら使用不可ターンを設定する（お守りで短くなる） */
+function afterMoveUsed(user: Combatant, move: AttackMoveDef, charms: readonly CharmEffect[] = []): Combatant {
+  const turns = bigMoveCooldown(charms);
+  if (move.kind !== 'big' || turns === 0) {
     return user;
   }
   // このターンの終了処理で 1 減り、ちょうど「次から使えないターン数」になる
-  return { ...user, cooldowns: { ...user.cooldowns, [move.id]: BIG_MOVE_COOLDOWN_TURNS + 1 } };
+  return { ...user, cooldowns: { ...user.cooldowns, [move.id]: turns + 1 } };
 }
 
 /**
@@ -224,10 +225,10 @@ export function resolveTurn(state: BattleState, commands: Commands, rng: RngStat
 
     const roll = rollDamagePercent(currentRng);
     currentRng = roll.rng;
-    const damage = computeDamage(user, target, move, roll.value, sides[side].charms);
+    const damage = computeDamage(user, target, move, roll.value, sides[side].charms, sides[targetSide].charms);
     const hp = Math.max(0, target.hp - damage.amount);
 
-    sides = withActive(sides, side, afterMoveUsed(user, move));
+    sides = withActive(sides, side, afterMoveUsed(user, move, sides[side].charms));
     sides = withActive(sides, targetSide, { ...target, hp });
     events.push({
       type: 'damage',

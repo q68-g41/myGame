@@ -5,6 +5,7 @@
  * ほかのエンジンと同じく、状態は書き換えずに新しい状態を返す。乱数の状態もランの状態に含める。
  */
 import { createBattle } from './battle';
+import { victoryHealPercent } from './charms';
 import {
   AREA_COUNT,
   AREA_STAT_MULTIPLIER,
@@ -312,7 +313,7 @@ function enterNextArea(run: RunState): RunState {
 
 /**
  * 決着したバトルの結果をランに反映する。
- * 負けたらラン終了。勝ったらHPを持ち越し、倒れていたキャラは最大HPの一部で戻る。
+ * 負けたらラン終了。勝ったらHPを持ち越し、倒れていたキャラは最大HPの一部で戻る（お守りがあれば、そのあと回復する）。
  * 最後のエリアのボスに勝てばクリア。それ以外は報酬を選ぶ（強敵とボスなら2回）。
  */
 export function finishBattle(run: RunState, battle: BattleState, content: RunContent): RunState {
@@ -331,9 +332,13 @@ export function finishBattle(run: RunState, battle: BattleState, content: RunCon
     return { ...run, team, phase: { kind: 'ended', result: 'defeated' } };
   }
 
+  // 勝ったら回復するお守りがあれば、倒れていたキャラは戻ったあとに回復する
+  const victoryHeal = victoryHealPercent(run.charms.map((charm) => charm.effect));
   const team = run.team.map((member, index): RunMember => {
-    const hp = fighters[index]!.hp;
-    return { ...member, hp: hp > 0 ? hp : percentOfMaxHp(member.fighter.stats.hp, REVIVE_HP_PERCENT) };
+    const max = member.fighter.stats.hp;
+    const left = fighters[index]!.hp;
+    const hp = left > 0 ? left : percentOfMaxHp(max, REVIVE_HP_PERCENT);
+    return { ...member, hp: victoryHeal > 0 ? Math.min(max, hp + percentOfMaxHp(max, victoryHeal)) : hp };
   });
   const kind = nodeAt(run.map, run.position).kind;
   if (kind === 'boss' && run.area >= AREA_COUNT - 1) {

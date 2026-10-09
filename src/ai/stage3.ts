@@ -64,10 +64,18 @@ function isWasted(move: MoveDef, self: Combatant, opponent: Combatant): boolean 
 }
 
 /** いま選べる攻撃技のどれかで、相手の場のキャラを確実に（乱数が一番低くても）倒せるか */
-function canSurelyFaint(self: Combatant, opponent: Combatant, charms: readonly CharmEffect[]): boolean {
+function canSurelyFaint(
+  self: Combatant,
+  opponent: Combatant,
+  charms: readonly CharmEffect[],
+  opponentCharms: readonly CharmEffect[],
+): boolean {
   return selectableMoves(self)
     .filter(isAttackMove)
-    .some((move) => computeDamage(self, opponent, move, DAMAGE_ROLL_MIN_PERCENT, charms).amount >= opponent.hp);
+    .some(
+      (move) =>
+        computeDamage(self, opponent, move, DAMAGE_ROLL_MIN_PERCENT, charms, opponentCharms).amount >= opponent.hp,
+    );
 }
 
 /**
@@ -79,7 +87,12 @@ export function commandOptions(state: BattleState, side: Side): readonly Command
   const self = activeCombatant(state, side);
   const opponent = activeCombatant(state, opponentOf(side));
   const selectable = selectableMoves(self);
-  const finishing = canSurelyFaint(self, opponent, state.sides[side].charms ?? []);
+  const finishing = canSurelyFaint(
+    self,
+    opponent,
+    state.sides[side].charms ?? [],
+    state.sides[opponentOf(side)].charms ?? [],
+  );
   const useful = selectable.filter(
     (move) => !isWasted(move, self, opponent) && !(finishing && move.kind === 'support'),
   );

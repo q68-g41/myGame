@@ -5,9 +5,9 @@ import { ATTRIBUTE_COLORS, ATTRIBUTE_NAMES } from '../data/attributes';
 import { getEvent } from '../data/events';
 import { getFighter } from '../data/fighters';
 import { getMove } from '../data/moves';
-import { REST_HEAL_PERCENT, REST_POWER_UP } from '../engine/constants';
+import { REST_POWER_UP } from '../engine/constants';
 import { isAttackMove } from '../engine/moves';
-import type { EventOutcome } from '../engine/nodes';
+import { restHealPercent, type EventOutcome } from '../engine/nodes';
 import type { RunState } from '../engine/run';
 import {
   BOOST_STAT_NAMES,
@@ -74,7 +74,7 @@ export function buildRestView(run: RunState, ui: RestUiState = INITIAL_REST_UI):
       {
         id: 'heal',
         title: 'ゆっくり休む',
-        detail: `全員のHPが 最大HPの${REST_HEAL_PERCENT}% 回復する`,
+        detail: `全員のHPが 最大HPの${restHealPercent(run)}% 回復する`,
         selected: ui.selected === 'heal',
       },
       {

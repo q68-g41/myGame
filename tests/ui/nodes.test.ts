@@ -1,5 +1,6 @@
 // @vitest-environment happy-dom
 import { describe, expect, it, vi } from 'vitest';
+import { getCharm } from '../../src/data/charms';
 import { getEvent } from '../../src/data/events';
 import { FIGHTERS } from '../../src/data/fighters';
 import { chooseEventOption } from '../../src/engine/nodes';
@@ -39,6 +40,11 @@ describe('休憩の画面に出す内容', () => {
     ]);
     expect(view.canConfirm).toBe(false);
     expect(buildRestView(run, { ...INITIAL_REST_UI, selected: 'power' }).canConfirm).toBe(true);
+  });
+
+  it('休憩の回復を増やすお守りがあれば、増えた割合を出す', () => {
+    const charmed = { ...run, charms: [getCharm('hot-spring-charm')] };
+    expect(buildRestView(charmed).options[0]?.detail).toBe('全員のHPが 最大HPの50% 回復する');
   });
 
   it('技の強化：キャラ → 技の順に選ぶ。補助技は選べない', () => {

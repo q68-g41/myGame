@@ -2,6 +2,7 @@
  * 休憩・スカウト・イベントのマス（4.2）。
  * マスに入ると、ランはそのマスの段階になる。選んだら（イベントは結果を見たら）マップに戻る。
  */
+import { restHealBonus } from './charms';
 import { REST_HEAL_PERCENT, REST_POWER_UP, SCOUT_CANDIDATE_COUNT } from './constants';
 import { percentOfMaxHp } from './effects';
 import { boostStat, memberOf, powerUpMove, statBoostAmount, type StatBoostKey } from './growth';
@@ -88,10 +89,16 @@ function changeHp(member: RunMember, percent: number, sign: 1 | -1): RunMember {
 
 /* ===== 休憩 ===== */
 
-/** 休憩：全員のHPを最大HPの30%回復する */
+/** 休憩で回復する割合（最大HPの %）。お守りで増える */
+export function restHealPercent(run: RunState): number {
+  return REST_HEAL_PERCENT + restHealBonus(run.charms.map((charm) => charm.effect));
+}
+
+/** 休憩：全員のHPを最大HPの30%（お守りがあればもっと）回復する */
 export function restHeal(run: RunState): RunState {
   assertPhase(run, 'rest', '休憩');
-  return { ...run, team: run.team.map((member) => changeHp(member, REST_HEAL_PERCENT, 1)), phase: { kind: 'map' } };
+  const percent = restHealPercent(run);
+  return { ...run, team: run.team.map((member) => changeHp(member, percent, 1)), phase: { kind: 'map' } };
 }
 
 /** 休憩：チームの1体の攻撃技を1つ選んで、威力を上げる */

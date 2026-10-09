@@ -145,12 +145,32 @@ export interface BossPattern {
 
 /**
  * お守りの効果（4.4：チーム全体にかかる常時効果）。
- * - movePower：その種類の技の威力を percent % 上げる（切り捨て）
+ * 威力を上げる効果（movePower・attributePower・lowHpPower）は、当てはまるものの percent を足して、威力に掛けて切り捨てる。
+ * - movePower：その種類の技の威力を percent % 上げる
+ * - attributePower：その属性の技の威力を percent % 上げる
+ * - lowHpPower：使うキャラのHPが最大HPの hpPercent % 以下なら、攻撃技の威力を percent % 上げる
+ * - damageCut：受けるダメージを percent % 減らす（切り捨て、最低1）。against が 'advantage' なら相手の技が有利な相性のとき、
+ *   技の種類なら、その種類の技を受けたとき
  * - switchInHeal：交代で場に出たキャラ（倒れたあとに出したときも）のHPを、最大HPの percent % 回復する
+ * - turnEndHeal：ターンの終わりに、場の倒れていないキャラのHPを、最大HPの percent % 回復する（侵蝕のダメージのあと）
+ * - statusGuard：その状態異常にならない
+ * - healPower：回復技の回復量を percent % 増やす
+ * - cooldownCut：大技を使ったあとの、使えないターン数を turns 減らす
+ * - victoryHeal：（ラン）戦闘に勝ったあと、全員のHPを最大HPの percent % 回復する（倒れていたキャラは戻ったあとに）
+ * - restHeal：（ラン）休憩で回復する割合を percent ポイント増やす
  */
 export type CharmEffect =
   | { readonly type: 'movePower'; readonly moveKind: AttackKind; readonly percent: number }
-  | { readonly type: 'switchInHeal'; readonly percent: number };
+  | { readonly type: 'attributePower'; readonly attribute: AttributeId; readonly percent: number }
+  | { readonly type: 'lowHpPower'; readonly hpPercent: number; readonly percent: number }
+  | { readonly type: 'damageCut'; readonly against: 'advantage' | AttackKind; readonly percent: number }
+  | { readonly type: 'switchInHeal'; readonly percent: number }
+  | { readonly type: 'turnEndHeal'; readonly percent: number }
+  | { readonly type: 'statusGuard'; readonly status: StatusId }
+  | { readonly type: 'healPower'; readonly percent: number }
+  | { readonly type: 'cooldownCut'; readonly turns: number }
+  | { readonly type: 'victoryHeal'; readonly percent: number }
+  | { readonly type: 'restHeal'; readonly percent: number };
 
 /** 陣営ごとのチーム */
 export interface SideState {
@@ -248,6 +268,8 @@ export type BattleEvent =
       readonly type: 'statusBlocked';
       readonly side: Side;
       readonly status: StatusId;
+      /** お守りで防いだときは 'charm'（省くと、すでに状態異常だったため） */
+      readonly reason?: 'charm';
     }
   | {
       /** 状態異常によるダメージ（侵蝕） */

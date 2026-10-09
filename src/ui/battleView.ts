@@ -161,7 +161,7 @@ function moveButtons(
       disabled: phase !== 'command' || !isMoveSelectable(active, move.id),
       note: cooldown > 0 ? `あと${cooldown}ターン` : null,
       color: ATTRIBUTE_COLORS[move.attribute],
-      power: attack ? movePower(move, charms) : null,
+      power: attack ? movePower(move, charms, active) : null,
       summary: attack ? null : summarizeEffects(move.effects),
       kindLabel: move.kind === 'normal' ? null : MOVE_KIND_NAMES[move.kind],
       effectiveness: attack ? getEffectiveness(move.attribute, opponent.attribute) : null,

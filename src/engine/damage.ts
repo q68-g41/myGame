@@ -1,5 +1,5 @@
 import { affinityMultiplier, getEffectiveness, isResonant, resonanceMultiplier } from './affinity';
-import { movePower } from './charms';
+import { damageCutPercent, movePower } from './charms';
 import { DAMAGE_ROLL_MAX_PERCENT, DAMAGE_ROLL_MIN_PERCENT, DAMAGE_SCALE, MIN_DAMAGE } from './constants';
 import { nextInt, type RngResult, type RngState } from './rng';
 import { effectiveAttack, effectiveDefense } from './stats';
@@ -45,22 +45,29 @@ export interface DamageResult {
   readonly resonance: boolean;
 }
 
-/** 攻撃側・受ける側・技・乱数から、ダメージと相性・共鳴の結果を出す。charms は攻撃側の陣営のお守り */
+/**
+ * 攻撃側・受ける側・技・乱数から、ダメージと相性・共鳴の結果を出す。
+ * charms は攻撃側の陣営のお守り（威力が上がる）、defenderCharms は受ける側の陣営のお守り（ダメージが減る）。
+ * ダメージを減らすお守りは、ダメージ式の結果に掛けて切り捨てる（最低1）
+ */
 export function computeDamage(
   attacker: Combatant,
   defender: Combatant,
   move: AttackMoveDef,
   rollPercent: number,
   charms: readonly CharmEffect[] = [],
+  defenderCharms: readonly CharmEffect[] = [],
 ): DamageResult {
-  const amount = calcDamage({
-    power: movePower(move, charms),
+  const base = calcDamage({
+    power: movePower(move, charms, attacker),
     attack: effectiveAttack(attacker),
     defense: effectiveDefense(defender),
     affinity: affinityMultiplier(move.attribute, defender.attribute),
     resonance: resonanceMultiplier(move.attribute, attacker.attribute),
     rollPercent,
   });
+  const cut = damageCutPercent(move, defender, defenderCharms);
+  const amount = cut === 0 ? base : Math.max(MIN_DAMAGE, Math.floor((base * (100 - cut)) / 100));
   return {
     amount,
     effectiveness: getEffectiveness(move.attribute, defender.attribute),

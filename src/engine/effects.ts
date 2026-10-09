@@ -1,3 +1,4 @@
+import { guardsStatus, healAmount } from './charms';
 import { STATUS_DURATION } from './constants';
 import { clampStage } from './stats';
 import { activeOf, opponentOf, withActive, type Sides } from './team';
@@ -16,7 +17,8 @@ export function percentOfMaxHp(maxHp: number, percent: number): number {
 
 /**
  * 補助技の効果を順番に適用する（3.6）。
- * 能力変化は上下3段階で止まり、回復は最大HPを超えない。状態異常は相手にかける。
+ * 能力変化は上下3段階で止まり、回復は最大HPを超えない（お守りで回復量が増える）。
+ * 状態異常は相手にかける（相手のお守りで防がれることがある）。
  */
 export function applySupportMove(sides: Sides, side: Side, move: SupportMoveDef): EffectResult {
   let current = sides;
@@ -38,7 +40,7 @@ export function applySupportMove(sides: Sides, side: Side, move: SupportMoveDef)
       }
       case 'heal': {
         const user = activeOf(current[side]);
-        const amount = Math.min(percentOfMaxHp(user.stats.hp, effect.percent), user.stats.hp - user.hp);
+        const amount = Math.min(healAmount(user.stats.hp, effect.percent, current[side].charms), user.stats.hp - user.hp);
         const hp = user.hp + amount;
         current = withActive(current, side, { ...user, hp });
         events.push({ type: 'healed', side, amount, hp });
@@ -50,6 +52,10 @@ export function applySupportMove(sides: Sides, side: Side, move: SupportMoveDef)
         const target = activeOf(current[targetSide]);
         if (target.status !== null) {
           events.push({ type: 'statusBlocked', side: targetSide, status: effect.status });
+          break;
+        }
+        if (guardsStatus(current[targetSide].charms, effect.status)) {
+          events.push({ type: 'statusBlocked', side: targetSide, status: effect.status, reason: 'charm' });
           break;
         }
         current = withActive(current, targetSide, {

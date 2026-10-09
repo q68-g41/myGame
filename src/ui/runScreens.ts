@@ -65,9 +65,17 @@ export function teamRow(doc: Document, team: readonly TeamMemberView[]): HTMLEle
   return row;
 }
 
-/** 持っているお守り（なければ「なし」） */
+/** 持っているお守り（なければ「なし」）。名前の途中では折り返さない */
 export function charmLine(doc: Document, charms: readonly string[]): HTMLElement {
-  return el(doc, 'p', 'charm-line', `お守り：${charms.length === 0 ? 'なし' : charms.join('・')}`);
+  const line = el(doc, 'p', 'charm-line', 'お守り：');
+  if (charms.length === 0) {
+    line.append('なし');
+    return line;
+  }
+  line.append(
+    ...charms.map((name, index) => el(doc, 'span', 'charm-line__name', index < charms.length - 1 ? `${name}・` : name)),
+  );
+  return line;
 }
 
 /* ===== チーム選択 ===== */
