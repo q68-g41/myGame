@@ -1,8 +1,9 @@
 /**
- * 自動保存と再開（仕様書 5：毎ターン自動保存。アプリを閉じても同じターンから再開できる）。
+ * 自動保存と再開（仕様書 5：毎ターン自動保存。アプリを閉じても同じターンから再開できる）と、設定（演出の速さ）の保存。
  * 保存先はブラウザの localStorage。エンジンには持ち込まず、画面の側だけで扱う。
  */
 import type { RunState } from '../engine/run';
+import type { PlaybackSpeed } from './playback';
 import { saveSession, type BattleSession, type SavedBattle } from './session';
 
 /** localStorage のキー */
@@ -98,6 +99,61 @@ export function createSaveStore(storage: Pick<Storage, 'getItem' | 'setItem' | '
         storage?.removeItem(SAVE_KEY);
       } catch {
         // 消せなくても続ける
+      }
+    },
+  };
+}
+
+/* ===== 設定（演出の速さ） ===== */
+
+/** 設定の localStorage のキー。ランの保存とは別にして、ランが終わっても消さない */
+export const SETTINGS_KEY = 'mygame.settings';
+
+/** 開き直しても残す設定 */
+export interface Settings {
+  /** 演出の速さ */
+  readonly speed: PlaybackSpeed;
+}
+
+export const DEFAULT_SETTINGS: Settings = { speed: 1 };
+
+/** 保存した設定を読む。読めない・形がおかしいときは、最初の設定 */
+export function parseSettings(text: string | null): Settings {
+  if (text === null) {
+    return DEFAULT_SETTINGS;
+  }
+  try {
+    const file: unknown = JSON.parse(text);
+    if (isObject(file) && (file.speed === 1 || file.speed === 2)) {
+      return { speed: file.speed };
+    }
+  } catch {
+    // 読めなければ最初の設定
+  }
+  return DEFAULT_SETTINGS;
+}
+
+/** 設定の保存先 */
+export interface SettingsStore {
+  load(): Settings;
+  save(settings: Settings): void;
+}
+
+/** localStorage（など同じ形のもの）を使う設定の保存先を作る。null なら保存しない */
+export function createSettingsStore(storage: Pick<Storage, 'getItem' | 'setItem'> | null): SettingsStore {
+  return {
+    load: () => {
+      try {
+        return parseSettings(storage?.getItem(SETTINGS_KEY) ?? null);
+      } catch {
+        return DEFAULT_SETTINGS;
+      }
+    },
+    save: (settings) => {
+      try {
+        storage?.setItem(SETTINGS_KEY, JSON.stringify(settings));
+      } catch {
+        // 保存できなくても遊び続けられるようにする
       }
     },
   };

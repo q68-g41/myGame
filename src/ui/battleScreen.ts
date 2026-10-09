@@ -37,6 +37,7 @@ function hpLevel(hp: number, maxHp: number): 'high' | 'middle' | 'low' {
 function fighterPanel(doc: Document, view: FighterPanelView, side: 'enemy' | 'player', hit: boolean): HTMLElement {
   const panel = el(doc, 'div', `fighter fighter--${side}${hit ? ' fighter--hit' : ''}`);
   panel.dataset.side = side;
+  panel.dataset.fighter = view.id;
 
   // ドット絵を2倍で出す。後ろに属性の色をうすく敷いて、暗い色の絵（ボス）も背景に埋もれないようにする。相手は左右反転
   const sprite = el(doc, 'div', 'fighter__sprite');
@@ -75,7 +76,11 @@ const EFFECTIVENESS_MARK = { advantage: '▲有利', neutral: '', disadvantage: 
 function moveButton(doc: Document, view: MoveButtonView, handlers: BattleScreenHandlers): HTMLButtonElement {
   const button = el(doc, 'button', 'move-button');
   button.type = 'button';
-  button.disabled = view.disabled;
+  // 使えない技も長押しで詳細を見られるように、disabled ではなく aria-disabled にする
+  // （disabled のボタンは、ブラウザによっては指の操作を受け取らず、長押しが効かない）
+  if (view.disabled) {
+    button.setAttribute('aria-disabled', 'true');
+  }
   button.dataset.moveId = view.id;
   // 属性の色を左の帯で見せる
   button.style.borderLeftColor = view.color;
@@ -108,7 +113,11 @@ function moveButton(doc: Document, view: MoveButtonView, handlers: BattleScreenH
   }
 
   button.append(top, bottom);
-  button.addEventListener('click', () => handlers.onMove(view.id));
+  button.addEventListener('click', () => {
+    if (!view.disabled) {
+      handlers.onMove(view.id);
+    }
+  });
   // 長押しでブラウザのメニューが出ないようにする（長押しは技の詳細に使う）
   button.addEventListener('contextmenu', (event) => event.preventDefault());
   return button;
@@ -195,9 +204,46 @@ function menu(doc: Document, view: BattleView, handlers: BattleScreenHandlers): 
   return row;
 }
 
+/** 場のキャラのHPバーの、いまの幅（%）。キーは「陣営:キャラ ID」 */
+function currentHpWidths(root: HTMLElement): Map<string, string> {
+  const widths = new Map<string, string>();
+  for (const fill of root.querySelectorAll<HTMLElement>('.fighter .hp-bar__fill')) {
+    const panel = fill.closest<HTMLElement>('.fighter');
+    const barWidth = fill.parentElement?.getBoundingClientRect().width ?? 0;
+    // 動いている途中なら、いま見えている幅から続ける（幅が測れない環境では、目標の幅を使う）
+    const width = barWidth > 0 ? `${(fill.getBoundingClientRect().width / barWidth) * 100}%` : fill.style.width;
+    if (panel?.dataset.side !== undefined && panel.dataset.fighter !== undefined) {
+      widths.set(`${panel.dataset.side}:${panel.dataset.fighter}`, width);
+    }
+  }
+  return widths;
+}
+
+/**
+ * HPバーをなめらかに動かす：描き直す前と同じキャラなら、前の幅から新しい幅へ CSS の transition で動かす。
+ * 交代して別のキャラになったときは、動かさずにそのまま出す
+ */
+function animateHpBars(screen: HTMLElement, before: ReadonlyMap<string, string>): void {
+  const fills: { fill: HTMLElement; target: string }[] = [];
+  for (const fill of screen.querySelectorAll<HTMLElement>('.fighter .hp-bar__fill')) {
+    const panel = fill.closest<HTMLElement>('.fighter');
+    const from = before.get(`${panel?.dataset.side}:${panel?.dataset.fighter}`);
+    if (from !== undefined && from !== fill.style.width) {
+      fills.push({ fill, target: fill.style.width });
+      fill.style.width = from;
+    }
+  }
+  for (const { fill, target } of fills) {
+    // いったん前の幅で描かせてから、新しい幅にする（そうしないと transition が効かない）
+    void fill.getBoundingClientRect();
+    fill.style.width = target;
+  }
+}
+
 /** バトル画面を描く（毎回まるごと描き直す） */
 export function renderBattleScreen(root: HTMLElement, view: BattleView, handlers: BattleScreenHandlers): void {
   const doc = root.ownerDocument;
+  const hpBefore = currentHpWidths(root);
 
   // 上半分：表示だけ
   const display = el(doc, 'section', 'screen__view battle__view');
@@ -237,7 +283,7 @@ export function renderBattleScreen(root: HTMLElement, view: BattleView, handlers
   bench.append(...view.bench.map((member) => benchButton(doc, member, handlers)));
   controls.append(bench, menu(doc, view, handlers));
 
-  const screen = el(doc, 'div', `screen battle battle--${view.phase}`);
+  const screen = el(doc, 'div', `screen battle battle--${view.phase}${view.speed === 2 ? ' battle--fast' : ''}`);
   screen.append(display, controls);
   if (view.phase === 'playing') {
     // 演出中は画面全体を覆い、どこをタップしても早送りする（速さの切り替えだけはこの上に出す）
@@ -247,4 +293,5 @@ export function renderBattleScreen(root: HTMLElement, view: BattleView, handlers
     screen.append(skip);
   }
   root.replaceChildren(screen);
+  animateHpBars(screen, hpBefore);
 }

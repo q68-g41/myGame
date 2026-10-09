@@ -17,8 +17,11 @@ function startBattle(seed = 1): void {
   startAppBattle(root, seed);
 }
 
+/** 押せるボタン（技ボタンは、長押しできるように disabled ではなく aria-disabled で押せなくしている） */
 const enabled = (selector: string) =>
-  [...root.querySelectorAll<HTMLButtonElement>(selector)].filter((button) => !button.disabled);
+  [...root.querySelectorAll<HTMLButtonElement>(selector)].filter(
+    (button) => !button.disabled && button.getAttribute('aria-disabled') !== 'true',
+  );
 
 /** 演出中なら早送りして、最終的な画面にする */
 function finishPlayback(): void {
@@ -185,5 +188,71 @@ describe('補助技のボタン', () => {
       '防御↑1・',
       '相手の素早さ↓1',
     ]);
+  });
+});
+
+describe('HPバーの動き', () => {
+  const handlers = {
+    onMove: vi.fn(),
+    onBench: vi.fn(),
+    onConfirm: vi.fn(),
+    onCancel: vi.fn(),
+    onContinue: vi.fn(),
+    onToggleSpeed: vi.fn(),
+    onSkip: vi.fn(),
+  };
+  const battle = createBattle(['crimson-trial', 'blue-trial'].map(getFighter), ['green-trial', 'yellow-trial'].map(getFighter));
+  const session = createSession(battle, 1);
+  const view = buildBattleView(session);
+
+  /** 描き直したあと、HPバーの幅（style）が順にどう変わったか */
+  function widthChanges(next: typeof view): Record<string, string[]> {
+    const observer = new MutationObserver(() => undefined);
+    observer.observe(root, { subtree: true, attributes: true, attributeFilter: ['style'], attributeOldValue: true });
+    renderBattleScreen(root, next, handlers);
+    // 記録には「変わる前の値」が入るので、次の記録の前の値と、最後の値を並べると「変わったあとの値」の列になる
+    const before: Record<string, string[]> = { enemy: [], player: [] };
+    for (const record of observer.takeRecords()) {
+      const fill = record.target as HTMLElement;
+      if (fill.classList.contains('hp-bar__fill')) {
+        const side = fill.closest<HTMLElement>('.fighter')!.dataset.side!;
+        before[side]!.push(/width:\s*([\d.]+%)/.exec(record.oldValue ?? '')![1]!);
+      }
+    }
+    observer.disconnect();
+    const changes: Record<string, string[]> = {};
+    for (const side of ['enemy', 'player']) {
+      const now = root.querySelector<HTMLElement>(`[data-side="${side}"] .hp-bar__fill`)!.style.width;
+      changes[side] = before[side]!.length === 0 ? [] : [...before[side]!.slice(1), now];
+    }
+    return changes;
+  }
+
+  beforeEach(() => {
+    document.body.innerHTML = '<div id="app"></div>';
+    root = document.querySelector<HTMLElement>('#app')!;
+    renderBattleScreen(root, view, handlers);
+  });
+
+  it('同じキャラのHPが減ったら、前の幅にしてから新しい幅にする（CSS の transition でなめらかに動く）', () => {
+    const hp = view.enemy.maxHp / 2;
+    const changes = widthChanges({ ...view, enemy: { ...view.enemy, hp } });
+    expect(changes.enemy).toEqual(['100%', '50%']);
+    // HPが変わらない側は動かさない
+    expect(changes.player).toEqual([]);
+    expect(root.querySelector<HTMLElement>('[data-side="enemy"] .hp-bar__fill')!.style.width).toBe('50%');
+  });
+
+  it('交代して別のキャラになったときは、動かさずに新しい幅で出す', () => {
+    const changes = widthChanges({ ...view, enemy: { ...view.enemy, id: 'yellow-trial', hp: view.enemy.maxHp / 4 } });
+    expect(changes.enemy).toEqual([]);
+    expect(root.querySelector<HTMLElement>('[data-side="enemy"] .hp-bar__fill')!.style.width).toBe('25%');
+  });
+
+  it('2倍速のときは、画面に battle--fast を付けて、HPバーも速く動かす', () => {
+    renderBattleScreen(root, { ...view, speed: 2 }, handlers);
+    expect(root.querySelector('.battle--fast')).not.toBeNull();
+    renderBattleScreen(root, view, handlers);
+    expect(root.querySelector('.battle--fast')).toBeNull();
   });
 });

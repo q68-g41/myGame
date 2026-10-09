@@ -23,6 +23,8 @@ export type BattlePhase = 'command' | 'replacement' | 'playing' | 'ended';
 
 /** 場に出ているキャラの表示 */
 export interface FighterPanelView {
+  /** キャラ ID（HPバーを動かすとき、同じキャラかどうかを見分ける） */
+  readonly id: string;
   readonly name: string;
   readonly color: string;
   /** ドット絵の URL。絵がなければ null（属性の色の四角を出す） */
@@ -140,6 +142,7 @@ function panel(state: BattleSession['state'], side: Side): FighterPanelView {
   const sideState = state.sides[side];
   const active = activeOf(sideState);
   return {
+    id: active.id,
     name: getFighter(active.id).name,
     color: ATTRIBUTE_COLORS[active.attribute],
     sprite: spriteUrl(active.id),

@@ -120,7 +120,7 @@ describe('報酬の画面', () => {
         root.querySelector<HTMLElement>('.playback-skip')?.click();
         (
           root.querySelector<HTMLButtonElement>('.confirm .button--primary') ??
-          root.querySelector<HTMLButtonElement>('.move-button:not([disabled])') ??
+          root.querySelector<HTMLButtonElement>('.move-button:not([aria-disabled="true"])') ??
           root.querySelector<HTMLButtonElement>('.bench-button:not([disabled])')
         )?.click();
         root.querySelector<HTMLElement>('.playback-skip')?.click();

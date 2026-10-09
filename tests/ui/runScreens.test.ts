@@ -46,7 +46,7 @@ function finishBattle(): string {
     root.querySelector<HTMLElement>('.playback-skip')?.click();
     const target =
       root.querySelector<HTMLButtonElement>('.confirm .button--primary') ??
-      root.querySelector<HTMLButtonElement>('.move-button:not([disabled])') ??
+      root.querySelector<HTMLButtonElement>('.move-button:not([aria-disabled="true"])') ??
       root.querySelector<HTMLButtonElement>('.bench-button:not([disabled])');
     target?.click();
     root.querySelector<HTMLElement>('.playback-skip')?.click();

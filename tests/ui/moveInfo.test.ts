@@ -30,7 +30,7 @@ describe('技の詳細（長押しで出す文章）', () => {
       '威力 100',
       'いまの相手に 等倍（×1）',
       '使ったあと 2ターン 使えない',
-      'あと 2ターン 使えない',
+      'いまは使えない（あと 2ターン）',
     ]);
   });
 
@@ -177,7 +177,7 @@ describe('画面：長押しで詳細', () => {
 
   afterEach(() => vi.useRealTimers());
 
-  const firstButton = () => root.querySelector<HTMLButtonElement>('.move-button:not([disabled])')!;
+  const firstButton = () => root.querySelector<HTMLButtonElement>('.move-button:not([aria-disabled="true"])')!;
   const press = (target: Element) => target.dispatchEvent(new PointerEvent('pointerdown', { bubbles: true }));
   const release = (target: Element) => target.dispatchEvent(new PointerEvent('pointerup', { bubbles: true }));
 
@@ -211,6 +211,37 @@ describe('画面：長押しで詳細', () => {
     button.click();
     expect(root.querySelector('.move-detail')).toBeNull();
     expect(root.querySelector('.battle--playing')).not.toBeNull();
+  });
+
+  it('使えない間の技（大技を使ったあと）も、長押しで詳細が出る。タップしても技は使わない', () => {
+    // 大技を使っても決着しないバトルを探す
+    let cooling: HTMLButtonElement | null = null;
+    for (let seed = 1; seed <= 20 && cooling === null; seed += 1) {
+      document.body.innerHTML = '<div id="app"></div>';
+      root = document.querySelector<HTMLElement>('#app')!;
+      startAppBattle(root, seed);
+      const big = [...root.querySelectorAll<HTMLButtonElement>('.move-button')].find(
+        (button) => button.querySelector('.move-button__kind')?.textContent === '大技',
+      );
+      if (big === undefined || big.getAttribute('aria-disabled') === 'true') {
+        continue;
+      }
+      big.click();
+      root.querySelector<HTMLElement>('.playback-skip')?.click();
+      cooling = root.querySelector<HTMLButtonElement>('.battle--command .move-button[aria-disabled="true"]');
+    }
+    expect(cooling).not.toBeNull();
+    // 長押しが効くように、disabled にはしない
+    expect(cooling!.disabled).toBe(false);
+    const name = cooling!.querySelector('.move-button__name')?.textContent;
+
+    cooling!.click();
+    expect(root.querySelector('.battle--playing')).toBeNull();
+
+    press(cooling!);
+    vi.advanceTimersByTime(500);
+    expect(root.querySelector('.move-detail__name')?.textContent).toBe(name);
+    expect(root.querySelector('.move-detail')?.textContent).toMatch(/いまは使えない（あと \d+ターン）/);
   });
 
   it('長押しのあとでも、次のタップでは技を使える', () => {

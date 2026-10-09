@@ -237,6 +237,17 @@ body {
   transition: width 0.3s ease;
 }
 
+/* 2倍速では、HPバーも半分の時間で動かす */
+.battle--fast .hp-bar__fill {
+  transition-duration: 0.15s;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .hp-bar__fill {
+    transition: none;
+  }
+}
+
 .hp-bar__fill--high {
   background: #4fb36a;
 }
@@ -289,11 +300,12 @@ body {
   cursor: pointer;
 }
 
-.move-button:active:not(:disabled) {
+.move-button:active:not([aria-disabled='true']) {
   transform: translateY(2px);
 }
 
-.move-button:disabled {
+/* 使えない技（長押しで詳細は見られる） */
+.move-button[aria-disabled='true'] {
   opacity: 0.45;
   cursor: default;
 }

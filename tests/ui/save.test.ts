@@ -3,7 +3,17 @@ import { beforeEach, describe, expect, it, vi } from 'vitest';
 import { RUN_CONTENT } from '../../src/data/content';
 import { chooseTeam, startRun } from '../../src/engine/run';
 import { startApp } from '../../src/ui/app';
-import { createSaveStore, parseSavedGame, SAVE_KEY, SAVE_VERSION, serializeGame } from '../../src/ui/save';
+import {
+  createSaveStore,
+  createSettingsStore,
+  DEFAULT_SETTINGS,
+  parseSavedGame,
+  parseSettings,
+  SAVE_KEY,
+  SAVE_VERSION,
+  serializeGame,
+  SETTINGS_KEY,
+} from '../../src/ui/save';
 import { playMove } from '../../src/ui/session';
 import { renderTopScreen } from '../../src/ui/top';
 import { firstBattleSession } from '../helpers/app';
@@ -148,12 +158,12 @@ describe('自動保存と再開（アプリ）', () => {
     }
     tap('.draft__controls .button--primary');
     tap('.map-choice');
-    tap('.move-button:not([disabled])');
+    tap('.move-button:not([aria-disabled="true"])');
     skip();
     const hpAfterTurn1 = [...root.querySelectorAll('.fighter__hp')].map((hp) => hp.textContent);
 
     // 閉じずに、もう1ターン進めた結果
-    tap('.move-button:not([disabled])');
+    tap('.move-button:not([aria-disabled="true"])');
     skip();
     const expected = root.querySelector('.screen__view')!.innerHTML;
 
@@ -166,14 +176,14 @@ describe('自動保存と再開（アプリ）', () => {
     }
     tap('.draft__controls .button--primary');
     tap('.map-choice');
-    tap('.move-button:not([disabled])');
+    tap('.move-button:not([aria-disabled="true"])');
     skip();
 
     reopen(999);
     tap('.screen__controls .button--primary');
     expect([...root.querySelectorAll('.fighter__hp')].map((hp) => hp.textContent)).toEqual(hpAfterTurn1);
     expect(root.querySelector('[role="status"]')?.textContent).toBe('続きから。技を選んでください');
-    tap('.move-button:not([disabled])');
+    tap('.move-button:not([aria-disabled="true"])');
     skip();
     expect(root.querySelector('.screen__view')!.innerHTML).toBe(expected);
   });
@@ -210,7 +220,7 @@ describe('自動保存と再開（アプリ）', () => {
         skip();
         (
           root.querySelector<HTMLButtonElement>('.confirm .button--primary') ??
-          root.querySelector<HTMLButtonElement>('.move-button:not([disabled])') ??
+          root.querySelector<HTMLButtonElement>('.move-button:not([aria-disabled="true"])') ??
           root.querySelector<HTMLButtonElement>('.bench-button:not([disabled])')
         )?.click();
         skip();
@@ -232,5 +242,63 @@ describe('自動保存と再開（アプリ）', () => {
     expect(root.querySelector('h1')).not.toBeNull();
     expect(storage.data.has(SAVE_KEY)).toBe(false);
     expect([...root.querySelectorAll('.screen__controls button')].map((b) => b.textContent)).toEqual(['はじめる']);
+  });
+});
+
+describe('設定（演出の速さ）の保存', () => {
+  it('保存した設定を読み戻せる。読めない・形がおかしいときは最初の設定（×1）', () => {
+    const storage = memoryStorage();
+    const store = createSettingsStore(storage);
+    expect(store.load()).toEqual(DEFAULT_SETTINGS);
+    store.save({ speed: 2 });
+    expect(store.load()).toEqual({ speed: 2 });
+    for (const text of [null, '{', '{"speed":3}', '[]', '"2"']) {
+      expect(parseSettings(text)).toEqual(DEFAULT_SETTINGS);
+    }
+  });
+
+  it('保存先が使えなくても（例外を出しても）止まらない', () => {
+    const broken = {
+      getItem: () => {
+        throw new Error('使えない');
+      },
+      setItem: () => {
+        throw new Error('使えない');
+      },
+    };
+    const store = createSettingsStore(broken);
+    expect(store.load()).toEqual(DEFAULT_SETTINGS);
+    expect(() => store.save({ speed: 2 })).not.toThrow();
+  });
+
+  it('バトルで2倍速にすると、開き直しても2倍速のまま。ランの保存を消しても残る', () => {
+    const storage = memoryStorage();
+    const open = () => {
+      document.body.innerHTML = '<div id="app"></div>';
+      const root = document.querySelector<HTMLElement>('#app')!;
+      startApp(root, { buildId: 'test', newSeed: () => 1, storage });
+      return root;
+    };
+    let root = open();
+    root.querySelector<HTMLButtonElement>('.screen__controls button')!.click();
+    for (const index of [0, 1, 2]) {
+      root.querySelectorAll<HTMLButtonElement>('.candidate')[index]!.click();
+    }
+    root.querySelector<HTMLButtonElement>('.draft__controls .button--primary')!.click();
+    root.querySelector<HTMLButtonElement>('.map-choice')!.click();
+    expect(root.querySelector('.menu__button')?.textContent).toBe('速さ ×1');
+    root.querySelector<HTMLButtonElement>('.menu__button')!.click();
+    expect(root.querySelector('.menu__button')?.textContent).toBe('速さ ×2');
+    expect(JSON.parse(storage.data.get(SETTINGS_KEY)!)).toEqual({ speed: 2 });
+
+    // 開き直して、つづきから
+    root = open();
+    root.querySelector<HTMLButtonElement>('.screen__controls .button--primary')!.click();
+    expect(root.querySelector('.menu__button')?.textContent).toBe('速さ ×2');
+
+    // ランの保存を消しても（ランが終わったときなど）、設定は残る
+    createSaveStore(storage).clear();
+    expect(storage.data.has(SAVE_KEY)).toBe(false);
+    expect(storage.data.has(SETTINGS_KEY)).toBe(true);
   });
 });
