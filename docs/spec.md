@@ -371,6 +371,8 @@ M4（エリア1だけ）では、強敵とボスも段階1で動かし、相手�
 7. **M6 公開**：itch.io で公開し、遊んだ人の感想をもとに調整する
    - itch.io では無料で公開する。まず URL を知っている人だけが開ける限定公開にして社内の人に遊んでもらい、問題がなければ一般公開にする
    - 最初は、ビルドした zip を手作業でアップロードする。慣れたら、main へのマージで自動でアップロードする形を検討する
+     - 実装用の補足：zip は main へのマージのたびに GitHub Actions で作り、GitHub Pages の `sairei-itch.zip`（https://q68-g41.github.io/myGame/sairei-itch.zip）に置く。中身はビルドしたファイルそのもの（いちばん上に `index.html`）。手元では `npm run build` のあと `npm run zip:itch` で `dist/sairei-itch.zip` ができる。どの版かは、トップ画面のビルドの識別子で確かめる
+     - 実装用の補足：itch.io の HTML ゲームは、ほかの人のゲームと同じドメインで動く。localStorage のキーは、ほかのゲームとぶつからないように `sairei-no-michi.` で始める（M6 で `mygame.` から変えた。前のキーは、ほかのゲームのものかもしれないので読まない・消さない）
    - GitHub Pages は、開発版を確認する場所として残す
    - 感想の集め方：社内は紹介ページと Slack のスレッド。一般公開のあとは itch.io のコメント欄
    - 絵は画像生成AIで作ったので、itch.io の設定で生成AIを使ったことを申告する。公開ページには「Claude Code と画像生成AIを使って作った」と書く

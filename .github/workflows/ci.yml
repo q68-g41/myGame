@@ -29,3 +29,5 @@ jobs:
       - run: npm ci
       - run: npm test
       - run: npm run build
+      # itch.io にアップロードする zip も作れることを確かめる
+      - run: npm run zip:itch

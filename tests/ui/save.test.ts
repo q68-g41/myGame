@@ -245,6 +245,14 @@ describe('自動保存と再開（アプリ）', () => {
   });
 });
 
+describe('保存のキー', () => {
+  it('itch.io ではほかのゲームと同じドメインで動くので、ゲームの名前で始める', () => {
+    expect(SAVE_KEY.startsWith('sairei-no-michi.')).toBe(true);
+    expect(SETTINGS_KEY.startsWith('sairei-no-michi.')).toBe(true);
+    expect(SAVE_KEY).not.toBe(SETTINGS_KEY);
+  });
+});
+
 describe('設定（演出の速さ）の保存', () => {
   it('保存した設定を読み戻せる。読めない・形がおかしいときは最初の設定（×1）', () => {
     const storage = memoryStorage();
