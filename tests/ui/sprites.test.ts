@@ -8,6 +8,8 @@ import {
   ICON_SIZE,
   iconElement,
   iconUrl,
+  IRODORITE_SIZE,
+  irodoriteUrl,
   MAP_ICON_SIZE,
   mapIconElement,
   mapIconUrl,
@@ -21,6 +23,7 @@ const FILES = import.meta.glob<string>('../../src/assets/sprites/*.png', { eager
 const ICON_FILES = import.meta.glob<string>('../../src/assets/icons/*.png', { eager: true, query: '?inline', import: 'default' });
 const MAP_FILES = import.meta.glob<string>('../../src/assets/map/*.png', { eager: true, query: '?inline', import: 'default' });
 const ANIM_FILES = import.meta.glob<string>('../../src/assets/anim/*.png', { eager: true, query: '?inline', import: 'default' });
+const IRODORITE_FILES = import.meta.glob<string>('../../src/assets/irodorite/*.png', { eager: true, query: '?inline', import: 'default' });
 
 /** PNG の幅と高さ（IHDR の値） */
 function pngSize(dataUri: string): { width: number; height: number } {
@@ -80,6 +83,46 @@ describe('コマ送りアニメのファイル（M7-3）', () => {
   it('どれも 48×48 のコマを4つ横に並べた 192×48', () => {
     for (const [path, dataUri] of Object.entries(ANIM_FILES)) {
       expect(pngSize(dataUri), path).toEqual({ width: SPRITE_SIZE * ANIM_FRAMES, height: SPRITE_SIZE });
+    }
+  });
+});
+
+describe('彩り手の絵のファイル（仕様書 4.6・5.1）', () => {
+  // 仕様書 4.6 の表の19人（クロを含む）。彩り手のデータ（src/data/）を足したら、そちらの ID と照らし合わせる
+  const ids = [
+    'kuro',
+    'hina',
+    'master',
+    'dai',
+    'sunny',
+    'morie',
+    'taisho',
+    'miu',
+    'wata',
+    'shu',
+    'maru',
+    'otakara',
+    'yuhi',
+    'kasa',
+    'taka',
+    'kai',
+    'rin',
+    'tatsumichi',
+    'sou',
+  ];
+
+  it('19人のすべてに絵があり、ほかの絵はない', () => {
+    for (const id of ids) {
+      expect(irodoriteUrl(id), id).toBeTypeOf('string');
+    }
+    const files = Object.keys(IRODORITE_FILES).map((path) => path.split('/').pop()!.replace(/\.png$/, ''));
+    expect(files.sort()).toEqual([...ids].sort());
+    expect(irodoriteUrl('unknown')).toBeNull();
+  });
+
+  it('どれも64×64', () => {
+    for (const [path, dataUri] of Object.entries(IRODORITE_FILES)) {
+      expect(pngSize(dataUri), path).toEqual({ width: IRODORITE_SIZE, height: IRODORITE_SIZE });
     }
   });
 });
