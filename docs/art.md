@@ -129,9 +129,53 @@ Plain solid white background, no ground shadow, no text, no letters, no border. 
 | スカウト | A floating spirit wisp (hitodama): a round soft flame with a short curling tail, its colors shifting through red, orange, yellow, green, blue and violet like a rainbow. |
 | イベント | A small old wooden roadside shrine (hokora) on a stone base, with a little gabled roof and a red cloth hanging in front. |
 
+## コマ送りアニメ（M7-3）
+
+バトルの場のキャラの待機の動きは、4コマのコマ送りアニメにした（仕様書 7 の M7-3）。上の「採用した絵」の元の絵を参考画像にして、GPT Image 2.5（Higgsfield。quality high、1k、正方形）で、4コマを2×2に並べた1枚を描いた。
+
+- 48×48 の止まった絵（`src/assets/sprites/`）と32×32 の小さい絵（`src/assets/icons/`）も、このアニメの1コマ目から作り直した（絵柄をアニメとそろえるため）
+- ベニギツネとヨモギガエルは、試作のときに描いたものをそのまま使った
+
+| ID | 名前 | 動き | 生成のジョブID |
+| --- | --- | --- | --- |
+| crimson-trial | ベニギツネ | しっぽの炎がゆれる・耳が動く | 89615f59-e47d-4816-b505-37380b1f9c63 |
+| crimson-guard | ベニコウラ | 首を出し入れ・しっぽが動く | 71d2f7f0-b23a-4d4b-80f8-90fb78bb2bef |
+| orange-trial | ユウヒダヌキ | 体がふくらむ・しっぽがゆれる | c7565176-cdee-4ef5-9288-84d1f192b59b |
+| orange-raider | カキザル | 身構えて弾む・しっぽがゆれる | 41e7a768-57e6-4e66-a264-aec7bf234ae4 |
+| yellow-trial | イナホイタチ | 稲穂のしっぽがゆれる | ce3c561d-fa06-4018-a0b9-797e81d6664c |
+| yellow-trickster | ナノハナバチ | 羽ばたく | 1ac0b93a-8599-4bfc-acad-67bce8c531d4 |
+| green-trial | ヨモギガエル | のどがふくらむ・葉がゆれる | 378c2263-6804-4192-ad99-1f1fd76d984e |
+| green-charger | タケジカ | 首と耳が動く・角の葉がゆれる | 1b367380-96f6-46cd-9bb5-623c5fe54c7d |
+| blue-trial | シズクサギ | 首がゆれる・羽が動く | 5f1f0472-547e-4259-bf7e-a7c18ba34906 |
+| blue-skirmisher | アオシャチ | 尾びれとひれが動く | 2316c075-89de-4e1b-bf17-f499df528ab3 |
+| violet-trial | フジチョウ | 羽を開いて閉じる | 789dadf8-f95a-426e-91d6-93a08c29d962 |
+| violet-warden | スミレヘビ | 首がゆれる・とぐろがふくらむ | 41632d00-a132-4d4f-9f85-9f234c5663da |
+| crimson-boss | くすみ大猿 | 肩で息をする・もやが動く | b8cc3ad5-339d-4269-b55c-0bf03d37f0f2 |
+| blue-boss | くすみ大鯉 | 体とひれがうねる・墨の水が動く | ceca4c37-026d-4f65-9728-c9b4d540ea5d |
+| violet-boss | くすみの主 | 霧がうごめく・目が光る | 31e795cb-d250-4641-a2ba-249e759cfdb7 |
+
+指示の文は次の形で、`{題材}` に上の「題材」とほぼ同じ文、`{足もと}` に「feet planted on the same spot in every frame」（飛ぶ・泳ぐキャラは「hovering at the same spot」など）、`{動き}` にキャラごとの動き、`{雰囲気}` にボスだけボスの雰囲気の文を入れた。
+
+```
+Pixel art idle animation sprite sheet of the exact creature shown in the reference image ({題材}). Draw 4 animation
+frames arranged in a 2x2 grid on a square canvas: frame 1 top-left, frame 2 top-right, frame 3 bottom-left, frame 4
+bottom-right. Every frame shows the same creature with the identical design, colors, outline, size, scale and position
+inside its cell, facing right in the same three-quarter view, {足もと}. Only small idle changes between frames: {動き}.
+Keep the same pixel art style as the reference: chunky pixels, limited palette, dark 1-pixel outline, flat cel
+shading, no blur, no gradients. Bold silhouette that still reads when shrunk to 48x48 pixels; avoid tiny floating
+particles. Plain solid white background in every cell, no grid lines, no borders, no numbers, no text, no ground
+shadow. {雰囲気} Original design that does not resemble any existing game, anime, or mascot character.
+```
+
+組み込みの手順は、上の「組み込むときの処理」とほぼ同じ。コマのあいだで絵がずれたり色が変わったりしないように、次の2つを変えた。
+
+- 2×2 を4つに分けて背景を抜いたあと、4コマすべてが入る範囲（4コマの範囲を合わせたもの）で、同じように切り抜く（コマごとに切り抜くと、コマごとに位置と大きさが変わってしまう）
+- 16色に減らすときは、4コマを並べた1枚からパレットを作り、4コマとも同じパレットを使う
+- 4コマを左から順に横に並べ、192×48 の PNG で `src/assets/anim/<キャラID>.png` に保存する
+
 ## 差し替えるとき
 
-- `src/assets/sprites/<キャラID>.png` を、48×48・右向きの PNG で上書きすれば、コードを変えずに差し替わる
+- `src/assets/sprites/<キャラID>.png` を、48×48・右向きの PNG で上書きすれば、コードを変えずに差し替わる。バトルの場では `src/assets/anim/<キャラID>.png`（192×48・4コマ）を使うので、止まった絵を変えたらアニメも作り直す（アニメの1コマ目と止まった絵はそろえる）
 - 小さい絵は `src/assets/icons/<キャラID>.png`（32×32・右向き）。大きい絵を差し替えたら、小さい絵も同じ元の絵から作り直す
 - マップのアイコンは `src/assets/map/<マスの種類>.png`（24×24）。ファイルがないマスは、これまでの1文字で出る（テスト `tests/ui/sprites.test.ts` は、5種類そろっていることを確かめる）
 - 新しいキャラを足したときは、同じ名前で絵を置く。絵がなくても属性の色の四角で動く（テスト `tests/ui/sprites.test.ts` は、全キャラに絵があることを確かめるので、絵を足すまで失敗する）
