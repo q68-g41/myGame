@@ -206,7 +206,7 @@ export interface MapIconView {
   readonly size: number;
 }
 
-/** マップのヒント：戦うマスの相手1体の属性（4.3） */
+/** マップのヒント：戦うマスで先頭に出てくる相手の属性（4.3） */
 export interface EnemyHintView {
   /** 属性の表示名（紅・蒼など） */
   readonly name: string;
@@ -227,8 +227,8 @@ export interface MapNodeView {
   readonly letter: string | null;
   /** つながっている次の層のマス */
   readonly next: readonly number[];
-  /** 戦うマスなら、相手の属性（出る順に1体ずつ）。戦わないマスは空 */
-  readonly enemies: readonly EnemyHintView[];
+  /** 戦うマスなら、先頭に出てくる相手の属性。戦わないマスは null */
+  readonly lead: EnemyHintView | null;
 }
 
 /** 次のマスを選ぶボタン */
@@ -238,8 +238,8 @@ export interface MapChoiceView {
   readonly name: string;
   /** マスのアイコン。絵がなければ null */
   readonly icon: MapIconView | null;
-  /** 戦うマスなら、相手の属性（出る順に1体ずつ）。戦わないマスは空 */
-  readonly enemies: readonly EnemyHintView[];
+  /** 戦うマスなら、先頭に出てくる相手の属性。戦わないマスは null */
+  readonly lead: EnemyHintView | null;
 }
 
 export interface MapView {
@@ -316,13 +316,12 @@ function mapIcon(run: RunState, kind: NodeKind): MapIconView | null {
 }
 
 /**
- * マスの相手の属性（4.3）。戦闘・強敵・ライバルは、マップを作るときに決めておいた相手。
- * ボスは、そのエリアのボス。戦わないマス（休憩・スカウト・イベント）は空
+ * マスで先頭に出てくる相手の属性（4.3。ヒントは1体目だけ）。戦闘・強敵・ライバルは、マップを作るときに決めておいた相手。
+ * ボスは、そのエリアのボス。戦わないマス（休憩・スカウト・イベント）は null
  */
-function enemyHints(run: RunState, position: MapPosition, kind: NodeKind): EnemyHintView[] {
-  const fighters: readonly FighterDef[] =
-    kind === 'boss' ? (BOSSES[run.area] ? [BOSSES[run.area]!.fighter] : []) : (nodeEnemies(run, position) ?? []);
-  return fighters.map((fighter) => ({ name: ATTRIBUTE_NAMES[fighter.attribute], color: ATTRIBUTE_COLORS[fighter.attribute] }));
+function leadHint(run: RunState, position: MapPosition, kind: NodeKind): EnemyHintView | null {
+  const lead: FighterDef | undefined = kind === 'boss' ? BOSSES[run.area]?.fighter : nodeEnemies(run, position)?.[0];
+  return lead === undefined ? null : { name: ATTRIBUTE_NAMES[lead.attribute], color: ATTRIBUTE_COLORS[lead.attribute] };
 }
 
 /** 次に進めるマスから、この先たどり着けるマスを層ごとに集める */
@@ -378,7 +377,7 @@ export function buildMapView(run: RunState, notice: string | null = null, ui: Ma
         state: nodeState(run.position, l, index, letter, reachable),
         letter,
         next: node.next,
-        enemies: enemyHints(run, { layer: l, index }, node.kind),
+        lead: leadHint(run, { layer: l, index }, node.kind),
       };
     }),
   );
@@ -393,7 +392,7 @@ export function buildMapView(run: RunState, notice: string | null = null, ui: Ma
         letter: letterOf(index)!,
         name: NODE_KIND_NAMES[kind],
         icon: mapIcon(run, kind),
-        enemies: enemyHints(run, position, kind),
+        lead: leadHint(run, position, kind),
       };
     }),
     team: teamViews(run.team),
