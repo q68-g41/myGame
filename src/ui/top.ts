@@ -53,7 +53,7 @@ export function renderTopScreen(root: HTMLElement, options: TopScreenOptions, co
     doc,
     'p',
     'top__message',
-    onContinue ? '前回のランの続きから遊べます' : '彩霊を3体えらんで、旅に出ます',
+    onContinue ? '前回のランの続きから遊べます' : '彩り手をえらんで、相棒と旅に出ます',
   );
   view.append(subtitle, title, team, message);
 
