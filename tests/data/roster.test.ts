@@ -1,7 +1,7 @@
 import { describe, expect, it } from 'vitest';
 import { ATTRIBUTE_NAMES } from '../../src/data/attributes';
 import { RUN_CONTENT } from '../../src/data/content';
-import { BOSS_FIGHTERS, FIGHTERS } from '../../src/data/fighters';
+import { BOSS_FIGHTERS, FIGHTERS, PARTNER_FIGHTERS } from '../../src/data/fighters';
 import { MOVES, getMove } from '../../src/data/moves';
 import { createCombatant } from '../../src/engine/battle';
 import {
@@ -61,32 +61,32 @@ describe('技のデータ（仕様書 3.6 の目安）', () => {
 });
 
 describe('キャラのデータ（仕様書 3.2 の目安）', () => {
-  it('ID も名前も重ならない', () => {
-    expect(new Set(FIGHTERS.map((fighter) => fighter.id)).size).toBe(FIGHTERS.length);
-    expect(new Set(FIGHTERS.map((fighter) => fighter.name)).size).toBe(FIGHTERS.length);
+  const all = [...FIGHTERS, ...PARTNER_FIGHTERS, ...BOSS_FIGHTERS];
+
+  it('ID も名前も重ならない（ふつうのキャラ・相棒・ボスをまとめて）', () => {
+    expect(new Set(all.map((fighter) => fighter.id)).size).toBe(all.length);
+    expect(new Set(all.map((fighter) => fighter.name)).size).toBe(all.length);
   });
 
-  it('どのキャラ（ボスも）にも説明があり、24文字まで（詳細の絵の横に2行で収まる長さ）', () => {
-    for (const fighter of [...FIGHTERS, ...BOSS_FIGHTERS]) {
+  it('どのキャラ（相棒・ボスも）にも説明があり、24文字まで（詳細の絵の横に2行で収まる長さ）', () => {
+    for (const fighter of all) {
       expect(fighter.description, fighter.id).toBeTruthy();
       expect([...fighter.description].length, fighter.description).toBeLessThanOrEqual(24);
     }
   });
 
   it('名前は6文字まで（仕様書 5。狭い枠でも省略せずに出せる長さ）', () => {
-    for (const fighter of FIGHTERS) {
+    for (const fighter of [...FIGHTERS, ...PARTNER_FIGHTERS]) {
       expect([...fighter.name].length, fighter.name).toBeLessThanOrEqual(6);
     }
   });
 
-  it('14体で、6色は属性ごとに2体ずつ、白・黒は1体ずつ（カラスウサギ）いる（仕様書 7 の M5・M8）', () => {
-    expect(FIGHTERS).toHaveLength(14);
-    expect(FIGHTERS.map((fighter) => fighter.attribute).sort()).toEqual(
-      [...ATTRIBUTE_ORDER, ...ATTRIBUTE_ORDER, ...MONOCHROME_ATTRIBUTES].sort(),
-    );
+  it('ふつうのキャラは12体で、6色が属性ごとに2体ずついる（仕様書 7 の M5）', () => {
+    expect(FIGHTERS).toHaveLength(12);
+    expect(FIGHTERS.map((fighter) => fighter.attribute).sort()).toEqual([...ATTRIBUTE_ORDER, ...ATTRIBUTE_ORDER].sort());
   });
 
-  it.each(FIGHTERS)('$name の能力値が目安の範囲（HP 80〜120、ほか 30〜70）で、戦闘に出せる', (fighter) => {
+  it.each([...FIGHTERS, ...PARTNER_FIGHTERS])('$name の能力値が目安の範囲（HP 80〜120、ほか 30〜70）で、戦闘に出せる', (fighter) => {
     expect(fighter.stats.hp).toBeGreaterThanOrEqual(80);
     expect(fighter.stats.hp).toBeLessThanOrEqual(120);
     for (const stat of [fighter.stats.attack, fighter.stats.defense, fighter.stats.speed]) {
@@ -95,6 +95,26 @@ describe('キャラのデータ（仕様書 3.2 の目安）', () => {
     }
     // 技は 1〜4 個、重複なし、大技以外が1つ以上（createCombatant が検査する）
     expect(() => createCombatant(fighter)).not.toThrow();
+  });
+});
+
+describe('彩り手の相棒（仕様書 4.6）', () => {
+  it('カラスウサギ2体と、最初の彩り手3人（ヒナ・ワタ・ソウ）の相棒がいる', () => {
+    expect(PARTNER_FIGHTERS.map((fighter) => fighter.id)).toEqual([
+      'white-twin',
+      'black-twin',
+      'hina-partner',
+      'wata-partner',
+      'sou-partner',
+    ]);
+  });
+
+  it('相棒は、スタートの候補・スカウト・ふつうの相手に出ない（ランのキャラに入らない）', () => {
+    const ids = RUN_CONTENT.fighters.map((fighter) => fighter.id);
+    for (const partner of PARTNER_FIGHTERS) {
+      expect(ids, partner.id).not.toContain(partner.id);
+    }
+    expect(RUN_CONTENT.fighters).toBe(FIGHTERS);
   });
 });
 
@@ -124,7 +144,7 @@ describe('白・黒の技はカラスウサギ専用（仕様書 3.6）', () => 
 
   it('カラスウサギ2体は、はじめから自分の属性の技を覚えている', () => {
     for (const attribute of MONOCHROME_ATTRIBUTES) {
-      const twins = FIGHTERS.filter((fighter) => fighter.attribute === attribute);
+      const twins = PARTNER_FIGHTERS.filter((fighter) => fighter.attribute === attribute);
       expect(twins).toHaveLength(1);
       expect(twins[0]!.moves.filter((move) => move.attribute === attribute).map((move) => move.kind).sort()).toEqual([
         'big',
@@ -134,7 +154,9 @@ describe('白・黒の技はカラスウサギ専用（仕様書 3.6）', () => 
   });
 
   it('白・黒の技を覚えているのは、カラスウサギ2体だけ', () => {
-    const users = FIGHTERS.filter((fighter) => fighter.moves.some((move) => MONOCHROME_ATTRIBUTES.includes(move.attribute)));
+    const users = [...FIGHTERS, ...PARTNER_FIGHTERS, ...BOSS_FIGHTERS].filter((fighter) =>
+      fighter.moves.some((move) => MONOCHROME_ATTRIBUTES.includes(move.attribute)),
+    );
     expect(users.map((fighter) => fighter.id).sort()).toEqual(['black-twin', 'white-twin']);
   });
 });

@@ -1,6 +1,6 @@
 // @vitest-environment happy-dom
 import { describe, expect, it } from 'vitest';
-import { BOSS_FIGHTERS, FIGHTERS } from '../../src/data/fighters';
+import { BOSS_FIGHTERS, FIGHTERS, PARTNER_FIGHTERS } from '../../src/data/fighters';
 import {
   ANIM_FRAMES,
   animatedSpriteElement,
@@ -33,10 +33,10 @@ function pngSize(dataUri: string): { width: number; height: number } {
 }
 
 describe('ドット絵のファイル（仕様書 5.1）', () => {
-  const ids = [...FIGHTERS, ...BOSS_FIGHTERS].map((fighter) => fighter.id);
+  const ids = [...FIGHTERS, ...PARTNER_FIGHTERS, ...BOSS_FIGHTERS].map((fighter) => fighter.id);
   const files = Object.keys(FILES).map((path) => path.split('/').pop()!);
 
-  it('キャラ14体とボス3体のすべてに絵があり、キャラにない絵はない', () => {
+  it('ふつうのキャラ12体・相棒・ボス3体のすべてに絵があり、キャラにない絵はない', () => {
     for (const id of ids) {
       expect(spriteUrl(id), id).toBeTypeOf('string');
     }
@@ -52,8 +52,8 @@ describe('ドット絵のファイル（仕様書 5.1）', () => {
 });
 
 describe('小さい絵のファイル（候補一覧・選んだ順の枠・控え）', () => {
-  it('キャラ14体のすべてにあり、キャラにない絵はない（ボスは小さい表示に出ないので、なくてよい）', () => {
-    const ids = FIGHTERS.map((fighter) => fighter.id);
+  it('ふつうのキャラと相棒のすべてにあり、キャラにない絵はない（ボスは小さい表示に出ないので、なくてよい）', () => {
+    const ids = [...FIGHTERS, ...PARTNER_FIGHTERS].map((fighter) => fighter.id);
     for (const id of ids) {
       expect(iconUrl(id), id).toBeTypeOf('string');
     }
@@ -70,8 +70,8 @@ describe('小さい絵のファイル（候補一覧・選んだ順の枠・控�
 });
 
 describe('コマ送りアニメのファイル（M7-3）', () => {
-  it('キャラ14体とボス3体のすべてにあり、キャラにない絵はない', () => {
-    const ids = [...FIGHTERS, ...BOSS_FIGHTERS].map((fighter) => fighter.id);
+  it('ふつうのキャラ・相棒・ボスのすべてにあり、キャラにない絵はない', () => {
+    const ids = [...FIGHTERS, ...PARTNER_FIGHTERS, ...BOSS_FIGHTERS].map((fighter) => fighter.id);
     for (const id of ids) {
       expect(animUrl(id), id).toBeTypeOf('string');
     }

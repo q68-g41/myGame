@@ -175,7 +175,7 @@ shadow. {雰囲気} Original design that does not resemble any existing game, an
 
 ## カラスウサギ（M8）
 
-主人公の相棒の2体（仕様書 7 の M8-2）。カラスとウサギを合わせたオリジナルキャラ「からすうさぎ」の絵（白いウサギの体に、カラスの黒い翼・くちばし・尾羽）をもとに描いた。もとの絵は生成サービスに送れなかったので、特徴を文で伝え、参考画像には採用済みの絵（ベニコウラとイナホイタチ）を渡して絵柄をそろえた。GPT Image 2.5（Higgsfield。quality high、1k、正方形）。
+ライバル・クロの相棒の2体（仕様書 7 の M8-2）。カラスとウサギを合わせたオリジナルキャラ「からすうさぎ」の絵（白いウサギの体に、カラスの黒い翼・くちばし・尾羽）をもとに描いた。もとの絵は生成サービスに送れなかったので、特徴を文で伝え、参考画像には採用済みの絵（ベニコウラとイナホイタチ）を渡して絵柄をそろえた。GPT Image 2.5（Higgsfield。quality high、1k、正方形）。
 
 | ID | 名前 | 止まった絵の生成 | コマ送りアニメの生成 | 動き |
 | --- | --- | --- | --- | --- |
@@ -187,6 +187,22 @@ shadow. {雰囲気} Original design that does not resemble any existing game, an
 - 止まった絵の指示は「描き直し」の文に近い形で、`{題材}` に次の文を入れた（黒は色を反転した文。顔が黒に埋もれないよう、目に白い光を入れるよう足した）
   - `A 'crow-rabbit' (karasu-usagi): a small, round, chubby rabbit with a white body and head (soft white with light gray shading), two long upright rabbit ears with light gray insides, two small black dot eyes, a small black triangular crow beak in place of a rabbit nose, a fluffy white chest ruff, short white rabbit feet, small black crow wings on both sides of its body, and a short tuft of black crow tail feathers at the back.`
 - コマ送りアニメは、上の「コマ送りアニメ」と同じ指示の形で、止まった絵の生成を参考画像にした。組み込みの手順もほかのキャラと同じ（48×48・32×32・192×48）
+
+## 彩り手の相棒（M8）
+
+彩り手の相棒の彩霊（仕様書 4.6・5.1）。GPT Image 2.5（Higgsfield。quality high、1k、正方形）で、参考画像には採用済みの絵（ベニコウラとイナホイタチ）を渡して絵柄をそろえた。止まった絵を描いてから、その絵を参考画像にしてコマ送りアニメを描き、48×48 の止まった絵と32×32 の小さい絵はアニメの1コマ目から作った（カラスウサギと同じ手順）。どれも1回目の生成を採用した。
+
+| ID | 名前 | 止まった絵の生成 | コマ送りアニメの生成 | 動き |
+| --- | --- | --- | --- | --- |
+| hina-partner | サクラシバ | e8baaf90-b84c-4202-b016-a1f0fbed86f8 | ca8f8dac-a637-460f-9fd7-faf5b120d88e | しっぽが左右にゆれる・耳が動く・しっぽの桜がゆれる |
+| wata-partner | キビタキ | ea6bd441-8ade-441a-ab9d-326d1f49ff90 | 3832b815-0ece-4a72-b926-58ca5ad38a4c | 首をかしげる・尾羽が開いて閉じる・翼が動く |
+| sou-partner | ヨイミミズク | 0c10b467-edfb-495d-80a9-96c498280fb4 | 1e6b695b-5141-4ffa-a34c-730186ad874c | 羽角が動く・1コマだけまばたき・胸の羽がふくらむ |
+
+- 止まった絵の指示は、上の「生成の指示」の共通の文に、参考画像の絵柄に合わせる文（「Match the art style, outline weight, shading and palette feel of the reference images, which are finished sprites from the same game, but draw only the creature described here.」）と、「avoid tiny floating particles and thin wisps」を足した形。`{題材}` は次の文
+  - サクラシバ：`A cheerful, energetic shiba inu (Japanese dog) spirit with crimson-red fur and a cream chest and muzzle, pointed ears, a tightly curled tail with a few cherry blossoms blooming at its tip, and a small cherry-blossom pink neckerchief. Main color: crimson red, with cherry-blossom pink accents.`
+  - キビタキ：`A small, round songbird spirit modeled on a narcissus flycatcher (kibitaki): a bright golden-yellow throat, chest and eyebrow stripe, a dark charcoal back and wings with one white wing patch, and a slightly fanned tail whose tips glow golden yellow. It stands alert on short legs with its head tilted, as if listening. Main color: bright golden yellow.`
+  - ヨイミミズク：`A round, plump horned owl spirit (mimizuku) in deep evening violet, with prominent feather ear tufts, a lighter lavender facial disc, large calm amber eyes, and a pattern of small pale star shapes on its folded wings like the early evening sky. It stands upright on short legs, calm and dependable. Main color: deep evening violet.`
+- コマ送りアニメの指示は、上の「コマ送りアニメ」と同じ形（`{足もと}` は3体とも「feet planted on the same spot in every frame」）
 
 ## 彩り手（M8）
 

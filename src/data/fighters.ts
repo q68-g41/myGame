@@ -1,5 +1,5 @@
 /**
- * キャラ（彩霊）のデータ。6色は属性ごとに2体、白・黒はカラスウサギが1体ずつで、全部で14体。
+ * キャラ（彩霊）のデータ。ふつうのキャラは6色が属性ごとに2体で12体。ほかに、彩り手の相棒（仕様書 4.6）とボスがいる。
  * 名前は和風の世界観での仮置き（仕様書 8）。ID は名前と切り離してあり、名前を変えても ID は変えない
  * （はじめの6体の ID が `〜-trial` なのは、M2 の仮キャラの ID をそのまま使っているため）。
  * 能力値の目安（仕様書 3.2）：HP 80〜120、攻撃・防御・素早さ 30〜70
@@ -25,7 +25,7 @@ function fighter(
   return { id, name, description, attribute, stats, moves: moveIds.map(getMove) };
 }
 
-/** キャラの一覧（スタートの候補・スカウト・ふつうの相手に出る） */
+/** ふつうのキャラの一覧（スタートの候補・スカウト・ふつうの相手に出る） */
 export const FIGHTERS: readonly FighterData[] = [
   // 1体目：属性ごとの基本のキャラ
   fighter('crimson-trial', 'crimson', 'ベニギツネ', { hp: 95, attack: 65, defense: 45, speed: 60 }, [
@@ -101,7 +101,13 @@ export const FIGHTERS: readonly FighterData[] = [
     'corrode',
     'haze',
   ], 'すみれ模様の蛇。守りながら相手を弱らせる'),
-  // M8：主人公の相棒、白と黒のカラスウサギ。白は守りと回復、黒は速攻
+];
+
+/**
+ * 彩り手の相棒（仕様書 4.6）。その彩り手だけのキャラで、スタートの候補・スカウト・ふつうの相手には出ない。
+ * ID は「彩り手の ID-partner」。カラスウサギ2体は、ライバル・クロの相棒（白は守りと回復、黒は速攻）
+ */
+export const PARTNER_FIGHTERS: readonly FighterData[] = [
   fighter('white-twin', 'white', 'シラハウサギ', { hp: 105, attack: 55, defense: 60, speed: 45 }, [
     'white-strike',
     'white-burst',
@@ -114,6 +120,27 @@ export const FIGHTERS: readonly FighterData[] = [
     'violet-quick',
     'hinder',
   ], '黒いカラスウサギ。素早さで攻める'),
+  // ヒナの相棒。火照りで攻撃と素早さを上げて攻める
+  fighter('hina-partner', 'crimson', 'サクラシバ', { hp: 105, attack: 60, defense: 50, speed: 55 }, [
+    'crimson-strike',
+    'crimson-burst',
+    'quick-jab',
+    'kindle',
+  ], '桜のしっぽの柴犬。勢いに乗って攻める'),
+  // ワタの相棒。速く、崩しで相手の防御を下げる
+  fighter('wata-partner', 'yellow', 'キビタキ', { hp: 85, attack: 55, defense: 45, speed: 70 }, [
+    'yellow-strike',
+    'yellow-burst',
+    'quick-dart',
+    'break',
+  ], '黄色い小鳥。素早く相手の守りを崩す'),
+  // ソウの相棒。打たれ強く、朧と手当てで粘る
+  fighter('sou-partner', 'violet', 'ヨイミミズク', { hp: 110, attack: 60, defense: 60, speed: 40 }, [
+    'violet-strike',
+    'violet-burst',
+    'haze',
+    'mend',
+  ], '宵色のミミズク。打たれ強く、粘って戦う'),
 ];
 
 /**
@@ -142,10 +169,10 @@ export const BOSS_FIGHTERS: readonly FighterData[] = [
 ];
 
 const FIGHTER_BY_ID: ReadonlyMap<string, FighterData> = new Map(
-  [...FIGHTERS, ...BOSS_FIGHTERS].map((data) => [data.id, data]),
+  [...FIGHTERS, ...PARTNER_FIGHTERS, ...BOSS_FIGHTERS].map((data) => [data.id, data]),
 );
 
-/** ID からキャラ（ボスも含む）を取り出す。なければエラー */
+/** ID からキャラ（相棒とボスも含む）を取り出す。なければエラー */
 export function getFighter(id: string): FighterData {
   const data = FIGHTER_BY_ID.get(id);
   if (!data) {
