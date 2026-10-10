@@ -212,6 +212,45 @@ shadow. {雰囲気} Original design that does not resemble any existing game, an
   - 2回目の3体（コムギネコ・カラクサジシ・ミナモイヌ）も、どれも1回目の生成を採用した。ミナモイヌのアニメの指示には、離れた水しぶきが点にならないよう「avoid ... separate droplets」を足した
 - コマ送りアニメの指示は、上の「コマ送りアニメ」と同じ形（`{足もと}` は3体とも「feet planted on the same spot in every frame」。描き直したコムギネコは「sitting on the same spot in every frame」）
 
+### 残りの12体（M8）
+
+彩り手を18人そろえるときに、残りの12人の相棒を一度に描いた。手順と指示の形は上の6体と同じ。12体の止まった絵を並べて、今のキャラ（ふつうのキャラ・カラスウサギ・相棒）と色と形が似ていないかを見比べ、似ていた2体（ツキミギツネとウミウマ）は描き直した。
+
+| ID | 名前 | 止まった絵の生成 | コマ送りアニメの生成 | 動き |
+| --- | --- | --- | --- | --- |
+| master-partner | イリマメヤギ | 2273ded3-41e3-4967-bdf6-850ebfb4cb83 | 51e5c6bc-6811-428d-84a9-23213cf19115 | 首を小さく振る・耳が動く・短いしっぽを振る |
+| dai-partner | セトガニ | 27079913-9323-4ba6-9d7a-b3b9c6e5cbcc | 31d40914-e5b9-48c4-87fe-f2630386e445 | 大きなはさみが上下する・小さなはさみが開いて閉じる・目が動く |
+| sunny-partner | アカネヅル | 7ebe95e6-a851-4e48-b54a-d8ee719ef830 | 0ca6c097-2c8a-4203-a7e6-8b6a8038fc93 | 紙の翼が少し開いて閉じる・長い首が上下する |
+| taisho-partner | キナコグマ | f59370cf-5b02-4833-96bf-014bceecc3c2 | 2dc5ffef-554a-4e71-907a-c020b52b4937 | 体が息でふくらむ・首をかしげる・丸い耳が動く |
+| miu-partner | ビワカワウソ | 98715da9-3abf-49f6-a7ca-dda275ff360a | a206a565-2f6d-4c4b-a337-57fa8e2bccb6 | 体が左右に少しゆれる・ひげと耳が動く・頭の葉がゆれる |
+| shu-partner | イカヅチイヌ | 15713ab2-37af-4cd7-b401-d7ab61e2f49c | 01710749-ca12-450c-8858-82cc2faace16 | 体が身構えて上下する・稲妻のしっぽが動く・たてがみが逆立つ |
+| maru-partner | ツキミギツネ | caa74c32-864a-4d3d-895a-db0ef6e55782 | 7f3f2643-1344-4e72-b52d-8b6d07279408 | 耳が動く・1コマだけ目を閉じる・胸が息で上下する・しっぽの先が動く |
+| otakara-partner | マネキネコ | 482058ad-07a9-4cc0-a9b6-3c54129d5bf2 | e4f04612-48e4-41cc-a6fa-5a3b65681b92 | 上げた手で招く・鈴がゆれる・しっぽがゆれる |
+| kasa-partner | ネジトンボ | badd35f7-d3f2-45ec-95ac-842f73ba3c70 | 4a5f7e9c-c660-45d1-a6f4-db264f1d3e27 | 4枚の羽が上下する・しっぽが少し上下する |
+| taka-partner | ルリコウモリ | 94a748a8-1f7c-42a8-91d7-b73fe3475222 | 2a23c74e-3af0-4c36-bca0-238308e29473 | 翼が少し上下する・耳が動く |
+| kai-partner | ウミウマ | 4f964400-00cd-4e4a-b039-2df176cd1f6f | 1a8b3d5e-f506-4a51-b046-46407cda90c1 | 首を小さく振る・波頭のたてがみとしっぽがゆれる・前足を少し上げて下ろす |
+| tatsumichi-partner | コウロリュウ | 71bb7fe8-6843-42b8-b950-76821d02b84e | 185c72fa-2031-4eeb-91fb-2f3556ad9093 | 体が少しうねる・たてがみがゆれる・しっぽの先の煙の形が変わる |
+
+- 止まった絵の `{題材}` は次の文
+  - イリマメヤギ：`A calm, gentle young goat spirit with roasted-coffee-bean crimson and dark red-brown fur, small curled horns shaped like roasted beans, a fluffy cream beard, and a steaming-cup shaped marking on its side. Main color: deep roasted crimson red.`
+  - セトガニ：`A sturdy crab spirit with a bright crimson-red shell, one oversized hammer-like claw raised proudly, a smaller second claw, and pale sea-foam wave markings on its shell like the calm waves of an inland sea. Main color: bright crimson red.`
+  - アカネヅル：`A graceful crane spirit that looks like a large folded origami paper crane come to life, with crisp angular paper-fold wings in madder orange (akane) and warm sunset orange, a long folded neck, and a small crimson crest. Main color: madder orange.`
+  - キナコグマ：`A big, round, cheerful bear cub spirit with warm orange-brown fur, a cream belly, a pattern of small bean-shaped spots on its back, round ears, and a happy, sturdy posture. Main color: warm orange.`
+  - ビワカワウソ：`A chubby, round river otter spirit standing upright on its hind legs, hugging a big round loquat (biwa) fruit with both front paws, with loquat-orange fur, a round cream face with whiskers and a wide surprised mouth, small round ears, webbed feet, a thick tail curled on the ground, and a loquat leaf on its head. It must look plump and upright, not slender, and must not look like a weasel or cat. Main color: loquat orange.`
+  - イカヅチイヌ：`A fierce, wiry thunder beast spirit (raijuu) with a lean wolf-like body, bright electric-yellow fur with dark charcoal stripes, a jagged lightning-bolt shaped tail and spiky mane tufts, and sharp golden eyes. Main color: electric yellow.`
+  - ツキミギツネ：`A compact fox spirit sitting upright and perfectly still like a Japanese shrine guardian fox statue: pale golden moon-yellow fur with a cream chest, upright pointed ears, a bright red cloth bib tied around its neck, a small crescent-moon mark on its forehead, calm narrow eyes, and a short neat tail curled tightly around its front paws. It must NOT have a big fluffy or flowing tail, must not be slender or walking, and must not look like a weasel. Main color: pale moon yellow, with a bright red bib accent.`（向きの文は「sitting upright」）
+  - マネキネコ：`A round lucky beckoning cat spirit in the traditional maneki-neko style, with golden-yellow and cream fur, one front paw raised in a beckoning gesture, a red collar with a small gold bell, and a small plain gold oval coin (koban, no letters or symbols) held against its chest with the other paw. Main color: golden yellow.`
+  - ネジトンボ：`A mechanical clockwork dragonfly spirit (karakuri) with a bamboo-green body made of jointed wooden segments, four broad leaf-green wings drawn as solid shapes with brass screw joints at the base, and large round green eyes. Main color: bamboo green.`
+  - ルリコウモリ：`A small round bat spirit with deep lapis-lazuli blue fur, large rounded ears, wide wings with lighter blue membranes spread out, tiny fangs, and wise, curious eyes. Main color: lapis blue.`
+  - ウミウマ：`A sturdy, muscular, thick-necked horse spirit with a solid deep indigo-navy blue coat, a big white sea-foam mane and tail shaped like the crests of breaking waves, white lower legs like foam, and dark hooves, standing proud with its head held high. The body is plain dark navy with no swirl, spiral, ring or ripple patterns, and it is not light blue. Main color: deep indigo navy blue, with white foam accents.`
+  - コウロリュウ：`A small eastern dragon spirit with a large, clearly drawn dragon head (taking up about a third of the figure) with two short antlers, a long snout, bright amber eyes and a lavender mane, and a solid violet scaled serpentine body coiled in a compact S-shape below it. Only the tail tip turns into a few thick, solid curls of incense smoke. A small incense-burner shaped ornament hangs at its chest. Main color: deep violet.`
+- 描き直した4体（使っていない絵）
+  - ビワカワウソ：細身のカワウソ（8dc42da6-f94b-4c95-9862-b6f22b962be3）は、イタチに見えたので、立ってびわを抱える丸いカワウソに描き直した
+  - コウロリュウ：煙でできた龍（5cc6d31d-754e-4732-aea3-f6eae694b0c1）は、48×48 に縮めると紫の煙のかたまりになり、何か分からなかったので、頭をはっきり描いた龍に描き直した
+  - ツキミギツネ：大きなしっぽの狐（5a19d795-240f-4f51-bfc7-ee352781ebc3、アニメ 59720603-ba28-44ed-adcf-c41222bc85ab）は、黄色・細身・大きなしっぽがイナホイタチと似ていたので、社の狐の像のように座る姿（赤い前掛け・額に三日月・しっぽは足もとに巻く）に描き直した
+  - ウミウマ：明るい青の馬（e4c1d8d2-3091-4715-95ac-8d6abc3fc005、アニメ 734256f4-8e02-4e1b-874d-7258a4fcc56b）は、明るい青と渦の模様がミナモイヌと似ていたので、藍色の体に白い波頭のたてがみの馬に描き直した
+- コマ送りアニメの `{足もと}` は、ふつうは「feet planted on the same spot in every frame」。セトガニは「legs planted」、ウミウマは「hooves planted」、ツキミギツネとマネキネコは「sitting on the same spot」、ネジトンボとルリコウモリは「hovering at the same spot」、コウロリュウは「floating at the same spot」。避けるもの（avoid）には、イカヅチイヌは「sparks」、ウミウマは「separate droplets」、コウロリュウは「haze」を足した
+
 ## 彩り手（M8）
 
 主人公の「彩り手」19人（クロを含む。仕様書 4.6・5.1）。64×64 の全身のドット絵。モチーフにした人の見た目には似せず、みんな同じ旅笠と羽織の旅装束にして、顔は笠の影に入れ、顔立ちや性別は描き込まない。だれか分かるのは、持ち物と羽織の色だけにした。GPT Image 2.5（Higgsfield。quality high、1k、正方形）で、参考画像には採用済みの絵（ベニコウラとイナホイタチ）を渡して絵柄をそろえた。

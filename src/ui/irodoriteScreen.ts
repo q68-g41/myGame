@@ -17,6 +17,8 @@ export interface IrodoriteScreenHandlers {
 export function renderIrodoriteScreen(root: HTMLElement, view: IrodoriteSelectView, handlers: IrodoriteScreenHandlers): void {
   const doc = root.ownerDocument;
   const { detail } = view;
+  // 選び直すたびに画面を作り直すので、一覧のスクロール位置を引き継ぐ（下の方の彩り手を選んでも、一覧が先頭に戻らないように）
+  const scrollTop = root.querySelector('.irodorite-choices')?.scrollTop ?? 0;
 
   // 上半分：選んでいる彩り手（絵・あだ名・口ぐせ・特性）と、相棒の詳細（属性の前に「相棒」と出す）。
   // 基準の画面で上半分に収めるため、見出しと案内は下半分に置く。口ぐせと特性が2行ずつになっても収まるように、
@@ -68,4 +70,5 @@ export function renderIrodoriteScreen(root: HTMLElement, view: IrodoriteSelectVi
   controls.append(grid, button(doc, 'button button--primary', 'この彩り手で進む', () => handlers.onConfirm()));
 
   root.replaceChildren(screen(doc, 'irodorite', display, controls));
+  grid.scrollTop = scrollTop;
 }

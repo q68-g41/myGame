@@ -162,6 +162,90 @@ export const PARTNER_FIGHTERS: readonly FighterData[] = [
     'blue-quick',
     'stillwater',
   ], '水面色の犬。相手の足を止めて戦う'),
+  // マスターの相棒。手当てと構えで粘る
+  fighter('master-partner', 'crimson', 'イリマメヤギ', { hp: 110, attack: 55, defense: 60, speed: 45 }, [
+    'crimson-strike',
+    'crimson-burst',
+    'mend',
+    'brace',
+  ], '煎り豆色のヤギ。手当てで粘る'),
+  // ダイの相棒。とても硬く、遅い。強い通常の技で殴る
+  fighter('dai-partner', 'crimson', 'セトガニ', { hp: 105, attack: 60, defense: 65, speed: 35 }, [
+    'crimson-heavy',
+    'crimson-burst',
+    'brace',
+    'quick-jab',
+  ], '瀬戸の赤いカニ。硬い甲羅で守る'),
+  // サニーの相棒。速く、早駆けでさらに速くなる
+  fighter('sunny-partner', 'orange', 'アカネヅル', { hp: 85, attack: 55, defense: 45, speed: 70 }, [
+    'orange-strike',
+    'orange-burst',
+    'orange-quick',
+    'quicken',
+  ], '茜色の折り鶴。速く舞って攻める'),
+  // 大将の相棒。HPと攻撃が高く、遅い
+  fighter('taisho-partner', 'orange', 'キナコグマ', { hp: 120, attack: 65, defense: 50, speed: 35 }, [
+    'orange-heavy',
+    'orange-burst',
+    'focus',
+    'mend',
+  ], 'きな粉色のクマ。体力も力も強い'),
+  // ミウの相棒。身軽で、芽吹きで粘る
+  fighter('miu-partner', 'orange', 'ビワカワウソ', { hp: 95, attack: 55, defense: 50, speed: 60 }, [
+    'orange-strike',
+    'orange-burst',
+    'blue-quick',
+    'sprout',
+  ], 'びわ色のカワウソ。身軽に粘る'),
+  // シュウの相棒。速く、攻撃がとても高いが、打たれ弱い
+  fighter('shu-partner', 'yellow', 'イカヅチイヌ', { hp: 85, attack: 70, defense: 40, speed: 65 }, [
+    'yellow-strike',
+    'yellow-burst',
+    'quick-dart',
+    'kindle',
+  ], '雷をまとう山犬。攻撃がとても高い'),
+  // マルの相棒（呼び名はコン助）。目くらましと足止めで相手を封じる
+  fighter('maru-partner', 'yellow', 'ツキミギツネ', { hp: 95, attack: 60, defense: 50, speed: 60 }, [
+    'yellow-strike',
+    'yellow-burst',
+    'dazzle',
+    'hinder',
+  ], '月の印の狐・コン助。動きを封じる'),
+  // オタカラの相棒。先制技と手当てで立ち回る
+  fighter('otakara-partner', 'yellow', 'マネキネコ', { hp: 100, attack: 60, defense: 55, speed: 55 }, [
+    'yellow-strike',
+    'yellow-burst',
+    'quick-dart',
+    'mend',
+  ], '福を招く猫。先手と手当てで戦う'),
+  // カサの相棒。速く、早駆けでさらに速くなる
+  fighter('kasa-partner', 'green', 'ネジトンボ', { hp: 80, attack: 60, defense: 45, speed: 70 }, [
+    'green-strike',
+    'green-burst',
+    'green-quick',
+    'quicken',
+  ], 'からくりのトンボ。速さで先を取る'),
+  // タカ先生の相棒。崩しと蝕みで相手を弱らせる
+  fighter('taka-partner', 'blue', 'ルリコウモリ', { hp: 90, attack: 55, defense: 50, speed: 65 }, [
+    'blue-strike',
+    'blue-burst',
+    'break',
+    'corrode',
+  ], '瑠璃色のコウモリ。守りを崩す'),
+  // カイの相棒。攻撃が高く、闘志で押し切る
+  fighter('kai-partner', 'blue', 'ウミウマ', { hp: 110, attack: 65, defense: 50, speed: 50 }, [
+    'blue-heavy',
+    'blue-burst',
+    'focus',
+    'blue-quick',
+  ], '波を駆ける藍色の馬。力で押し切る'),
+  // タツミチの相棒。蝕みでじわじわ削る
+  fighter('tatsumichi-partner', 'violet', 'コウロリュウ', { hp: 100, attack: 55, defense: 55, speed: 55 }, [
+    'violet-strike',
+    'violet-burst',
+    'corrode',
+    'kindle',
+  ], '香炉の煙の龍。じわじわ蝕む'),
 ];
 
 /**
