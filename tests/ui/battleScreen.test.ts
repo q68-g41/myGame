@@ -263,3 +263,54 @@ describe('HPバーの動き', () => {
     expect(root.querySelector('.battle--fast')).toBeNull();
   });
 });
+
+describe('キャラの動き（M7-1）', () => {
+  const handlers = {
+    onMove: vi.fn(),
+    onBench: vi.fn(),
+    onConfirm: vi.fn(),
+    onCancel: vi.fn(),
+    onContinue: vi.fn(),
+    onToggleSpeed: vi.fn(),
+    onSkip: vi.fn(),
+  };
+  const battle = createBattle(['crimson-trial', 'blue-trial'].map(getFighter), ['green-trial', 'yellow-trial'].map(getFighter));
+  const view = buildBattleView(createSession(battle, 1));
+  const panel = (side: string) => root.querySelector<HTMLElement>(`[data-side="${side}"]`)!;
+
+  beforeEach(() => {
+    document.body.innerHTML = '<div id="app"></div>';
+    root = document.querySelector<HTMLElement>('#app')!;
+  });
+
+  it('技を使ったコマでは、使った側だけが前に出る', () => {
+    renderBattleScreen(root, { ...view, motion: { side: 'enemy', kind: 'attack' } }, handlers);
+    expect(panel('enemy').classList.contains('fighter--attack')).toBe(true);
+    expect(panel('player').classList.contains('fighter--attack')).toBe(false);
+  });
+
+  it('交代のコマでは、出てきた側が入ってくる', () => {
+    renderBattleScreen(root, { ...view, motion: { side: 'player', kind: 'enter' } }, handlers);
+    expect(panel('player').classList.contains('fighter--enter')).toBe(true);
+  });
+
+  it('HPが0になったコマでは揺れるだけ、倒れたコマで倒れる動き、そのあとは薄いまま止める', () => {
+    const fainted = { ...view, player: { ...view.player, hp: 0 } };
+    renderBattleScreen(root, { ...fainted, hit: 'player' }, handlers);
+    expect(panel('player').className).toContain('fighter--hit');
+    expect(panel('player').classList.contains('fighter--fainted')).toBe(false);
+
+    renderBattleScreen(root, { ...fainted, motion: { side: 'player', kind: 'faint' } }, handlers);
+    expect(panel('player').classList.contains('fighter--faint')).toBe(true);
+    expect(panel('player').classList.contains('fighter--fainted')).toBe(false);
+
+    renderBattleScreen(root, fainted, handlers);
+    expect(panel('player').classList.contains('fighter--fainted')).toBe(true);
+    expect(panel('enemy').classList.contains('fighter--fainted')).toBe(false);
+  });
+
+  it('待機中の上下の動きは、描き直しても途切れないように、いまの時刻から続きの位置で始める', () => {
+    renderBattleScreen(root, view, handlers);
+    expect(root.querySelector<HTMLElement>('.battle')!.style.getPropertyValue('--idle-delay')).toMatch(/^-\d+ms$/);
+  });
+});

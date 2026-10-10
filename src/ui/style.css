@@ -424,6 +424,121 @@ body {
   animation: hit-flash 0.3s ease-out;
 }
 
+/* ===== キャラの動き（M7-1）。左右反転（transform）とぶつからないように、translate で動かす ===== */
+
+/* 待機中：ゆっくり上下する。相手と自分で半周ずらす。--idle-delay は描き直しても途切れないための開始位置 */
+.fighter__sprite .sprite {
+  animation: idle-bob 2.4s ease-in-out infinite;
+  animation-delay: var(--idle-delay, 0ms);
+}
+
+.fighter--enemy .fighter__sprite .sprite {
+  animation-delay: calc(var(--idle-delay, 0ms) - 1200ms);
+}
+
+@keyframes idle-bob {
+  0%,
+  100% {
+    translate: 0 0;
+  }
+  50% {
+    translate: 0 -4px;
+  }
+}
+
+/* 技を使ったとき：相手のほうへ前に出て戻る（自分は右上へ、相手は左下へ） */
+.fighter--attack .fighter__sprite {
+  animation: lunge-player 0.3s ease-out;
+}
+
+.fighter--enemy.fighter--attack .fighter__sprite {
+  animation-name: lunge-enemy;
+}
+
+@keyframes lunge-player {
+  40% {
+    translate: 16px -10px;
+  }
+}
+
+@keyframes lunge-enemy {
+  40% {
+    translate: -16px 10px;
+  }
+}
+
+/* 交代で場に出たとき：外側から入ってくる（自分は左から、相手は右から） */
+.fighter--enter .fighter__sprite {
+  animation: enter-player 0.35s ease-out;
+}
+
+.fighter--enemy.fighter--enter .fighter__sprite {
+  animation-name: enter-enemy;
+}
+
+@keyframes enter-player {
+  from {
+    translate: -48px 0;
+    opacity: 0;
+  }
+}
+
+@keyframes enter-enemy {
+  from {
+    translate: 48px 0;
+    opacity: 0;
+  }
+}
+
+/* 倒れたとき：下に沈みながら薄れる。倒れたあとは、その形のまま止める */
+.fighter--faint .fighter__sprite {
+  animation: faint 0.45s ease-in forwards;
+}
+
+.fighter--faint .fighter__sprite .sprite,
+.fighter--fainted .fighter__sprite .sprite {
+  animation: none;
+}
+
+.fighter--fainted .fighter__sprite {
+  translate: 0 12px;
+  opacity: 0.25;
+  filter: grayscale(1);
+}
+
+@keyframes faint {
+  to {
+    translate: 0 12px;
+    opacity: 0.25;
+    filter: grayscale(1);
+  }
+}
+
+/* 2倍速では、動きも半分の時間にする */
+.battle--fast .fighter--hit .fighter__sprite {
+  animation-duration: 0.15s;
+}
+
+.battle--fast .fighter--attack .fighter__sprite {
+  animation-duration: 0.15s;
+}
+
+.battle--fast .fighter--enter .fighter__sprite {
+  animation-duration: 0.18s;
+}
+
+.battle--fast .fighter--faint .fighter__sprite {
+  animation-duration: 0.23s;
+}
+
+/* 端末の「動きを減らす」設定がオンなら動かさない（倒れたあとの薄い表示は残す） */
+@media (prefers-reduced-motion: reduce) {
+  .fighter__sprite,
+  .fighter__sprite .sprite {
+    animation: none !important;
+  }
+}
+
 @keyframes hit-flash {
   0%,
   60% {

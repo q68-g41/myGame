@@ -15,6 +15,7 @@ import { activeOf, isFainted } from '../engine/team';
 import type { CharmEffect, Combatant, Effectiveness, Side } from '../engine/types';
 import { describeEvents } from './messages';
 import { describeMove, MOVE_KIND_NAMES, summarizeEffects } from './moveInfo';
+import type { FrameMotion } from './playback';
 import { needsPlayerReplacement, type BattleSession } from './session';
 import { iconUrl, spriteUrl } from './sprites';
 
@@ -105,6 +106,7 @@ export interface FrameOverlay {
   readonly state: BattleSession['state'];
   readonly log: string;
   readonly hit: Side | null;
+  readonly motion?: FrameMotion | null;
 }
 
 export const INITIAL_UI_STATE: UiState = { selectedBench: null, speed: 1, detailMoveId: null };
@@ -121,6 +123,8 @@ export interface BattleView {
   readonly confirm: ConfirmView | null;
   /** 演出でダメージを受けて光らせる陣営。なければ null */
   readonly hit: Side | null;
+  /** 演出で動く場のキャラ（技・倒れる・交代）。なければ null */
+  readonly motion: FrameMotion | null;
   /** 演出の速さ（メニューの表示に使う） */
   readonly speed: 1 | 2;
   /** 行動順の予告 */
@@ -268,6 +272,7 @@ export function buildBattleView(
     bench,
     confirm: phase === 'playing' ? null : confirmView(session, phase, bench, ui),
     hit: frame?.hit ?? null,
+    motion: frame?.motion ?? null,
     speed: ui.speed,
     orderPreview: orderPreview(session, state),
     detail: detailView(state, ui),
