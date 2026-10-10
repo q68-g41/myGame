@@ -97,7 +97,7 @@ export interface UiState {
   readonly selectedBench: number | null;
   /** 演出の速さ（1倍・2倍） */
   readonly speed: 1 | 2;
-  /** 効果音を鳴らすか */
+  /** 音（効果音と BGM）を鳴らすか */
   readonly sound: boolean;
   /** 長押しで詳細を出している技。出していなければ null */
   readonly detailMoveId: string | null;
@@ -129,7 +129,7 @@ export interface BattleView {
   readonly motion: FrameMotion | null;
   /** 演出の速さ（メニューの表示に使う） */
   readonly speed: 1 | 2;
-  /** 効果音を鳴らすか（メニューの表示に使う） */
+  /** 音（効果音と BGM）を鳴らすか（メニューの表示に使う） */
   readonly sound: boolean;
   /** 行動順の予告 */
   readonly orderPreview: OrderPreview;

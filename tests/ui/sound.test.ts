@@ -1,7 +1,9 @@
 // @vitest-environment happy-dom
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
+import { TRACKS, type MusicId } from '../../src/data/music';
 import { SOUNDS, type SoundId } from '../../src/data/sounds';
 import { startApp } from '../../src/ui/app';
+import { partEvents } from '../../src/ui/music';
 import { buildFrames } from '../../src/ui/playback';
 import { SETTINGS_KEY } from '../../src/ui/save';
 import { playMove } from '../../src/ui/session';
@@ -33,10 +35,17 @@ describe('効果音のデータ（M7-2）', () => {
   });
 });
 
-/** Web Audio の代わり。作った音の粒の数と、resume を呼んだかを数える */
+/** Web Audio の代わり。作った音の粒の数と、resume を呼んだかを数える。resume すると動き出す */
 function fakeContext(state: AudioContextState = 'suspended') {
-  const param = () => ({ setValueAtTime: vi.fn(), exponentialRampToValueAtTime: vi.fn() });
+  const param = () => ({
+    value: 1,
+    setValueAtTime: vi.fn(),
+    exponentialRampToValueAtTime: vi.fn(),
+    setTargetAtTime: vi.fn(),
+  });
   const counts = { oscillators: 0, noises: 0, resumed: 0 };
+  const gains: { gain: ReturnType<typeof param> }[] = [];
+  const node = () => ({ connect: vi.fn(), disconnect: vi.fn() });
   const context = {
     state,
     currentTime: 0,
@@ -44,12 +53,21 @@ function fakeContext(state: AudioContextState = 'suspended') {
     destination: {},
     resume: vi.fn(() => {
       counts.resumed += 1;
+      context.state = 'running';
       return Promise.resolve();
     }),
-    createGain: () => ({ gain: param(), connect: vi.fn() }),
+    suspend: vi.fn(() => Promise.resolve()),
+    createGain: () => {
+      const gain = { ...node(), gain: param(), context };
+      gains.push(gain);
+      return gain;
+    },
+    createDelay: () => ({ ...node(), delayTime: param() }),
+    createBiquadFilter: () => ({ ...node(), type: 'lowpass', frequency: param() }),
+    createPeriodicWave: () => ({}),
     createOscillator: () => {
       counts.oscillators += 1;
-      return { type: 'square', frequency: param(), connect: vi.fn(), start: vi.fn(), stop: vi.fn() };
+      return { type: 'square', frequency: param(), connect: vi.fn(), start: vi.fn(), stop: vi.fn(), setPeriodicWave: vi.fn() };
     },
     createBufferSource: () => {
       counts.noises += 1;
@@ -57,7 +75,7 @@ function fakeContext(state: AudioContextState = 'suspended') {
     },
     createBuffer: (_channels: number, length: number) => ({ getChannelData: () => new Float32Array(length) }),
   };
-  return { context: context as unknown as AudioContext, counts };
+  return { context: context as unknown as AudioContext, fake: context, counts, gains };
 }
 
 describe('効果音を鳴らす仕組み', () => {
@@ -81,7 +99,8 @@ describe('効果音を鳴らす仕組み', () => {
     player.unlock();
     player.unlock();
     expect(create).toHaveBeenCalledTimes(1);
-    expect(counts.resumed).toBe(2);
+    // 1回目で動き出すので、2回目は resume しない
+    expect(counts.resumed).toBe(1);
 
     for (const id of Object.keys(SOUNDS) as SoundId[]) {
       const before = counts.oscillators + counts.noises;
@@ -101,10 +120,91 @@ describe('効果音を鳴らす仕組み', () => {
   });
 });
 
+/** 曲1回ぶんで鳴らす音の数 */
+const notesPerLoop = (id: MusicId) => TRACKS[id].parts.reduce((sum, part) => sum + partEvents(part).events.length, 0);
+
+describe('BGM を鳴らす仕組み（M7-3）', () => {
+  beforeEach(() => {
+    vi.useFakeTimers();
+  });
+
+  afterEach(() => {
+    vi.useRealTimers();
+  });
+
+  it('最初のタップの前に頼まれた曲は覚えておき、タップしたら鳴らし始める', () => {
+    const { context, counts } = fakeContext();
+    const player = createSoundPlayer(() => context);
+    player.music('battle');
+    expect(counts.oscillators + counts.noises).toBe(0);
+
+    player.unlock();
+    expect(counts.oscillators + counts.noises).toBe(notesPerLoop('battle'));
+  });
+
+  it('同じ曲を頼んでも、最初から鳴らし直さない', () => {
+    const { context, counts } = fakeContext();
+    const player = createSoundPlayer(() => context);
+    player.unlock();
+    player.music('field');
+    const after = counts.oscillators + counts.noises;
+    player.music('field');
+    vi.advanceTimersByTime(1000);
+    expect(counts.oscillators + counts.noises).toBe(after);
+  });
+
+  it('くり返す曲は、終わりが近づくと次の1回ぶんを予約する。くり返さない曲は1回だけ', () => {
+    const { context, fake, counts } = fakeContext();
+    const player = createSoundPlayer(() => context);
+    player.unlock();
+
+    player.music('battle');
+    const first = counts.oscillators + counts.noises;
+    fake.currentTime = 100;
+    vi.advanceTimersByTime(300);
+    expect(counts.oscillators + counts.noises - first).toBe(notesPerLoop('battle'));
+
+    player.music('victory');
+    const jingle = counts.oscillators + counts.noises;
+    fake.currentTime = 200;
+    vi.advanceTimersByTime(1000);
+    expect(counts.oscillators + counts.noises).toBe(jingle);
+    expect(jingle - first - notesPerLoop('battle')).toBe(notesPerLoop('victory'));
+  });
+
+  it('止めると、前の曲を小さくしていき、次の予約もしない', () => {
+    const { context, fake, counts, gains } = fakeContext();
+    const player = createSoundPlayer(() => context);
+    player.unlock();
+    const before = gains.length;
+    player.music('boss');
+    // 曲ごとに最初に作るのが、その曲の音の出口
+    const output = gains[before]!;
+    player.music(null);
+    expect(output.gain.setTargetAtTime).toHaveBeenCalled();
+
+    const stopped = counts.oscillators + counts.noises;
+    fake.currentTime = 100;
+    vi.advanceTimersByTime(1000);
+    expect(counts.oscillators + counts.noises).toBe(stopped);
+  });
+
+  it('音が使えない環境では、何もしない（止まらない）', () => {
+    const player = createSoundPlayer(() => null);
+    expect(() => {
+      player.unlock();
+      player.music('field');
+      player.music(null);
+    }).not.toThrow();
+  });
+});
+
 describe('アプリの効果音', () => {
   let root: HTMLElement;
   let played: SoundId[];
   let unlocks: number;
+  /** BGM の切り替え（同じ曲が続くときは1つにまとめる） */
+  let musics: (MusicId | null)[];
   let storage: { data: Map<string, string> } & Pick<Storage, 'getItem' | 'setItem' | 'removeItem'>;
 
   const player: SoundPlayer = {
@@ -113,6 +213,11 @@ describe('アプリの効果音', () => {
     },
     play: (id) => {
       played.push(id);
+    },
+    music: (id) => {
+      if (musics.at(-1) !== id) {
+        musics.push(id);
+      }
     },
   };
 
@@ -148,6 +253,7 @@ describe('アプリの効果音', () => {
     vi.useFakeTimers();
     played = [];
     unlocks = 0;
+    musics = [];
     storage = memoryStorage();
   });
 
@@ -218,7 +324,14 @@ describe('アプリの効果音', () => {
     expect(JSON.parse(storage.data.get(SETTINGS_KEY)!)).toEqual({ speed: 1, sound: true });
   });
 
-  it('早送りしても、勝ち負けの音は鳴らす', () => {
+  it('トップからマップまでは旅の曲、バトルでは戦闘の曲', () => {
+    open();
+    expect(musics).toEqual(['field']);
+    enterFirstBattle();
+    expect(musics).toEqual(['field', 'battle']);
+  });
+
+  it('決着の演出まで進むと、勝ち負けの短い曲に変わる。早送りしても変わる。報酬の画面で旅の曲に戻る', () => {
     open();
     enterFirstBattle();
     for (let i = 0; i < 500 && root.querySelector('.result') === null; i += 1) {
@@ -228,9 +341,29 @@ describe('アプリの効果音', () => {
         usableMove() ??
         root.querySelector<HTMLButtonElement>('.bench-button:not([disabled])');
       target?.click();
+      expect(musics.at(-1)).toBe('battle');
       root.querySelector<HTMLElement>('.playback-skip')?.click();
     }
     expect(root.querySelector('.result')).not.toBeNull();
-    expect(played.filter((id) => id === 'win' || id === 'lose')).toHaveLength(1);
+    const ending = musics.at(-1);
+    expect(['victory', 'defeat']).toContain(ending);
+    root.querySelector<HTMLButtonElement>('.result button')!.click();
+    expect(musics.at(-1)).toBe(ending === 'victory' ? 'field' : null);
+  });
+
+  it('音をオフにすると BGM も止め、オンに戻すと場面の曲を鳴らす', () => {
+    open();
+    enterFirstBattle();
+    const toggle = () => root.querySelector<HTMLButtonElement>('.sound-toggle')!;
+    toggle().click();
+    expect(musics.at(-1)).toBeNull();
+    toggle().click();
+    expect(musics.at(-1)).toBe('battle');
+  });
+
+  it('音をオフにして開き直すと、BGM も鳴らさない', () => {
+    storage.setItem(SETTINGS_KEY, JSON.stringify({ speed: 1, sound: false }));
+    open();
+    expect(musics).toEqual([null]);
   });
 });

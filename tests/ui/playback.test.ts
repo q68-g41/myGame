@@ -86,7 +86,8 @@ describe('演出のコマ', () => {
               expect(sound).toBe('faint');
               break;
             case 'battleEnd':
-              expect(sound).toBe(event.winner === 'player' ? 'win' : 'lose');
+              // 勝ち負けは効果音ではなく、BGM の短い曲で知らせる
+              expect(sound).toBeNull();
               break;
             default:
               expect(sound === null || ['heal', 'status'].includes(sound)).toBe(true);
