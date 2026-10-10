@@ -10,7 +10,7 @@ itch.io の画面の項目名は、2026年10月時点の理解で書いていま
 | --- | --- | --- |
 | ゲーム本体（zip） | https://q68-g41.github.io/myGame/sairei-itch.zip | Uploads |
 | カバー画像（630×500） | `docs/itch/cover.png` | Cover image |
-| スクリーンショット4枚（780×1688） | `docs/itch/screenshot-1-draft.png` ほか | Screenshots |
+| スクリーンショット5枚（780×1688） | `docs/itch/screenshot-1-irodorite.png` ほか | Screenshots |
 | ページの文面 | このファイルの「ページの文面」 | Short description / Description |
 
 - zip は main にマージするたびに作り直される（GitHub Actions の「Deploy to GitHub Pages」が終わったあと）
@@ -48,9 +48,9 @@ itch.io の画面の項目名は、2026年10月時点の理解で書いていま
 | Description | 下の「説明文」 |
 | Genre | Strategy |
 | Tags | roguelite, turn-based-combat, pixel-art, japanese, mobile, singleplayer |
-| AI generation disclosure | 使った、と申告する。絵（キャラ・マップのアイコン）は画像生成AIで描き、コードは AI（Claude Code）と一緒に書いた。効果音と BGM はコードでその場で作る音で、生成AIの音は使っていない |
+| AI generation disclosure | 使った、と申告する。絵（キャラ・彩り手・マップのアイコン）は画像生成AIで描き、コードは AI（Claude Code）と一緒に書いた。効果音と BGM はコードでその場で作る音で、生成AIの音は使っていない |
 | Cover image | `docs/itch/cover.png` |
-| Screenshots | `docs/itch/screenshot-1-draft.png` から `screenshot-4-reward.png` の4枚 |
+| Screenshots | `docs/itch/screenshot-1-irodorite.png` から `screenshot-5-reward.png` の5枚（彩り手を選ぶ・チーム選択・マップ・バトル・報酬） |
 | Comments | 有効にする（一般公開のあとの感想の受け皿。仕様書 7） |
 
 ### 埋め込みの設定（Embed options）
@@ -80,15 +80,18 @@ itch.io の画面の項目名は、2026年10月時点の理解で書いていま
 スマホを縦に持って、片手で遊べます。1回のプレイは15〜20分ほどです。
 
 ■ 遊び方
-・候補5体から3体を選んでチームを作り、分岐マップを下から上へ進みます
+・まず、彩霊と旅をする「彩り手（いろどりて）」を18人から1人選びます。彩り手には、専用の相棒の彩霊と、旅のあいだずっと効く特性があります
+・相棒に、候補5体から選んだ2体を加えた3体でチームを作り、分岐マップを下から上へ進みます
 ・バトルでは、技を選ぶか、控えと交代します。相手の次の一手を読み、属性の相性と交代で上を取りましょう
 ・勝つたびに「技・能力強化・お守り」から1つを選んで、チームを育てます
+・2つめのエリアのボスの手前では、ライバルの彩り手「クロ」が待ちかまえています
 ・3つのエリアの最後に待つ「くすみ」のボスを倒せばクリアです
 
 ■ 中身
-・彩霊 12体（紅・橙・黄・翠・蒼・紫の6属性）
+・彩り手 18人と、それぞれの相棒の彩霊 18体
+・仲間にできる彩霊 12体（紅・橙・黄・翠・蒼・紫の6属性）
 ・技 36個、お守り 20個
-・エリア 3つ、ボス 3体
+・エリア 3つ、ボス 3体、ライバル 1人
 ・相手（CPU）は、先のエリアほど賢くなります
 
 ■ 遊ぶときの注意
@@ -101,14 +104,14 @@ itch.io の画面の項目名は、2026年10月時点の理解で書いていま
 どこまで進めたか、1回にかかった時間、迷ったところ、難しすぎる・簡単すぎると感じたところを、コメント欄に書いてもらえるとうれしいです。
 
 ■ 制作について
-Claude Code（AI）と一緒に作っています。キャラとマップのアイコンの絵は、画像生成AI（GPT Image 2.5）で描いたものを、ドット絵に整えて使っています。効果音と BGM は、プログラムでその場で作っています。
+Claude Code（AI）と一緒に作っています。キャラ・彩り手・マップのアイコンの絵は、画像生成AI（GPT Image 2.5）で描いたものを、ドット絵に整えて使っています。効果音と BGM は、プログラムでその場で作っています。
 フォント：DotGothic16、Zen Kaku Gothic New（SIL Open Font License）
 ```
 
 説明文の最後に、日本語が読めない人向けの一文を足す。
 
 ```
-Japanese only. A portrait, one-handed roguelite command battle game: read your opponent's next move and win with type matchups and switching. Made with Claude Code; the character and icon art was generated with an AI image model (GPT Image 2.5) and converted to pixel art. Fonts: DotGothic16 and Zen Kaku Gothic New (SIL Open Font License).
+Japanese only. A portrait, one-handed roguelite command battle game: pick one of 18 travelers and their partner spirit, then read your opponent's next move and win with type matchups and switching. Made with Claude Code; the character and icon art was generated with an AI image model (GPT Image 2.5) and converted to pixel art. Fonts: DotGothic16 and Zen Kaku Gothic New (SIL Open Font License).
 ```
 
 ## アップデートのしかた
@@ -124,4 +127,5 @@ Japanese only. A portrait, one-handed roguelite command battle game: read your o
 ## 素材の作り直し
 
 - **カバー画像**：`docs/itch/cover.html` をブラウザで開き、`.cover` の部分（630×500）を画像にする（Chrome なら開発者ツールで要素を選び「ノードのスクリーンショットをキャプチャ」）。タイトルが決まったら `h1` を書き換えて作り直す
-- **スクリーンショット**：ゲームを 390×844・2倍（デバイスピクセル比 2）で開き、チーム選択・マップ・バトル・報酬の画面を撮る
+- **スクリーンショット**：ゲームを 390×844・2倍（デバイスピクセル比 2）で開き、彩り手を選ぶ・チーム選択・マップ・バトル（始まりの口ぐせが出ているところ）・報酬の画面を撮る
+- カバー画像の絵は、彩り手と相棒の3組（ヒナとサクラシバ、ユヒとカラクサジシ、リンとミナモイヌ）。どれも2倍（整数倍）で、足もとをそろえて並べる
