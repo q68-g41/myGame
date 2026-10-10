@@ -35,6 +35,10 @@ describe('トップ画面', () => {
     expect(controls.querySelectorAll(interactive).length).toBeGreaterThan(0);
   });
 
+  it('はじめから遊ぶときの案内は、今の遊び方（彩り手を選んで相棒と旅に出る）に合わせる', () => {
+    expect(root.querySelector('.screen__view .top__message')?.textContent).toBe('彩り手をえらんで、相棒と旅に出ます');
+  });
+
   it('「はじめる」をタップするとランを始める', () => {
     root.querySelector<HTMLButtonElement>('.screen__controls button')!.click();
     expect(onStart).toHaveBeenCalledTimes(1);
