@@ -272,11 +272,28 @@ body {
 
 .battle__log {
   margin: 0;
-  min-height: 3em;
-  padding: 8px 12px;
+  /* 3行ぶんの高さを取っておき、行が増えてもほかの表示が動かないようにする */
+  min-height: calc(3 * 1.5em + 12px);
+  padding: 6px 12px;
   border-radius: 8px;
   background: var(--color-panel);
   font-size: 14px;
+  display: flex;
+  flex-direction: column;
+  justify-content: flex-end;
+}
+
+.battle__log-line {
+  color: var(--color-muted);
+  /* 古い行は1行に収める（長ければ「…」）。いちばん新しい行は折り返して全部見せる */
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.battle__log-line--latest {
+  color: var(--color-text);
+  white-space: normal;
 }
 
 .battle__controls {

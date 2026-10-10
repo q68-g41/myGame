@@ -282,8 +282,13 @@ export function renderBattleScreen(root: HTMLElement, view: BattleView, handlers
   // 上半分：表示だけ
   const display = el(doc, 'section', 'screen__view battle__view');
   display.setAttribute('aria-label', '表示');
-  const log = el(doc, 'p', 'battle__log', view.log);
+  // ログは直近の数行を残す。いちばん新しい行を明るく、古い行は薄くする
+  const log = el(doc, 'p', 'battle__log');
   log.setAttribute('role', 'status');
+  view.logLines.forEach((line, index) => {
+    const latest = index === view.logLines.length - 1;
+    log.append(el(doc, 'span', latest ? 'battle__log-line battle__log-line--latest' : 'battle__log-line', line));
+  });
   if (view.caption !== null) {
     display.append(el(doc, 'p', 'battle__caption', view.caption));
   }

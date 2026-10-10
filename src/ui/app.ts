@@ -214,7 +214,7 @@ export function startApp(root: HTMLElement, options: AppOptions): void {
       render();
       playSound(current.frames[current.index]?.sound ?? null);
       scheduleNextFrame();
-    }, stepDuration(current.frames.length, ui.speed));
+    }, stepDuration(ui.speed));
   };
 
   /** セッションを進め、起きたことを演出として再生する。控えの選択は解除する */
