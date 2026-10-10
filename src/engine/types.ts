@@ -4,8 +4,11 @@
  * 表示名（キャラ名・技名・属性名）はエンジンでは持たず、src/data/ 側で ID に対応させる。
  */
 
-/** 属性の ID。表示名（紅・橙・黄・翠・蒼・紫）はデータ側で差し替える */
-export type AttributeId = 'crimson' | 'orange' | 'yellow' | 'green' | 'blue' | 'violet';
+/**
+ * 属性の ID。表示名（紅・橙・黄・翠・蒼・紫・白・黒）はデータ側で差し替える。
+ * white・black は相性のない属性（3.3）
+ */
+export type AttributeId = 'crimson' | 'orange' | 'yellow' | 'green' | 'blue' | 'violet' | 'white' | 'black';
 
 /** 能力値。hp は最大HP */
 export interface Stats {

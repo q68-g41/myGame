@@ -66,6 +66,35 @@ describe('キャラと技からのダメージ', () => {
     });
   });
 
+  it('計算例（仕様書 3.3）：白のキャラが白の技（威力60）を紅のキャラに使う → 相性は等倍、共鳴で 36', () => {
+    const attacker = makeCombatant({ attribute: 'white' });
+    const defender = makeCombatant({ attribute: 'crimson' });
+    const move = makeMove({ attribute: 'white', power: 60 });
+
+    // 60 × 1 × 1.0 × 1.2 × 1.00 × 0.5 = 36
+    expect(computeDamage(attacker, defender, move, 100)).toEqual({
+      amount: 36,
+      effectiveness: 'neutral',
+      resonance: true,
+    });
+  });
+
+  it('白・黒のキャラが受けるときも等倍（紫の技 → 黒のキャラは 30）', () => {
+    const attacker = makeCombatant({ attribute: 'violet' });
+    const defender = makeCombatant({ attribute: 'black' });
+    const move = makeMove({ attribute: 'violet', power: 60 });
+    expect(computeDamage(attacker, defender, move, 100)).toEqual({
+      amount: 36,
+      effectiveness: 'neutral',
+      resonance: true,
+    });
+    expect(computeDamage(makeCombatant({ attribute: 'crimson' }), defender, move, 100)).toEqual({
+      amount: 30,
+      effectiveness: 'neutral',
+      resonance: false,
+    });
+  });
+
   it('攻撃側の攻撃と、受ける側の防御の能力変化を使う', () => {
     const attacker = makeCombatant({ stages: { attack: 1, defense: 0, speed: 0 } });
     const defender = makeCombatant({ attribute: 'green', stages: { attack: 0, defense: -1, speed: 0 } });
