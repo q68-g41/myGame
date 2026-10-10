@@ -1,11 +1,8 @@
 import { ATTRIBUTE_COLORS } from '../data/attributes';
-import { getFighter } from '../data/fighters';
+import { getIrodorite, IRODORITE } from '../data/irodorite';
 import { GAME_TITLE } from '../data/labels';
 import { el } from './dom';
-import { spriteElement, spriteUrl } from './sprites';
-
-/** トップ画面に並べる彩霊（紅・蒼・翠の3体） */
-const TOP_TEAM = ['crimson-trial', 'blue-skirmisher', 'green-charger'] as const;
+import { irodoriteElement, irodoriteUrl, spriteElement, spriteUrl } from './sprites';
 
 export interface TopScreenOptions {
   /** 画面に出すビルドの識別子（デプロイ後に最新版か確かめるため） */
@@ -18,6 +15,8 @@ export interface TopScreenOptions {
   sound: boolean;
   /** 音（効果音と BGM）のオン ⇔ オフを切り替える。切り替えたあとの状態を返す */
   onToggleSound: () => boolean;
+  /** 上半分に、相棒と並べて出す彩り手の ID。省くと一覧の1人目 */
+  featured?: string;
 }
 
 function button(doc: Document, className: string, text: string, onClick: () => void): HTMLButtonElement {
@@ -39,15 +38,17 @@ export function renderTopScreen(root: HTMLElement, options: TopScreenOptions, co
   const view = el(doc, 'section', 'screen__view');
   view.setAttribute('aria-label', '表示');
 
-  const subtitle = el(doc, 'p', 'top__subtitle', '仮題');
   const title = el(doc, 'h1', 'top__title', GAME_TITLE);
 
-  const team = el(doc, 'div', 'top__team');
-  team.setAttribute('aria-hidden', 'true');
-  for (const id of TOP_TEAM) {
-    const color = ATTRIBUTE_COLORS[getFighter(id).attribute];
-    team.append(spriteElement(doc, { url: spriteUrl(id), color, scale: 2, className: 'top__member' }));
-  }
+  // 彩り手と、その相棒の彩霊を、どちらも2倍で並べる（足もとをそろえる）
+  const featured = getIrodorite(options.featured ?? IRODORITE[0]!.id);
+  const color = ATTRIBUTE_COLORS[featured.partner.attribute];
+  const scene = el(doc, 'div', 'top__scene');
+  scene.setAttribute('aria-hidden', 'true');
+  scene.append(
+    irodoriteElement(doc, { url: irodoriteUrl(featured.id), color, scale: 2, className: 'top__irodorite' }),
+    spriteElement(doc, { url: spriteUrl(featured.partner.id), color, scale: 2, className: 'top__partner' }),
+  );
 
   const message = el(
     doc,
@@ -55,7 +56,7 @@ export function renderTopScreen(root: HTMLElement, options: TopScreenOptions, co
     'top__message',
     onContinue ? '前回のランの続きから遊べます' : '彩り手をえらんで、相棒と旅に出ます',
   );
-  view.append(subtitle, title, team, message);
+  view.append(title, scene, message);
 
   // 下半分：操作領域
   const controls = el(doc, 'section', 'screen__controls');

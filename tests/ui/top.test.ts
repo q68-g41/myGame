@@ -1,5 +1,6 @@
 // @vitest-environment happy-dom
 import { beforeEach, describe, expect, it, vi } from 'vitest';
+import { irodoriteUrl, spriteUrl } from '../../src/ui/sprites';
 import { renderTopScreen } from '../../src/ui/top';
 
 describe('トップ画面', () => {
@@ -18,12 +19,21 @@ describe('トップ画面', () => {
     expect(root.querySelector('h1')?.textContent).toBe('彩霊のみち');
   });
 
-  it('彩霊3体のドット絵を、上半分に並べる', () => {
-    const sprites = root.querySelectorAll<HTMLImageElement>('.screen__view img.top__member');
-    expect(sprites).toHaveLength(3);
-    for (const sprite of sprites) {
-      expect(sprite.getAttribute('src')).toBeTruthy();
-    }
+  it('上半分に、彩り手とその相棒のドット絵を2倍で並べる。「仮題」は出さない', () => {
+    const irodorite = root.querySelector<HTMLImageElement>('.screen__view img.top__irodorite');
+    const partner = root.querySelector<HTMLImageElement>('.screen__view img.top__partner');
+    // 省いたときは一覧の1人目（ヒナとサクラシバ）
+    expect(irodorite?.getAttribute('src')).toBe(irodoriteUrl('hina'));
+    expect(irodorite?.getAttribute('width')).toBe('128');
+    expect(partner?.getAttribute('src')).toBe(spriteUrl('hina-partner'));
+    expect(partner?.getAttribute('width')).toBe('96');
+    expect(root.textContent).not.toContain('仮題');
+  });
+
+  it('出す彩り手を選べる（相棒もその彩り手のもの）', () => {
+    renderTopScreen(root, { buildId: 'abc1234', onStart, sound: true, onToggleSound, featured: 'kai' });
+    expect(root.querySelector('img.top__irodorite')?.getAttribute('src')).toBe(irodoriteUrl('kai'));
+    expect(root.querySelector('img.top__partner')?.getAttribute('src')).toBe(spriteUrl('kai-partner'));
   });
 
   it('操作できる要素は下半分（操作領域）にだけ置く', () => {
