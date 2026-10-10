@@ -15,7 +15,7 @@ import { activeOf, isFainted } from '../engine/team';
 import type { CharmEffect, Combatant, Effectiveness, Side } from '../engine/types';
 import { describeEvents } from './messages';
 import { describeMove, MOVE_KIND_NAMES, summarizeEffects } from './moveInfo';
-import type { FrameMotion } from './playback';
+import { LOG_LINES, type FrameMotion } from './playback';
 import { needsPlayerReplacement, type BattleSession } from './session';
 import { animUrl, iconUrl, spriteUrl } from './sprites';
 
@@ -108,7 +108,8 @@ export interface UiState {
 /** 演出中に見せるコマ（playback.ts の PlaybackFrame と同じ形） */
 export interface FrameOverlay {
   readonly state: BattleSession['state'];
-  readonly log: string;
+  /** 画面に残すログ（古い順。最後がこのコマの行） */
+  readonly logLines: readonly string[];
   readonly hit: Side | null;
   readonly motion?: FrameMotion | null;
 }
@@ -119,8 +120,8 @@ export interface BattleView {
   readonly phase: BattlePhase;
   readonly enemy: FighterPanelView;
   readonly player: FighterPanelView;
-  /** ログ1行 */
-  readonly log: string;
+  /** ログ（直近の数行。古い順で、最後がいちばん新しい行） */
+  readonly logLines: readonly string[];
   readonly moves: readonly MoveButtonView[];
   readonly bench: readonly BenchView[];
   /** 控えを選んで確定を待っているとき、その確認。なければ null */
@@ -223,13 +224,18 @@ function benchViews(state: BattleSession['state'], phase: BattlePhase, ui: UiSta
   );
 }
 
-function logLine(session: BattleSession, phase: BattlePhase): string {
-  if (phase === 'replacement') {
-    return '控えから次のキャラを選んでください';
-  }
+/** 演出がないときのログ：直前のターンの最後の数行（読み返せるように残す） */
+function logLines(session: BattleSession, phase: BattlePhase): readonly string[] {
   const lines = describeEvents(session.lastEvents, session.previousState);
-  // 起きたことがないのは、バトルの最初か、保存したところから再開した直後
-  return lines.at(-1) ?? (session.state.turn === 1 ? 'バトル開始！ 技を選んでください' : '続きから。技を選んでください');
+  if (phase === 'replacement') {
+    // 何が起きて倒れたのかが分かるように、直前の行も残す
+    return [...lines.slice(-(LOG_LINES - 1)), '控えから次のキャラを選んでください'];
+  }
+  if (lines.length === 0) {
+    // 起きたことがないのは、バトルの最初か、保存したところから再開した直後
+    return [session.state.turn === 1 ? 'バトル開始！ 技を選んでください' : '続きから。技を選んでください'];
+  }
+  return lines.slice(-LOG_LINES);
 }
 
 function confirmView(session: BattleSession, phase: BattlePhase, bench: readonly BenchView[], ui: UiState): ConfirmView | null {
@@ -274,7 +280,7 @@ export function buildBattleView(
     phase,
     enemy: panel(state, 'enemy'),
     player: panel(state, 'player'),
-    log: frame?.log ?? logLine(session, phase),
+    logLines: frame?.logLines ?? logLines(session, phase),
     moves: moveButtons(activeOf(state.sides.player), activeOf(state.sides.enemy), phase, state.sides.player.charms),
     bench,
     confirm: phase === 'playing' ? null : confirmView(session, phase, bench, ui),

@@ -44,7 +44,8 @@ function tapSomething(): boolean {
   return target !== undefined && target !== null;
 }
 
-const logText = () => root.querySelector('[role="status"]')?.textContent;
+/** ログのいちばん新しい行 */
+const logText = () => root.querySelector('.battle__log-line--latest')?.textContent;
 const playerName = () => root.querySelector('[data-side="player"] .fighter__name')?.textContent;
 
 describe('バトル画面', () => {

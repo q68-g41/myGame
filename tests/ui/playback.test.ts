@@ -3,7 +3,7 @@ import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { selectableMoves } from '../../src/engine/moves';
 import { activeCombatant, switchTargets } from '../../src/engine/team';
 import { describeEvents } from '../../src/ui/messages';
-import { buildFrames, MAX_STEP_MS, stepDuration, TURN_PLAYBACK_BUDGET_MS } from '../../src/ui/playback';
+import { buildFrames, LOG_LINES, STEP_MS, stepDuration } from '../../src/ui/playback';
 import { needsPlayerReplacement, playMove, playReplacement, type BattleSession } from '../../src/ui/session';
 import { firstBattleSession, startAppBattle } from '../helpers/app';
 import { startSession } from '../helpers/session';
@@ -26,7 +26,12 @@ describe('演出のコマ', () => {
     for (const session of sessions(1)) {
       const frames = buildFrames(session.previousState, session.lastEvents, session.state);
       expect(frames).toHaveLength(session.lastEvents.length);
-      expect(frames.map((frame) => frame.log)).toEqual(describeEvents(session.lastEvents, session.previousState));
+      const logs = describeEvents(session.lastEvents, session.previousState);
+      expect(frames.map((frame) => frame.log)).toEqual(logs);
+      // 画面に残すログは、このターンの直近3行（古い順で、最後がそのコマの行）
+      frames.forEach((frame, index) => {
+        expect(frame.logLines).toEqual(logs.slice(Math.max(0, index - 2), index + 1));
+      });
     }
   });
 
@@ -108,20 +113,26 @@ describe('演出のコマ', () => {
   });
 });
 
-describe('演出の長さ（仕様書 5：1ターン2秒以内、2倍速あり）', () => {
-  it.each([1, 2, 4, 6, 10, 20])('イベント %i 個でも、1ターンが2秒以内', (count) => {
-    expect(stepDuration(count, 1) * count).toBeLessThanOrEqual(TURN_PLAYBACK_BUDGET_MS);
-    expect(stepDuration(count, 1)).toBeLessThanOrEqual(MAX_STEP_MS);
+describe('演出の長さ（仕様書 5：ログ1行を0.8秒、2倍速なら半分）', () => {
+  it('1倍速ではログ1行を0.8秒出す', () => {
+    expect(STEP_MS).toBe(800);
+    expect(stepDuration(1)).toBe(800);
   });
 
-  it('2倍速なら半分', () => {
-    expect(stepDuration(4, 2)).toBe(stepDuration(4, 1) / 2);
+  it('2倍速なら半分（0.4秒）', () => {
+    expect(stepDuration(2)).toBe(400);
+  });
+
+  it('ログは直近の3行を残す', () => {
+    expect(LOG_LINES).toBe(3);
   });
 });
 
 describe('バトル画面での演出', () => {
   let root: HTMLElement;
-  const logText = () => root.querySelector('[role="status"]')?.textContent;
+  /** ログのいちばん新しい行と、画面に残っている行 */
+  const logText = () => root.querySelector('.battle__log-line--latest')?.textContent;
+  const logLines = () => [...root.querySelectorAll('.battle__log-line')].map((line) => line.textContent);
 
   beforeEach(() => {
     vi.useFakeTimers();
@@ -137,7 +148,7 @@ describe('バトル画面での演出', () => {
   const tapFirstMove = () =>
     [...root.querySelectorAll<HTMLButtonElement>('.move-button')].find((button) => button.getAttribute('aria-disabled') !== 'true')!.click();
 
-  it('技を選ぶと、ログが1行ずつ流れ、2秒以内に終わる。その間は技を選べない', () => {
+  it('技を選ぶと、ログが1行ずつ流れ、直近の3行が残る。1行0.8秒で進み、その間は技を選べない', () => {
     const session = playMove(firstBattleSession(), firstMoveId());
     const expected = describeEvents(session.lastEvents, session.previousState);
 
@@ -147,16 +158,19 @@ describe('バトル画面での演出', () => {
     expect([...root.querySelectorAll<HTMLButtonElement>('.move-button')].every((b) => b.getAttribute('aria-disabled') === 'true')).toBe(true);
 
     const seen = [logText()];
-    const step = stepDuration(expected.length, 1);
+    expect(logLines()).toEqual(expected.slice(0, 1));
+    const step = stepDuration(1);
     for (let i = 1; i < expected.length; i += 1) {
       vi.advanceTimersByTime(step);
       seen.push(logText());
+      expect(logLines()).toEqual(expected.slice(Math.max(0, i - 2), i + 1));
     }
     expect(seen).toEqual(expected);
 
     vi.advanceTimersByTime(step);
     expect(root.querySelector('.battle--playing')).toBeNull();
-    expect(step * expected.length).toBeLessThanOrEqual(TURN_PLAYBACK_BUDGET_MS);
+    // 演出が終わっても、最後の3行は残す
+    expect(logLines()).toEqual(expected.slice(-3));
   });
 
   it('演出中にタップすると、最後まで早送りする', () => {
@@ -175,7 +189,7 @@ describe('バトル画面での演出', () => {
     const session = playMove(firstBattleSession(), firstMoveId());
     const count = session.lastEvents.length;
     tapFirstMove();
-    vi.advanceTimersByTime(stepDuration(count, 1) * count * 0.5 + 1);
+    vi.advanceTimersByTime(stepDuration(1) * count * 0.5 + 1);
     expect(root.querySelector('.battle--playing')).toBeNull();
   });
 

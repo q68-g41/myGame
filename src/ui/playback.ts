@@ -7,11 +7,11 @@ import { memberAt, withActive } from '../engine/team';
 import type { BattleEvent, BattleState, Combatant, Side } from '../engine/types';
 import { describeEvents } from './messages';
 
-/** 1ターンの演出の長さの上限（仕様書 5：1ターンの演出は2秒以内） */
-export const TURN_PLAYBACK_BUDGET_MS = 2000;
+/** 1コマ（ログ1行）を出す長さ（仕様書 5：1倍速で0.8秒。2倍速なら半分） */
+export const STEP_MS = 800;
 
-/** 1コマの長さの上限（イベントが少ないターンでも、間延びしないように） */
-export const MAX_STEP_MS = 500;
+/** バトルのログに残す行の数（仕様書 5：直近の3行） */
+export const LOG_LINES = 3;
 
 /** 演出の速さ */
 export type PlaybackSpeed = 1 | 2;
@@ -31,8 +31,10 @@ export interface FrameMotion {
 export interface PlaybackFrame {
   /** このコマで画面に出す状態 */
   readonly state: BattleState;
-  /** ログ1行 */
+  /** このコマで出したログ1行 */
   readonly log: string;
+  /** 画面に残すログ（このターンの直近 LOG_LINES 行。古い順で、最後がこのコマの行） */
+  readonly logLines: readonly string[];
   /** ダメージを受けて光らせる陣営。なければ null */
   readonly hit: Side | null;
   /** このコマで動く場のキャラ。なければ null */
@@ -122,12 +124,18 @@ export function buildFrames(
   return events.map((event, index) => {
     state = applyForDisplay(state, event, final);
     const hit = event.type === 'damage' || event.type === 'statusDamage' ? event.side : null;
-    return { state, log: logs[index]!, hit, motion: motionOf(event), sound: soundOf(event) };
+    return {
+      state,
+      log: logs[index]!,
+      logLines: logs.slice(Math.max(0, index + 1 - LOG_LINES), index + 1),
+      hit,
+      motion: motionOf(event),
+      sound: soundOf(event),
+    };
   });
 }
 
-/** 1コマの長さ。1ターン全体が2秒以内に収まるようにし、2倍速なら半分にする */
-export function stepDuration(frameCount: number, speed: PlaybackSpeed): number {
-  const step = Math.min(MAX_STEP_MS, TURN_PLAYBACK_BUDGET_MS / Math.max(1, frameCount));
-  return step / speed;
+/** 1コマの長さ。ログ1行を読めるだけ出し、2倍速なら半分にする */
+export function stepDuration(speed: PlaybackSpeed): number {
+  return STEP_MS / speed;
 }
