@@ -27,7 +27,7 @@
     text-shadow: 0 2px 0 #0008, 0 0 24px #0006;
   }
   .title p { margin: 14px 0 0; font-size: 19px; font-weight: 700; letter-spacing: 0.08em; color: #e9e4d6; }
-  .row { position: absolute; left: 0; right: 0; bottom: 52px; display: flex; justify-content: center; gap: 6px; }
+  .row { position: absolute; left: 0; right: 0; bottom: 52px; display: flex; justify-content: center; gap: 0; }
   /* ドット絵は2倍（整数倍）で、後ろに属性の色をうすく敷く（ゲームのバトル画面と同じ） */
   .sp {
     width: 100px; height: 100px; display: grid; place-items: center; border-radius: 50%;
@@ -36,11 +36,11 @@
   .sp img { display: block; image-rendering: pixelated; }
   /* 彩り手（64×64 を2倍）と、その相棒（48×48 を2倍）を並べる。足もとをそろえ、後ろに属性の色をうすく敷く */
   .pair {
-    display: flex; align-items: flex-end; width: 200px; height: 136px; padding-bottom: 4px;
+    display: flex; align-items: flex-end; width: 208px; height: 136px; padding-bottom: 4px;
     background: radial-gradient(closest-side at 50% 62%, color-mix(in srgb, var(--c) 48%, transparent) 0%, transparent 100%);
   }
   .pair img { display: block; image-rendering: pixelated; }
-  .pair .aibo { margin-left: -24px; margin-bottom: -2px; }
+  .pair .aibo { margin-left: -16px; margin-bottom: -2px; }
   .tag { position: absolute; left: 0; right: 0; bottom: 22px; text-align: center; font-family: 'DotGothic16', sans-serif; font-size: 16px; font-weight: 400; color: #c9c6d6; letter-spacing: 0.06em; }
   .tag b { color: #f0b445; font-weight: 400; }
 </style>

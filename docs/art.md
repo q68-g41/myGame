@@ -258,7 +258,7 @@ shadow. {雰囲気} Original design that does not resemble any existing game, an
 | ID | あだ名 | 生成のジョブID | 備考 |
 | --- | --- | --- | --- |
 | kuro | クロ | 971791f7-253e-4ab3-9a62-2b053d0f059e | 絵柄の試作 |
-| hina | ヒナ | ce2fb3c5-7484-4c33-a7ce-b5795b2f39d8 | 絵柄の試作 |
+| hina | ヒナ | f84b345f-9c39-4a20-bc16-2edf06981f27 | 絵柄の試作。旗を短く描き直した（下） |
 | master | マスター | 51a33a08-32de-44b1-8aed-cb24e3404b16 | 絵柄の試作 |
 | dai | ダイ | afbd469b-342d-4775-b438-c7b915c90a68 | |
 | sunny | サニー | 96e637b3-7028-452b-9701-15555f535349 | |
@@ -277,7 +277,8 @@ shadow. {雰囲気} Original design that does not resemble any existing game, an
 | tatsumichi | タツミチ | 0b640d3c-90f3-4c12-b507-ed57a4265777 | |
 | sou | ソウ | eb7c96aa-070a-461e-80c0-93fa3d3c4895 | |
 
-- まず3人（クロ・ヒナ・マスター）で絵柄を決め、残りの16人を同じ指示の形で描いた。どれも1回目の生成を採用した（描き直しはない）
+- まず3人（クロ・ヒナ・マスター）で絵柄を決め、残りの16人を同じ指示の形で描いた。どれも1回目の生成を採用した
+- ヒナは、はじめの絵（ce2fb3c5-7484-4c33-a7ce-b5795b2f39d8）ののぼり旗が笠より高く伸びていて、長い辺を62ピクセルに縮めると、人物がほかの彩り手より一回り小さくなった。はじめの絵を参考画像にして、旗だけを「短い竿で胸の高さに持ち、旗の上端が笠より下にくる」形に描き直した（指示の `{持ち物}` の代わりに「change only the banner: the nobori banner flag is now SHORT and held in one hand at chest height, on a short bamboo pole, and the top of the flag stays clearly BELOW the top of the hat」と書いた）。旗を肩にかついで後ろに倒した案（a18caf41-8f97-489c-b420-1523ca98ac5a）は使っていない
 - 指示は次の文で、`{羽織}` に羽織の色と柄、`{持ち物}` に4.6 の表の持ち物、`{色}` にいちばん多く使う色を入れた。残りの16人では、64×64 でも持ち物が読めるように「The held items are drawn large and clear so they read at small size.」を足し、避けるものに「sparkles and thin wisps」を足した
   - `Pixel art game sprite of a single small chibi human traveler, an 'Irodorite' (a person who travels with color spirits) from a Japanese-style (wafu) fantasy world where colors are slowly fading. Match the art style, outline weight, shading and palette feel of the reference images, which are finished sprites from the same game, but draw only the person described here. The traveler wears a wide conical straw travel hat (kasa) pulled low so the face is mostly shaded and simple (no detailed facial features, gender-neutral), and a short {羽織} haori jacket over plain travel clothes and straw sandals. Held items: {持ち物}. Main accent color: {色}. Facing right in a three-quarter view, full body, standing, centered, filling about 85% of a square canvas, chibi proportions (big hat, small body). Bold, clearly readable silhouette that still reads when shrunk to 64x64 pixels; chunky pixels, limited palette of about 16 colors, dark 1-pixel outline, flat cel shading, no blur, no gradients; avoid tiny floating particles. Plain solid white background, no ground shadow, no text, no letters, no border. Original design that does not resemble any existing game, anime, or mascot character.`
 - 組み込みの手順はキャラと同じ（白い背景を抜き、16色に減らす）で、大きさだけ変えた。長い辺を62ピクセルに縮めて、64×64 の真ん中に置き、`src/assets/irodorite/<彩り手のID>.png` に保存する
