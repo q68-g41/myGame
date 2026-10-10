@@ -12,7 +12,11 @@ import type {
   OrderPreview,
 } from './battleView';
 import { el } from './dom';
+import type { MotionKind } from './playback';
 import { iconElement, spriteElement } from './sprites';
+
+/** 待機中の上下の動きの1周の長さ（style.css の idle-bob と同じ） */
+const IDLE_CYCLE_MS = 2400;
 
 export interface BattleScreenHandlers {
   onMove(moveId: string): void;
@@ -34,8 +38,29 @@ function hpLevel(hp: number, maxHp: number): 'high' | 'middle' | 'low' {
   return ratio > 0.5 ? 'high' : ratio > 0.2 ? 'middle' : 'low';
 }
 
-function fighterPanel(doc: Document, view: FighterPanelView, side: 'enemy' | 'player', hit: boolean): HTMLElement {
-  const panel = el(doc, 'div', `fighter fighter--${side}${hit ? ' fighter--hit' : ''}`);
+/**
+ * 場のキャラのパネル。動き（M7-1）は CSS のクラスで付ける：
+ * fighter--hit（揺れて光る）、fighter--attack（前に出る）、fighter--faint（沈んで薄れる）、fighter--enter（入ってくる）、
+ * fighter--fainted（倒れたあと。薄いまま止める）
+ */
+function fighterPanel(
+  doc: Document,
+  view: FighterPanelView,
+  side: 'enemy' | 'player',
+  hit: boolean,
+  motion: MotionKind | null,
+): HTMLElement {
+  const classes = ['fighter', `fighter--${side}`];
+  if (hit) {
+    classes.push('fighter--hit');
+  }
+  if (motion !== null) {
+    classes.push(`fighter--${motion}`);
+  } else if (view.hp === 0 && !hit) {
+    // 倒れたあとは、薄くしたまま止める（倒れる動きのコマと、ダメージで揺れるコマのあいだは除く）
+    classes.push('fighter--fainted');
+  }
+  const panel = el(doc, 'div', classes.join(' '));
   panel.dataset.side = side;
   panel.dataset.fighter = view.id;
 
@@ -256,9 +281,10 @@ export function renderBattleScreen(root: HTMLElement, view: BattleView, handlers
   if (view.caption !== null) {
     display.append(el(doc, 'p', 'battle__caption', view.caption));
   }
+  const motionOf = (side: 'enemy' | 'player') => (view.motion?.side === side ? view.motion.kind : null);
   display.append(
-    fighterPanel(doc, view.enemy, 'enemy', view.hit === 'enemy'),
-    fighterPanel(doc, view.player, 'player', view.hit === 'player'),
+    fighterPanel(doc, view.enemy, 'enemy', view.hit === 'enemy', motionOf('enemy')),
+    fighterPanel(doc, view.player, 'player', view.hit === 'player', motionOf('player')),
     log,
   );
   if (view.detail !== null) {
@@ -287,6 +313,8 @@ export function renderBattleScreen(root: HTMLElement, view: BattleView, handlers
   controls.append(bench, menu(doc, view, handlers));
 
   const screen = el(doc, 'div', `screen battle battle--${view.phase}${view.speed === 2 ? ' battle--fast' : ''}`);
+  // 待機中の上下の動きは、描き直しても途切れないように、いまの時刻から続きの位置で始める
+  screen.style.setProperty('--idle-delay', `-${Math.round(performance.now() % IDLE_CYCLE_MS)}ms`);
   screen.append(display, controls);
   if (view.phase === 'playing') {
     // 演出中は画面全体を覆い、どこをタップしても早送りする（速さの切り替えだけはこの上に出す）

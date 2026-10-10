@@ -45,6 +45,20 @@ describe('演出のコマ', () => {
     }
   });
 
+  it('技を使ったコマでは前に出る、倒れたコマでは倒れる、交代のコマでは入ってくる動きを付ける（M7-1）', () => {
+    let checked = 0;
+    for (const session of sessions(40)) {
+      const frames = buildFrames(session.previousState, session.lastEvents, session.state);
+      session.lastEvents.forEach((event, index) => {
+        const kind = { moveUsed: 'attack', fainted: 'faint', switched: 'enter' }[event.type as string];
+        const side = 'side' in event ? event.side : null;
+        expect(frames[index]!.motion).toEqual(kind === undefined ? null : { side, kind });
+        checked += kind === undefined ? 0 : 1;
+      });
+    }
+    expect(checked).toBeGreaterThan(0);
+  });
+
   it('ダメージを受けたコマでは、受けた側を光らせる', () => {
     const session = sessions(1)[0]!;
     const frames = buildFrames(session.previousState, session.lastEvents, session.state);

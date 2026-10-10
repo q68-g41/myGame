@@ -15,6 +15,17 @@ export const MAX_STEP_MS = 500;
 /** 演出の速さ */
 export type PlaybackSpeed = 1 | 2;
 
+/**
+ * 場のキャラの動き（M7-1）。attack：技を使って前に出る、faint：倒れて薄れる、enter：交代で入ってくる。
+ * ダメージで揺れて光る動きは hit で表す
+ */
+export type MotionKind = 'attack' | 'faint' | 'enter';
+
+export interface FrameMotion {
+  readonly side: Side;
+  readonly kind: MotionKind;
+}
+
 /** 演出の1コマ */
 export interface PlaybackFrame {
   /** このコマで画面に出す状態 */
@@ -23,6 +34,22 @@ export interface PlaybackFrame {
   readonly log: string;
   /** ダメージを受けて光らせる陣営。なければ null */
   readonly hit: Side | null;
+  /** このコマで動く場のキャラ。なければ null */
+  readonly motion: FrameMotion | null;
+}
+
+/** イベントから、場のキャラの動きを決める */
+function motionOf(event: BattleEvent): FrameMotion | null {
+  switch (event.type) {
+    case 'moveUsed':
+      return { side: event.side, kind: 'attack' };
+    case 'fainted':
+      return { side: event.side, kind: 'faint' };
+    case 'switched':
+      return { side: event.side, kind: 'enter' };
+    default:
+      return null;
+  }
 }
 
 /** イベント1つの結果を、画面用の状態に写す */
@@ -68,7 +95,7 @@ export function buildFrames(
   return events.map((event, index) => {
     state = applyForDisplay(state, event, final);
     const hit = event.type === 'damage' || event.type === 'statusDamage' ? event.side : null;
-    return { state, log: logs[index]!, hit };
+    return { state, log: logs[index]!, hit, motion: motionOf(event) };
   });
 }
 
