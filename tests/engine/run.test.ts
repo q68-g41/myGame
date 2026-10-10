@@ -52,7 +52,7 @@ const member = (fighter: FighterDef, hp = fighter.stats.hp): RunMember => ({ fig
 
 /** マップの段階のランを作る */
 function runAt(position: MapPosition | null, team: readonly RunMember[] = FIGHTERS.slice(0, 3).map((f) => member(f))): RunState {
-  return { area: 0, map: TEST_MAP, position, team, charms: [], phase: { kind: 'map' }, rng: createRng(3) };
+  return { area: 0, map: TEST_MAP, position, team, charms: [], irodorite: null, phase: { kind: 'map' }, rng: createRng(3) };
 }
 
 /** プレイヤーの HP を決めて、決着したバトルを作る */

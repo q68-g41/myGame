@@ -25,6 +25,7 @@ const runIn = (phase: RunState['phase']): RunState => ({
   position: { layer: 0, index: 0 },
   team,
   charms: [],
+  irodorite: null,
   phase,
   rng: 3,
 });

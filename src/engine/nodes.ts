@@ -7,7 +7,7 @@ import { REST_HEAL_PERCENT, REST_POWER_UP, SCOUT_CANDIDATE_COUNT } from './const
 import { percentOfMaxHp } from './effects';
 import { boostStat, memberOf, powerUpMove, statBoostAmount, type StatBoostKey } from './growth';
 import { nextInt, pickDistinct, type RngResult, type RngState } from './rng';
-import type { RunContent, RunMember, RunPhase, RunState } from './run';
+import { partnerIndex, runCharmEffects, type RunContent, type RunMember, type RunPhase, type RunState } from './run';
 
 /** イベントの効果の対象。all：全員、lead：チームの先頭、random：ランダムな1体 */
 export type EventTarget = 'all' | 'lead' | 'random';
@@ -91,7 +91,7 @@ function changeHp(member: RunMember, percent: number, sign: 1 | -1): RunMember {
 
 /** 休憩で回復する割合（最大HPの %）。お守りで増える */
 export function restHealPercent(run: RunState): number {
-  return REST_HEAL_PERCENT + restHealBonus(run.charms.map((charm) => charm.effect));
+  return REST_HEAL_PERCENT + restHealBonus(runCharmEffects(run));
 }
 
 /** 休憩：全員のHPを最大HPの30%（お守りがあればもっと）回復する */
@@ -111,7 +111,10 @@ export function restPowerUp(run: RunState, member: number, move: number): RunSta
 
 /* ===== スカウト ===== */
 
-/** スカウト：候補の1体を、チームの1体と入れ替える。入った仲間はHP満タンで、抜けたキャラの位置に入る */
+/**
+ * スカウト：候補の1体を、チームの1体と入れ替える。入った仲間はHP満タンで、抜けたキャラの位置に入る。
+ * 彩り手の相棒は入れ替えられない（4.6）
+ */
 export function scoutRecruit(run: RunState, candidate: number, member: number): RunState {
   const { phase } = run;
   if (phase.kind !== 'scout') {
@@ -122,6 +125,9 @@ export function scoutRecruit(run: RunState, candidate: number, member: number): 
     throw new Error(`スカウトの候補の ${candidate} 番目はいません`);
   }
   memberOf(run, member);
+  if (member === partnerIndex(run)) {
+    throw new Error('彩り手の相棒は、スカウトで入れ替えられません');
+  }
   return { ...run, team: run.team.with(member, { fighter, hp: fighter.stats.hp }), phase: { kind: 'map' } };
 }
 

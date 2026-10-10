@@ -39,6 +39,7 @@ const runAt = (position: RunState['position'], phase: RunState['phase'] = { kind
   position,
   team,
   charms: [],
+  irodorite: null,
   phase,
   rng: 1,
 });

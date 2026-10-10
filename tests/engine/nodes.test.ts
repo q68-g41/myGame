@@ -42,6 +42,7 @@ const baseRun = (overrides: Partial<RunState> = {}): RunState => ({
   position: null,
   team,
   charms: [],
+  irodorite: null,
   phase: { kind: 'map' },
   rng: 5,
   ...overrides,

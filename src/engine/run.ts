@@ -2,6 +2,7 @@
  * ローグライトの1ラン（4章）。
  * チームを選び、エリアごとの分岐マップを下から進み、戦闘をまたいでHPを持ち越す。戦闘に勝つたびに報酬を選ぶ。
  * エリアの最後のボスを倒すと次のエリアへ。最後のエリアのボスを倒せばクリア、全員倒れたら終わり。
+ * 彩り手（4.6）を選んだランでは、相棒がはじめからチームにいて外せず、特性（外せないお守り）がはじめから効く。
  * ほかのエンジンと同じく、状態は書き換えずに新しい状態を返す。乱数の状態もランの状態に含める。
  */
 import { createBattle } from './battle';
@@ -42,6 +43,19 @@ export { statBoostAmount, type StatBoostKey } from './growth';
 export interface CharmDef {
   readonly id: string;
   readonly effect: CharmEffect;
+}
+
+/**
+ * 彩り手（4.6）：ランの最初に選ぶ主人公。
+ * 相棒はチーム選択で1番目に入り、外せない（スカウトで入れ替えられない）。並び順は変えられる。
+ * 特性は、はじめから持っていて外せないお守り。ふつうのお守りと同じように効く
+ */
+export interface IrodoriteDef {
+  readonly id: string;
+  /** 相棒の彩霊。この彩り手だけのキャラ */
+  readonly partner: FighterDef;
+  /** 特性 */
+  readonly trait: CharmDef;
 }
 
 /** ボス（仕様書 4.2・6）：エリアの最後に1体で出て、行動パターンで動く */
@@ -140,45 +154,75 @@ export interface RunState {
   readonly position: MapPosition | null;
   /** チーム。並び順が戦闘に出る順になる */
   readonly team: readonly RunMember[];
-  /** 持っているお守り（手に入れた順） */
+  /** 持っているお守り（手に入れた順）。彩り手の特性は入れない（irodorite の trait） */
   readonly charms: readonly CharmDef[];
+  /** 選んだ彩り手。選んでいないランは null */
+  readonly irodorite: IrodoriteDef | null;
   readonly phase: RunPhase;
   /** 次に使う乱数の状態 */
   readonly rng: RngState;
 }
 
-/** ランを始める。マップを作り、スタートの候補を出す */
-export function startRun(content: RunContent, seed: number): RunState {
+/**
+ * ランを始める。マップを作り、スタートの候補を出す。
+ * 彩り手を選んでいれば、その彩り手と相棒を持たせる（相棒は候補に出さない）
+ */
+export function startRun(content: RunContent, seed: number, irodorite: IrodoriteDef | null = null): RunState {
   const map = generateAreaMap(createRng(seed));
-  const candidates = pickDistinct(content.fighters, DRAFT_CANDIDATE_COUNT, map.rng);
+  const pool = irodorite === null ? content.fighters : content.fighters.filter((fighter) => fighter.id !== irodorite.partner.id);
+  const candidates = pickDistinct(pool, DRAFT_CANDIDATE_COUNT, map.rng);
   return {
     area: 0,
     map: map.value,
     position: null,
     team: [],
     charms: [],
+    irodorite,
     phase: { kind: 'draft', candidates: candidates.value },
     rng: candidates.rng,
   };
 }
 
-/** 候補からチームを選ぶ。picks は候補の位置で、選んだ順に戦闘に出る */
+/** チーム選択で、候補から選ぶ数。彩り手の相棒がいれば、その分だけ少ない（4.6：相棒＋2体） */
+export function draftPickCount(run: RunState): number {
+  return run.irodorite === null ? RUN_TEAM_SIZE : RUN_TEAM_SIZE - 1;
+}
+
+/**
+ * 候補からチームを選ぶ。picks は候補の位置で、選んだ順に戦闘に出る。
+ * 彩り手の相棒がいれば、相棒が1番目に入り、選んだキャラはそのあとに続く
+ */
 export function chooseTeam(run: RunState, picks: readonly number[]): RunState {
   const { phase } = run;
   if (phase.kind !== 'draft') {
     throw new Error('いまはチームを選ぶ段階ではありません');
   }
-  if (picks.length !== RUN_TEAM_SIZE || new Set(picks).size !== picks.length) {
-    throw new Error(`候補から違うキャラを ${RUN_TEAM_SIZE} 体選んでください`);
+  const count = draftPickCount(run);
+  if (picks.length !== count || new Set(picks).size !== picks.length) {
+    throw new Error(`候補から違うキャラを ${count} 体選んでください`);
   }
-  const team = picks.map((pick): RunMember => {
+  const picked = picks.map((pick): RunMember => {
     const fighter = phase.candidates[pick];
     if (!fighter) {
       throw new Error(`候補の ${pick} 番目のキャラはいません`);
     }
     return { fighter, hp: fighter.stats.hp };
   });
+  const partner = run.irodorite?.partner;
+  const team = partner === undefined ? picked : [{ fighter: partner, hp: partner.stats.hp }, ...picked];
   return { ...run, team, phase: { kind: 'map' } };
+}
+
+/** チームの中の、彩り手の相棒の位置。彩り手がいないか、相棒がチームにいなければ -1 */
+export function partnerIndex(run: RunState): number {
+  const partner = run.irodorite?.partner;
+  return partner === undefined ? -1 : run.team.findIndex((member) => member.fighter.id === partner.id);
+}
+
+/** ランで効いているお守りの効果。彩り手の特性が先で、そのあとに手に入れたお守り */
+export function runCharmEffects(run: RunState): readonly CharmEffect[] {
+  const charms = run.charms.map((charm) => charm.effect);
+  return run.irodorite === null ? charms : [run.irodorite.trait.effect, ...charms];
 }
 
 /**
@@ -275,7 +319,7 @@ export function createRunBattle(run: RunState): BattleState {
   return createBattle(
     run.team.map((member) => member.fighter),
     phase.enemy,
-    { playerHp: run.team.map((member) => member.hp), playerCharms: run.charms.map((charm) => charm.effect) },
+    { playerHp: run.team.map((member) => member.hp), playerCharms: runCharmEffects(run) },
   );
 }
 
@@ -350,7 +394,7 @@ export function finishBattle(run: RunState, battle: BattleState, content: RunCon
   }
 
   // 勝ったら回復するお守りがあれば、倒れていたキャラは戻ったあとに回復する
-  const victoryHeal = victoryHealPercent(run.charms.map((charm) => charm.effect));
+  const victoryHeal = victoryHealPercent(runCharmEffects(run));
   const team = run.team.map((member, index): RunMember => {
     const max = member.fighter.stats.hp;
     const left = fighters[index]!.hp;
