@@ -33,7 +33,7 @@ describe('ドット絵のファイル（仕様書 5.1）', () => {
   const ids = [...FIGHTERS, ...BOSS_FIGHTERS].map((fighter) => fighter.id);
   const files = Object.keys(FILES).map((path) => path.split('/').pop()!);
 
-  it('キャラ12体とボス3体のすべてに絵があり、キャラにない絵はない', () => {
+  it('キャラ14体とボス3体のすべてに絵があり、キャラにない絵はない', () => {
     for (const id of ids) {
       expect(spriteUrl(id), id).toBeTypeOf('string');
     }
@@ -49,7 +49,7 @@ describe('ドット絵のファイル（仕様書 5.1）', () => {
 });
 
 describe('小さい絵のファイル（候補一覧・選んだ順の枠・控え）', () => {
-  it('キャラ12体のすべてにあり、キャラにない絵はない（ボスは小さい表示に出ないので、なくてよい）', () => {
+  it('キャラ14体のすべてにあり、キャラにない絵はない（ボスは小さい表示に出ないので、なくてよい）', () => {
     const ids = FIGHTERS.map((fighter) => fighter.id);
     for (const id of ids) {
       expect(iconUrl(id), id).toBeTypeOf('string');
@@ -67,7 +67,7 @@ describe('小さい絵のファイル（候補一覧・選んだ順の枠・控�
 });
 
 describe('コマ送りアニメのファイル（M7-3）', () => {
-  it('キャラ12体とボス3体のすべてにあり、キャラにない絵はない', () => {
+  it('キャラ14体とボス3体のすべてにあり、キャラにない絵はない', () => {
     const ids = [...FIGHTERS, ...BOSS_FIGHTERS].map((fighter) => fighter.id);
     for (const id of ids) {
       expect(animUrl(id), id).toBeTypeOf('string');
