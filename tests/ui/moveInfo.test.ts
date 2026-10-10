@@ -22,6 +22,20 @@ describe('技の詳細（長押しで出す文章）', () => {
     });
   });
 
+  it('白・黒の技は、いまの相手が何属性でも等倍。白のキャラが白の技を使えば共鳴', () => {
+    const move = makeMove({ id: 'crimson-strike', attribute: 'white', kind: 'normal', power: 60 });
+    const white = makeCombatant({ attribute: 'white' });
+    expect(describeMove(move, white, orange).lines).toEqual([
+      '白属性・通常',
+      '威力 60',
+      'いまの相手に 等倍（×1）',
+      '共鳴（×1.2）',
+    ]);
+    const black = makeCombatant({ attribute: 'black' });
+    const strike = makeMove({ id: 'crimson-strike', attribute: 'crimson', kind: 'normal', power: 60 });
+    expect(describeMove(strike, user, black).lines).toContain('いまの相手に 等倍（×1）');
+  });
+
   it('大技は「使ったあと2ターン使えない」、使用不可の間は残りも出す', () => {
     const big = makeMove({ id: 'blue-burst', attribute: 'blue', kind: 'big', power: 100 });
     const cooling = makeCombatant({ attribute: 'crimson', cooldowns: { 'blue-burst': 2 } });

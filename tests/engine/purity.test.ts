@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { ATTRIBUTE_ORDER } from '../../src/engine/constants';
+import { ATTRIBUTE_ORDER, NEUTRAL_ATTRIBUTES } from '../../src/engine/constants';
 
 // エンジン・データ・CPU のソースを文字列として読み込む
 const sources = import.meta.glob<string>(['../../src/engine/**/*.ts', '../../src/data/**/*.ts', '../../src/ai/**/*.ts'], {
@@ -25,5 +25,12 @@ describe('属性の並び順', () => {
   it('6属性が重複なく並んでいる', () => {
     expect(ATTRIBUTE_ORDER).toHaveLength(6);
     expect(new Set(ATTRIBUTE_ORDER).size).toBe(6);
+  });
+
+  it('相性のない属性は白と黒の2つで、円の6属性とは重ならない', () => {
+    expect(NEUTRAL_ATTRIBUTES).toEqual(['white', 'black']);
+    for (const attribute of NEUTRAL_ATTRIBUTES) {
+      expect(ATTRIBUTE_ORDER).not.toContain(attribute);
+    }
   });
 });

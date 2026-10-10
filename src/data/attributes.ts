@@ -8,9 +8,14 @@ export const ATTRIBUTE_NAMES: Readonly<Record<AttributeId, string>> = {
   green: '翠',
   blue: '蒼',
   violet: '紫',
+  white: '白',
+  black: '黒',
 };
 
-/** 属性の色（仮素材の四角や技ボタンに使う） */
+/**
+ * 属性の色（仮素材の四角や技ボタンに使う）。
+ * 暗いパネルの上の細い帯でも見分けられるよう、パネルの色とのコントラスト比を3以上にする。黒は少し明るい墨色
+ */
 export const ATTRIBUTE_COLORS: Readonly<Record<AttributeId, string>> = {
   crimson: '#d9473f',
   orange: '#e8892c',
@@ -18,4 +23,6 @@ export const ATTRIBUTE_COLORS: Readonly<Record<AttributeId, string>> = {
   green: '#4fb36a',
   blue: '#3f8fd9',
   violet: '#9a5fd0',
+  white: '#ece6d8',
+  black: '#6e687c',
 };
