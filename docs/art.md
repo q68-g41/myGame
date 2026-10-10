@@ -197,11 +197,18 @@ shadow. {雰囲気} Original design that does not resemble any existing game, an
 | hina-partner | サクラシバ | e8baaf90-b84c-4202-b016-a1f0fbed86f8 | ca8f8dac-a637-460f-9fd7-faf5b120d88e | しっぽが左右にゆれる・耳が動く・しっぽの桜がゆれる |
 | wata-partner | キビタキ | ea6bd441-8ade-441a-ab9d-326d1f49ff90 | 3832b815-0ece-4a72-b926-58ca5ad38a4c | 首をかしげる・尾羽が開いて閉じる・翼が動く |
 | sou-partner | ヨイミミズク | 0c10b467-edfb-495d-80a9-96c498280fb4 | 1e6b695b-5141-4ffa-a34c-730186ad874c | 羽角が動く・1コマだけまばたき・胸の羽がふくらむ |
+| morie-partner | コムギネコ | aab4e032-85c0-465b-afcd-a422b652d70e | 6fd4135f-69bb-4aa2-8193-d8a4fec7cdb2 | 麦の穂のしっぽがゆれる・耳が動く・上げた前足が上下する |
+| yuhi-partner | カラクサジシ | 5fadc1b7-8fca-4b4d-a024-d39214c97d1d | ce41c6d8-acb6-414e-85ce-31257391abdc | 胸が上下する（息）・たてがみがふくらむ・しっぽがゆれる |
+| rin-partner | ミナモイヌ | 0e0599ef-74c2-4bad-9996-9ee32e1dba8f | a2386324-7f1b-4741-ae37-5633de178e18 | 水しぶきのしっぽがゆれる・耳がはねる・首をかしげる |
 
 - 止まった絵の指示は、上の「生成の指示」の共通の文に、参考画像の絵柄に合わせる文（「Match the art style, outline weight, shading and palette feel of the reference images, which are finished sprites from the same game, but draw only the creature described here.」）と、「avoid tiny floating particles and thin wisps」を足した形。`{題材}` は次の文
   - サクラシバ：`A cheerful, energetic shiba inu (Japanese dog) spirit with crimson-red fur and a cream chest and muzzle, pointed ears, a tightly curled tail with a few cherry blossoms blooming at its tip, and a small cherry-blossom pink neckerchief. Main color: crimson red, with cherry-blossom pink accents.`
   - キビタキ：`A small, round songbird spirit modeled on a narcissus flycatcher (kibitaki): a bright golden-yellow throat, chest and eyebrow stripe, a dark charcoal back and wings with one white wing patch, and a slightly fanned tail whose tips glow golden yellow. It stands alert on short legs with its head tilted, as if listening. Main color: bright golden yellow.`
   - ヨイミミズク：`A round, plump horned owl spirit (mimizuku) in deep evening violet, with prominent feather ear tufts, a lighter lavender facial disc, large calm amber eyes, and a pattern of small pale star shapes on its folded wings like the early evening sky. It stands upright on short legs, calm and dependable. Main color: deep evening violet.`
+  - コムギネコ：`A nimble, slender cat spirit with warm wheat-orange fur and soft golden stripes, a long tail whose tip looks like a ripe ear of wheat, large bright eyes, and a playful, mischievous pose with one front paw raised. Main color: warm wheat orange.`
+  - カラクサジシ：`A sturdy, proud young lion spirit in the style of a Japanese guardian lion (shishi), with a big curly mane patterned with green arabesque vine scrolls (karakusa), a deep green and jade body, a thick tufted tail, and a confident stance. Main color: deep jade green.`
+  - ミナモイヌ：`A friendly medium-sized dog spirit with water-surface blue fur, a lighter blue chest, floppy ears, a ripple-like pattern of pale blue rings on its back like the surface of a pond, and a tail shaped like a curling water splash. Main color: clear water blue.`
+  - 2回目の3体（コムギネコ・カラクサジシ・ミナモイヌ）も、どれも1回目の生成を採用した。ミナモイヌのアニメの指示には、離れた水しぶきが点にならないよう「avoid ... separate droplets」を足した
 - コマ送りアニメの指示は、上の「コマ送りアニメ」と同じ形（`{足もと}` は3体とも「feet planted on the same spot in every frame」）
 
 ## 彩り手（M8）
