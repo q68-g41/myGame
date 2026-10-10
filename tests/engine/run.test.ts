@@ -19,6 +19,7 @@ import {
   finishBattle,
   runChoices,
   startRun,
+  swapTeamOrder,
   type RunContent,
   type RunMember,
   type RunState,
@@ -95,6 +96,27 @@ describe('ランを始める（4.1）', () => {
     expect(() => chooseTeam(run, [0, 0, 1])).toThrow('3 体選んで');
     expect(() => chooseTeam(run, [0, 1, 5])).toThrow('いません');
     expect(() => chooseTeam(chooseTeam(run, [0, 1, 2]), [0, 1, 2])).toThrow('チームを選ぶ段階ではありません');
+  });
+});
+
+describe('チームの並び順を変える（4.1）', () => {
+  const team = [member(FIGHTERS[0]!, 10), member(FIGHTERS[1]!, 20), member(FIGHTERS[2]!, 30)];
+
+  it('マップで次のマスを選ぶときに、2体の位置を入れ替えられる。HPはキャラについていく', () => {
+    const run = deepFreeze(runAt({ layer: 2, index: 0 }, team));
+    const swapped = swapTeamOrder(run, 0, 2);
+    expect(swapped.team).toEqual([team[2], team[1], team[0]]);
+    // 入れ替えたあとの戦闘は、新しい先頭から出る
+    expect(createRunBattle({ ...swapped, phase: { kind: 'battle', enemy: [FIGHTERS[5]!], seed: 1, cpu: 1, boss: null } }).sides.player.team[0]?.id).toBe(FIGHTERS[2]!.id);
+    // ほかは変わらない
+    expect({ ...swapped, team: run.team }).toEqual(run);
+  });
+
+  it('マップ以外の段階や、同じ位置・いない位置ではエラー', () => {
+    expect(() => swapTeamOrder(runAt(null, team), 1, 1)).toThrow('違う2体');
+    expect(() => swapTeamOrder(runAt(null, team), 0, 3)).toThrow('違う2体');
+    const draft = startRun(CONTENT, 1);
+    expect(() => swapTeamOrder(draft, 0, 1)).toThrow('マップで次のマスを選ぶとき');
   });
 });
 

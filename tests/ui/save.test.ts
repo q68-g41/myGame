@@ -157,6 +157,24 @@ describe('自動保存と再開（アプリ）', () => {
     expect(root.querySelector('.map')!.innerHTML).toBe(map);
   });
 
+  it('マップで並び順を入れ替えたら、閉じて開き直しても入れ替えた順のまま', () => {
+    tap('.screen__controls button');
+    for (const index of [0, 1, 2]) {
+      root.querySelectorAll<HTMLButtonElement>('.candidate')[index]!.click();
+    }
+    tap('.draft__controls .button--primary');
+    const members = () => [...root.querySelectorAll<HTMLButtonElement>('button.member')];
+    const names = () => [...root.querySelectorAll('.member__name')].map((n) => n.textContent);
+    const before = names();
+    members()[0]!.click();
+    members()[2]!.click();
+    expect(names()).toEqual([before[2], before[1], before[0]]);
+
+    reopen(999);
+    tap('.screen__controls .button--primary');
+    expect(names()).toEqual([before[2], before[1], before[0]]);
+  });
+
   it('戦闘中に閉じても、同じターン・同じHPから再開でき、そのあとの展開も閉じなかったときと同じ', () => {
     tap('.screen__controls button');
     for (const index of [0, 1, 2]) {

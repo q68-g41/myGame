@@ -207,6 +207,41 @@ describe('マップの画面', () => {
     onlyBottomIsInteractive();
   });
 
+  describe('チームの並び順', () => {
+    const members = () => [...root.querySelectorAll<HTMLButtonElement>('.screen__controls button.member')];
+    const names = () => members().map((card) => card.querySelector('.member__name')?.textContent);
+
+    it('チームのカードはボタン（下半分）。2体をタップすると、出る順が入れ替わる', () => {
+      const before = names();
+      expect(members()).toHaveLength(3);
+      members()[0]!.click();
+      expect(members()[0]!.getAttribute('aria-pressed')).toBe('true');
+      expect(root.querySelector('.map__message')?.textContent).toBe(`${before[0]}と入れ替える仲間を選んでください`);
+      members()[2]!.click();
+      expect(names()).toEqual([before[2], before[1], before[0]]);
+      expect(members().map((card) => card.getAttribute('aria-pressed'))).toEqual(['false', 'false', 'false']);
+      expect(root.querySelector('.map__message')?.textContent).toBe('進むマスを選んでください');
+      onlyBottomIsInteractive();
+    });
+
+    it('同じカードをもう一度タップすると、選ぶのをやめる（入れ替えない）', () => {
+      const before = names();
+      members()[1]!.click();
+      members()[1]!.click();
+      expect(names()).toEqual(before);
+      expect(members()[1]!.getAttribute('aria-pressed')).toBe('false');
+    });
+
+    it('入れ替えたあとの戦闘では、新しい先頭のキャラから場に出る', () => {
+      const before = names();
+      members()[0]!.click();
+      members()[1]!.click();
+      root.querySelector<HTMLButtonElement>('.map-choice')!.click();
+      expect(root.querySelector('.battle')).not.toBeNull();
+      expect(root.querySelector('.fighter--player .fighter__name')?.textContent).toBe(before[1]);
+    });
+  });
+
   it('マスには文字の代わりにアイコンの絵、ボスのマスにはボスのドット絵を出す。次のマスのボタンにも同じ絵が出る', () => {
     const nodes = [...root.querySelectorAll<HTMLElement>('.map-node')];
     expect(nodes.every((node) => node.querySelector('img.map-node__icon') !== null)).toBe(true);

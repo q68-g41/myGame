@@ -39,8 +39,8 @@ function hpLevel(hp: number, maxHp: number): 'high' | 'middle' | 'low' {
 }
 
 /** チームの1体（名前・HPバー・数字）。属性の色は、技ボタンと同じく左の帯で見せる（6文字の名前が1行に収まるように） */
-function memberCard(doc: Document, member: TeamMemberView): HTMLElement {
-  const card = el(doc, 'div', member.hp === 0 ? 'member member--fainted' : 'member');
+function memberCard(doc: Document, member: TeamMemberView, card: HTMLElement = el(doc, 'div', '')): HTMLElement {
+  card.className = member.hp === 0 ? 'member member--fainted' : 'member';
   card.style.borderLeftColor = member.color;
   const header = el(doc, 'div', 'member__header');
   // 絵を上に、名前をその下に出す（3つ並ぶので、横に並べると6文字の名前が入らない）
@@ -56,10 +56,31 @@ function memberCard(doc: Document, member: TeamMemberView): HTMLElement {
   return card;
 }
 
-export function teamRow(doc: Document, team: readonly TeamMemberView[]): HTMLElement {
+/**
+ * チームの一覧。onMember を渡すと、カードをボタンにする（マップ画面の並び替え）。
+ * selected は選んでいるカードの位置
+ */
+export function teamRow(
+  doc: Document,
+  team: readonly TeamMemberView[],
+  options: { readonly onMember?: (index: number) => void; readonly selected?: number | null } = {},
+): HTMLElement {
   const row = el(doc, 'div', 'team-status');
-  row.setAttribute('aria-label', 'チーム');
-  row.append(...team.map((member) => memberCard(doc, member)));
+  row.setAttribute('aria-label', 'チーム（出る順）');
+  row.append(
+    ...team.map((member, index) => {
+      const { onMember } = options;
+      if (onMember === undefined) {
+        return memberCard(doc, member);
+      }
+      const card = memberCard(doc, member, button(doc, '', '', () => onMember(index)));
+      const selected = options.selected === index;
+      card.classList.add('member--button');
+      card.classList.toggle('member--selected', selected);
+      card.setAttribute('aria-pressed', String(selected));
+      return card;
+    }),
+  );
   return row;
 }
 
@@ -163,6 +184,8 @@ export function renderDraftScreen(root: HTMLElement, view: DraftView, handlers: 
 export interface MapScreenHandlers {
   /** 次のマスを選んだ（次の層での位置） */
   onChoose(index: number): void;
+  /** チームの1体をタップした（2体タップすると並び順を入れ替える） */
+  onMember(index: number): void;
 }
 
 /** マスの位置（マップの枠に対する %）。左右は層のマス数で等分し、層は下から上へ並べる */
@@ -258,7 +281,14 @@ export function renderMapScreen(root: HTMLElement, view: MapView, handlers: MapS
     choose.append(el(doc, 'span', 'map-choice__name', choice.name));
     choices.append(choose);
   }
-  controls.append(message, choices, teamRow(doc, view.team), charmLine(doc, view.charms));
+  const order = el(doc, 'p', 'team-order-hint', '出る順：2体をタップすると入れ替え');
+  controls.append(
+    message,
+    choices,
+    order,
+    teamRow(doc, view.team, { onMember: (index) => handlers.onMember(index), selected: view.selectedMember }),
+    charmLine(doc, view.charms),
+  );
 
   root.replaceChildren(screen(doc, 'map-screen', display, controls));
 }
