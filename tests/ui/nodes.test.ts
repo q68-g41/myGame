@@ -3,6 +3,7 @@ import { describe, expect, it, vi } from 'vitest';
 import { getCharm } from '../../src/data/charms';
 import { getEvent } from '../../src/data/events';
 import { FIGHTERS } from '../../src/data/fighters';
+import { getIrodorite } from '../../src/data/irodorite';
 import { chooseEventOption } from '../../src/engine/nodes';
 import type { RunState } from '../../src/engine/run';
 import { startApp } from '../../src/ui/app';
@@ -85,6 +86,19 @@ describe('スカウトの画面に出す内容', () => {
     const member = buildScoutView(run, { step: 'member', selected: 1 });
     expect(member.prompt).toBe('シズクサギと だれを入れ替えますか？（抜けたキャラは戻りません）');
     expect(member.members.map((m) => m.note)).toEqual(['HP 50 / 95', 'HP 50 / 115', 'HP 50 / 85']);
+  });
+
+  it('彩り手の相棒は、入れ替える相手に選べない（並び順を変えていても）', () => {
+    const sou = getIrodorite('sou');
+    const withPartner: RunState = {
+      ...run,
+      irodorite: sou,
+      team: [team[0]!, { fighter: sou.partner, hp: 30 }, team[2]!],
+    };
+    const view = buildScoutView(withPartner, { step: 'member', selected: 0 });
+    expect(view.members.map((m) => m.disabled)).toEqual([false, true, false]);
+    expect(view.members[1]!.note).toBe('相棒（入れ替えられない）');
+    expect(buildScoutView(run, { step: 'member', selected: 0 }).members.every((m) => !m.disabled)).toBe(true);
   });
 
   it('マップに出す一言', () => {
@@ -199,7 +213,8 @@ describe('スカウト・イベントの画面', () => {
       root = document.querySelector<HTMLElement>('#app')!;
       startApp(root, { buildId: 'test', newSeed: () => seed });
       root.querySelector<HTMLButtonElement>('.screen__controls button')!.click();
-      for (const index of [0, 1, 2]) {
+      root.querySelector<HTMLButtonElement>('.irodorite__controls .button--primary')!.click();
+      for (const index of [0, 1]) {
         root.querySelectorAll<HTMLButtonElement>('.candidate')[index]!.click();
       }
       root.querySelector<HTMLButtonElement>('.draft__controls .button--primary')!.click();

@@ -135,17 +135,24 @@ export function renderDraftScreen(root: HTMLElement, view: DraftView, handlers: 
   const slots = el(doc, 'ol', 'draft__slots');
   slots.setAttribute('aria-label', '選んだチーム（出る順）');
   for (const slot of view.slots) {
-    const item = el(doc, 'li', slot.name === null ? 'draft-slot draft-slot--empty' : 'draft-slot');
+    const classes = ['draft-slot', slot.name === null ? 'draft-slot--empty' : '', slot.partner ? 'draft-slot--partner' : ''];
+    const item = el(doc, 'li', classes.filter(Boolean).join(' '));
     item.append(
-      el(doc, 'span', 'draft-slot__order', String(slot.order)),
+      // 相棒の枠は、順番の代わりに「相棒」と出す（1番目に入っていて外せない）
+      el(doc, 'span', 'draft-slot__order', slot.partner ? `${slot.order} 相棒` : String(slot.order)),
       iconElement(doc, { url: slot.icon, color: slot.color, className: 'draft-slot__icon' }),
       el(doc, 'span', 'draft-slot__name', slot.name ?? '―'),
     );
     slots.append(item);
   }
+  // 基準の幅で1行に収まる長さにする（2行になると、上半分に収まらない）
+  const hint =
+    view.pickCount < view.slots.length
+      ? `相棒に続けて${view.pickCount}体。長押しで説明だけ見られます`
+      : `タップした順に${view.pickCount}体。長押しで説明だけ見られます`;
   display.append(
     el(doc, 'h2', 'draft__title', 'チームを選ぶ'),
-    el(doc, 'p', 'draft__hint', 'タップした順に3体。長押しで説明だけ見られます'),
+    el(doc, 'p', 'draft__hint', hint),
     slots,
     view.detail === null
       ? el(doc, 'p', 'draft__placeholder', '候補をタップすると、説明と能力・技が出ます')

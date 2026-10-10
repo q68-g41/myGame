@@ -30,6 +30,7 @@ function memberPicks(doc: Document, members: readonly NodeMemberView[], onPick: 
   const row = el(doc, 'div', 'node-members');
   for (const member of members) {
     const pick = button(doc, 'node-pick', '', () => onPick(member.index));
+    pick.disabled = member.disabled === true;
     pick.style.borderLeftColor = member.color;
     pick.append(
       iconElement(doc, { url: member.icon, color: member.color, className: 'node-pick__icon' }),

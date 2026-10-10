@@ -8,7 +8,8 @@ vi.mock('../../src/engine/run', async (importOriginal) => {
   return {
     ...actual,
     startRun: (...args: Parameters<typeof actual.startRun>) => {
-      const run = actual.chooseTeam(actual.startRun(...args), [0, 1, 2]);
+      const started = actual.startRun(...args);
+      const run = actual.chooseTeam(started, [0, 1, 2].slice(0, actual.draftPickCount(started)));
       return { ...run, team: run.team.map((member) => ({ ...member, hp: 10 })), position: { layer: 4, index: 0 } };
     },
   };
@@ -26,6 +27,7 @@ describe('休憩のマス（アプリの流れ）', () => {
     root = document.querySelector<HTMLElement>('#app')!;
     startApp(root, { buildId: 'test', newSeed: () => 1 });
     root.querySelector<HTMLButtonElement>('.screen__controls button')!.click();
+    root.querySelector<HTMLButtonElement>('.irodorite__controls .button--primary')!.click();
     expect(root.querySelector('.map-choice__name')?.textContent).toBe('休憩');
     root.querySelector<HTMLButtonElement>('.map-choice')!.click();
   });

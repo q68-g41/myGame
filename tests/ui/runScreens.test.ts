@@ -1,6 +1,8 @@
 // @vitest-environment happy-dom
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { RUN_CONTENT } from '../../src/data/content';
+import { getFighter } from '../../src/data/fighters';
+import { IRODORITE } from '../../src/data/irodorite';
 import { chooseTeam, runChoices, startRun } from '../../src/engine/run';
 import { startApp } from '../../src/ui/app';
 
@@ -13,7 +15,12 @@ function start(seed = 1): void {
   root = document.querySelector<HTMLElement>('#app')!;
   startApp(root, { buildId: 'test', newSeed: () => seed });
   root.querySelector<HTMLButtonElement>('.screen__controls button')!.click();
+  // 彩り手を選ぶ画面：一覧の1人目（ヒナ。相棒はサクラシバ）で進む
+  root.querySelector<HTMLButtonElement>('.irodorite__controls .button--primary')!.click();
 }
+
+/** 1人目の彩り手の相棒の名前 */
+const PARTNER_NAME = getFighter(IRODORITE[0]!.partner.id).name;
 
 const candidates = () => [...root.querySelectorAll<HTMLButtonElement>('.candidate')];
 const confirmButton = () => root.querySelector<HTMLButtonElement>('.draft__controls .button--primary')!;
@@ -22,7 +29,7 @@ const onlyBottomIsInteractive = () => {
   expect(root.querySelector('.screen__controls')!.querySelectorAll(INTERACTIVE).length).toBeGreaterThan(0);
 };
 
-function pickTeam(indices: readonly number[] = [0, 1, 2]): void {
+function pickTeam(indices: readonly number[] = [0, 1]): void {
   for (const index of indices) {
     candidates()[index]!.click();
   }
@@ -97,14 +104,23 @@ describe('チーム選択の画面', () => {
     onlyBottomIsInteractive();
   });
 
+  it('1番目の枠には、はじめから彩り手の相棒が入っている。候補に相棒は出ない', () => {
+    const first = root.querySelector('.draft-slot')!;
+    expect(first.classList.contains('draft-slot--partner')).toBe(true);
+    expect(first.querySelector('.draft-slot__order')?.textContent).toBe('1 相棒');
+    expect(first.querySelector('.draft-slot__name')?.textContent).toBe(PARTNER_NAME);
+    expect(candidates().map((c) => c.querySelector('.candidate__name')?.textContent)).not.toContain(PARTNER_NAME);
+    expect(root.querySelector('.draft__hint')?.textContent).toBe('相棒に続けて2体。長押しで説明だけ見られます');
+  });
+
   it('候補の一覧と、選んだ順の枠に、キャラの小さい絵（32×32）が出る', () => {
     const icons = [...root.querySelectorAll<HTMLImageElement>('.candidate img.candidate__icon')];
     expect(icons).toHaveLength(5);
     expect(icons.every((icon) => icon.getAttribute('width') === '32')).toBe(true);
-    // まだ選んでいない枠は、空の枠
-    expect(root.querySelectorAll('.draft-slot img')).toHaveLength(0);
+    // 相棒の枠だけ絵があり、まだ選んでいない枠は空の枠
+    expect(root.querySelectorAll('.draft-slot img')).toHaveLength(1);
     candidates()[1]!.click();
-    const slot = root.querySelector<HTMLImageElement>('.draft-slot img.draft-slot__icon');
+    const slot = root.querySelectorAll<HTMLImageElement>('.draft-slot img.draft-slot__icon')[1];
     expect(slot?.getAttribute('src')).toBe(icons[1]!.getAttribute('src'));
   });
 
@@ -116,20 +132,22 @@ describe('チーム選択の画面', () => {
     expect(sprite?.getAttribute('src')).toBeTruthy();
   });
 
-  it('3体選ぶまでは出発できない。タップした順が出る順になり、もう一度タップで外せる', () => {
+  it('相棒のあとに2体選ぶまでは出発できない。タップした順が出る順になり、3体目は選べず、もう一度タップで外せる', () => {
     expect(confirmButton().disabled).toBe(true);
     candidates()[3]!.click();
+    expect(confirmButton().disabled).toBe(true);
     candidates()[1]!.click();
     expect(root.querySelector('.fighter-detail__name')?.textContent).toBe(
       candidates()[1]!.querySelector('.candidate__name')?.textContent,
     );
-    candidates()[4]!.click();
     expect(confirmButton().disabled).toBe(false);
-    expect(candidates().map((c) => c.querySelector('.candidate__order')?.textContent)).toEqual(['', '2', '', '1', '3']);
+    // 2体選んだあとは、ほかの候補をタップしても選ばない（詳細だけ変わる）。候補の数字は、相棒のあとの出る順（2・3）
+    candidates()[4]!.click();
+    expect(candidates().map((c) => c.querySelector('.candidate__order')?.textContent)).toEqual(['', '3', '', '2', '']);
 
     candidates()[1]!.click();
     expect(confirmButton().disabled).toBe(true);
-    expect(candidates().map((c) => c.getAttribute('aria-pressed'))).toEqual(['false', 'false', 'false', 'true', 'true']);
+    expect(candidates().map((c) => c.getAttribute('aria-pressed'))).toEqual(['false', 'false', 'false', 'true', 'false']);
     onlyBottomIsInteractive();
   });
 
@@ -156,8 +174,8 @@ describe('チーム選択の画面', () => {
       onlyBottomIsInteractive();
     });
 
-    it('3体選んだあとでも、長押しで選んでいない候補の詳細を見られる。選んだチームは変わらない', () => {
-      for (const index of [0, 1, 2]) {
+    it('選び終えたあとでも、長押しで選んでいない候補の詳細を見られる。選んだチームは変わらない', () => {
+      for (const index of [0, 1]) {
         candidates()[index]!.click();
       }
       press(candidates()[4]!);
@@ -167,7 +185,7 @@ describe('チーム選択の画面', () => {
       expect(root.querySelector('.fighter-detail__name')?.textContent).toBe(
         candidates()[4]!.querySelector('.candidate__name')?.textContent,
       );
-      expect(candidates().map((c) => c.querySelector('.candidate__order')?.textContent)).toEqual(['1', '2', '3', '', '']);
+      expect(candidates().map((c) => c.querySelector('.candidate__order')?.textContent)).toEqual(['2', '3', '', '', '']);
     });
 
     it('すぐ離した（短いタップ）なら、今までどおり選ぶ', () => {
@@ -179,11 +197,11 @@ describe('チーム選択の画面', () => {
     });
   });
 
-  it('出発すると、選んだ順のチームでマップに進む', () => {
-    const names = [3, 0, 4].map((i) => candidates()[i]!.querySelector('.candidate__name')?.textContent);
-    pickTeam([3, 0, 4]);
+  it('出発すると、相棒が先頭で、そのあとに選んだ順のチームでマップに進む', () => {
+    const names = [3, 0].map((i) => candidates()[i]!.querySelector('.candidate__name')?.textContent);
+    pickTeam([3, 0]);
     expect(root.querySelector('.map-screen')).not.toBeNull();
-    expect([...root.querySelectorAll('.member__name')].map((n) => n.textContent)).toEqual(names);
+    expect([...root.querySelectorAll('.member__name')].map((n) => n.textContent)).toEqual([PARTNER_NAME, ...names]);
   });
 });
 
@@ -194,7 +212,7 @@ describe('マップの画面', () => {
   });
 
   it('マップ全体は上半分（表示だけ）、次のマスのボタンとチームのHPは下半分', () => {
-    const run = chooseTeam(startRun(RUN_CONTENT, 1), [0, 1, 2]);
+    const run = chooseTeam(startRun(RUN_CONTENT, 1, IRODORITE[0]!), [0, 1]);
     const total = run.map.layers.reduce((sum, layer) => sum + layer.length, 0);
     expect(root.querySelectorAll('.screen__view .map-node')).toHaveLength(total);
     expect(root.querySelectorAll('.screen__controls .map-choice')).toHaveLength(runChoices(run).length);
@@ -299,13 +317,16 @@ describe('ランを最後まで', () => {
     }
   });
 
-  it('ランの結果から、新しいランを始めるか、タイトルに戻れる', () => {
+  it('ランの結果から、新しいラン（彩り手を選ぶところから）を始めるか、タイトルに戻れる', () => {
     start(1);
     pickTeam();
     for (let step = 0; step < 50 && root.querySelector('.run-end') === null; step += 1) {
       playStep();
     }
+    // もう一度遊ぶときも、彩り手を選ぶところから
     root.querySelector<HTMLButtonElement>('.run-end .button--primary')!.click();
+    expect(root.querySelector('.irodorite')).not.toBeNull();
+    root.querySelector<HTMLButtonElement>('.irodorite__controls .button--primary')!.click();
     expect(root.querySelector('.draft')).not.toBeNull();
     expect(candidates().every((c) => c.getAttribute('aria-pressed') === 'false')).toBe(true);
 

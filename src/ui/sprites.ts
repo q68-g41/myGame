@@ -103,6 +103,14 @@ export function iconElement(
   return pixelImage(doc, { url: options.url, color: options.color ?? 'transparent', size: ICON_SIZE, className: options.className });
 }
 
+/** 彩り手の絵（64×64）の要素。scale は拡大の倍率（整数）。絵がなければ color の四角 */
+export function irodoriteElement(
+  doc: Document,
+  options: { url: string | null; color: string; scale: number; className?: string },
+): HTMLElement {
+  return pixelImage(doc, { url: options.url, color: options.color, size: IRODORITE_SIZE * options.scale, className: options.className });
+}
+
 /** マップのアイコンの要素（等倍）。size はマスのアイコン（24）とボスの絵（32）で変わる */
 export function mapIconElement(doc: Document, options: { url: string; size: number; className?: string }): HTMLElement {
   return pixelImage(doc, { url: options.url, color: 'transparent', size: options.size, className: options.className });

@@ -153,7 +153,8 @@ describe('自動保存と再開（アプリ）', () => {
 
   it('マップで閉じても、同じマップの同じ場所から再開できる', () => {
     tap('.screen__controls button');
-    for (const index of [2, 0, 4]) {
+    tap('.irodorite__controls .button--primary');
+    for (const index of [2, 0]) {
       root.querySelectorAll<HTMLButtonElement>('.candidate')[index]!.click();
     }
     tap('.draft__controls .button--primary');
@@ -168,7 +169,8 @@ describe('自動保存と再開（アプリ）', () => {
 
   it('マップで並び順を入れ替えたら、閉じて開き直しても入れ替えた順のまま', () => {
     tap('.screen__controls button');
-    for (const index of [0, 1, 2]) {
+    tap('.irodorite__controls .button--primary');
+    for (const index of [0, 1]) {
       root.querySelectorAll<HTMLButtonElement>('.candidate')[index]!.click();
     }
     tap('.draft__controls .button--primary');
@@ -186,7 +188,8 @@ describe('自動保存と再開（アプリ）', () => {
 
   it('戦闘中に閉じても、同じターン・同じHPから再開でき、そのあとの展開も閉じなかったときと同じ', () => {
     tap('.screen__controls button');
-    for (const index of [0, 1, 2]) {
+    tap('.irodorite__controls .button--primary');
+    for (const index of [0, 1]) {
       root.querySelectorAll<HTMLButtonElement>('.candidate')[index]!.click();
     }
     tap('.draft__controls .button--primary');
@@ -204,7 +207,8 @@ describe('自動保存と再開（アプリ）', () => {
     storage = memoryStorage();
     reopen();
     tap('.screen__controls button');
-    for (const index of [0, 1, 2]) {
+    tap('.irodorite__controls .button--primary');
+    for (const index of [0, 1]) {
       root.querySelectorAll<HTMLButtonElement>('.candidate')[index]!.click();
     }
     tap('.draft__controls .button--primary');
@@ -223,7 +227,8 @@ describe('自動保存と再開（アプリ）', () => {
 
   it('ランが終わったら、保存したランは消える', () => {
     tap('.screen__controls button');
-    for (const index of [0, 1, 2]) {
+    tap('.irodorite__controls .button--primary');
+    for (const index of [0, 1]) {
       root.querySelectorAll<HTMLButtonElement>('.candidate')[index]!.click();
     }
     tap('.draft__controls .button--primary');
@@ -322,7 +327,8 @@ describe('設定（演出の速さ・音）の保存', () => {
     };
     let root = open();
     root.querySelector<HTMLButtonElement>('.screen__controls button')!.click();
-    for (const index of [0, 1, 2]) {
+    root.querySelector<HTMLButtonElement>('.irodorite__controls .button--primary')!.click();
+    for (const index of [0, 1]) {
       root.querySelectorAll<HTMLButtonElement>('.candidate')[index]!.click();
     }
     root.querySelector<HTMLButtonElement>('.draft__controls .button--primary')!.click();

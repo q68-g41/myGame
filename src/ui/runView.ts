@@ -5,12 +5,14 @@ import { ATTRIBUTE_COLORS, ATTRIBUTE_NAMES } from '../data/attributes';
 import { BOSSES } from '../data/bosses';
 import { getCharm } from '../data/charms';
 import { getFighter } from '../data/fighters';
+import { getIrodorite } from '../data/irodorite';
 import { NODE_KIND_MARKS, NODE_KIND_NAMES, STAT_NAMES } from '../data/labels';
 import { getMove } from '../data/moves';
 import { AREA_COUNT, MAX_MOVES, RUN_TEAM_SIZE } from '../engine/constants';
 import { nodeAt, type MapPosition, type NodeKind } from '../engine/map';
 import { isAttackMove } from '../engine/moves';
 import {
+  draftPickCount,
   runChoices,
   type RewardChoice,
   type RewardOffer,
@@ -53,7 +55,7 @@ export interface CandidateView {
   /** 小さい絵の URL。絵がなければ null（属性の色の四角を出す） */
   readonly icon: string | null;
   readonly attributeName: string;
-  /** 選んだ順番（1〜3）。選んでいなければ null */
+  /** チームで出る順番（1〜3。彩り手の相棒がいれば2から）。選んでいなければ null */
   readonly order: number | null;
 }
 
@@ -76,6 +78,8 @@ export interface FighterDetailView {
 /** 選んだチームの枠（1〜3番目） */
 export interface DraftSlotView {
   readonly order: number;
+  /** 彩り手の相棒の枠（はじめから入っていて、外せない） */
+  readonly partner: boolean;
   /** 選んだキャラ。まだなら null */
   readonly name: string | null;
   readonly color: string | null;
@@ -87,7 +91,9 @@ export interface DraftView {
   readonly candidates: readonly CandidateView[];
   readonly slots: readonly DraftSlotView[];
   readonly detail: FighterDetailView | null;
-  /** 3体選んで、出発できるか */
+  /** 候補から選ぶ数（彩り手の相棒がいれば2、いなければ3） */
+  readonly pickCount: number;
+  /** 選び終えて、出発できるか */
   readonly canConfirm: boolean;
 }
 
@@ -128,12 +134,15 @@ export function focusDraftCandidate(ui: DraftUiState, index: number): DraftUiSta
   return { ...ui, focused: index };
 }
 
-/** 候補をタップしたあとの状態。選んでいれば外し、3体に満たなければ選ぶ。どちらでも詳細はそのキャラにする */
-export function toggleDraftPick(ui: DraftUiState, index: number): DraftUiState {
+/**
+ * 候補をタップしたあとの状態。選んでいれば外し、選ぶ数（max）に満たなければ選ぶ。どちらでも詳細はそのキャラにする。
+ * max は、彩り手の相棒がいれば2（draftPickCount）
+ */
+export function toggleDraftPick(ui: DraftUiState, index: number, max: number = RUN_TEAM_SIZE): DraftUiState {
   if (ui.picks.includes(index)) {
     return { picks: ui.picks.filter((pick) => pick !== index), focused: index };
   }
-  const picks = ui.picks.length < RUN_TEAM_SIZE ? [...ui.picks, index] : ui.picks;
+  const picks = ui.picks.length < max ? [...ui.picks, index] : ui.picks;
   return { picks, focused: index };
 }
 
@@ -143,30 +152,36 @@ export function buildDraftView(run: RunState, ui: DraftUiState = INITIAL_DRAFT_U
   }
   const { candidates } = run.phase;
   const focused = ui.focused === null ? undefined : candidates[ui.focused];
+  // 彩り手の相棒がいれば1番目の枠に入れ、選んだキャラはそのあとに続ける（4.6）
+  const partner = run.irodorite?.partner;
+  const members = [...(partner === undefined ? [] : [partner]), ...ui.picks.map((pick) => candidates[pick])];
+  const pickCount = draftPickCount(run);
   return {
     candidates: candidates.map((fighter, index) => {
       const order = ui.picks.indexOf(index);
+      const offset = partner === undefined ? 1 : 2;
       return {
         index,
         name: getFighter(fighter.id).name,
         color: ATTRIBUTE_COLORS[fighter.attribute],
         icon: iconUrl(fighter.id),
         attributeName: ATTRIBUTE_NAMES[fighter.attribute],
-        order: order < 0 ? null : order + 1,
+        order: order < 0 ? null : order + offset,
       };
     }),
     slots: Array.from({ length: RUN_TEAM_SIZE }, (_, i): DraftSlotView => {
-      const pick = ui.picks[i];
-      const fighter = pick === undefined ? undefined : candidates[pick];
+      const fighter = members[i];
       return {
         order: i + 1,
+        partner: partner !== undefined && i === 0,
         name: fighter ? getFighter(fighter.id).name : null,
         color: fighter ? ATTRIBUTE_COLORS[fighter.attribute] : null,
         icon: fighter ? iconUrl(fighter.id) : null,
       };
     }),
     detail: focused ? fighterDetail(focused) : null,
-    canConfirm: ui.picks.length === RUN_TEAM_SIZE,
+    pickCount,
+    canConfirm: ui.picks.length === pickCount,
   };
 }
 
@@ -256,8 +271,10 @@ export function tapMapMember(
   return { ui: INITIAL_MAP_UI, swap: [ui.selectedMember, index] };
 }
 
+/** 効いているお守りの名前。彩り手の特性を先に、「（特性）」を付けて出す */
 export function charmNames(run: RunState): string[] {
-  return run.charms.map((charm) => getCharm(charm.id).name);
+  const charms = run.charms.map((charm) => getCharm(charm.id).name);
+  return run.irodorite === null ? charms : [`${getIrodorite(run.irodorite.id).trait.name}（特性）`, ...charms];
 }
 
 export function teamViews(team: readonly RunMember[]): TeamMemberView[] {

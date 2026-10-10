@@ -240,7 +240,8 @@ describe('アプリの効果音', () => {
   /** トップ → チーム選択 → 最初のマスまで進める */
   function enterFirstBattle(): void {
     root.querySelector<HTMLButtonElement>('.screen__controls .button--primary')!.click();
-    for (const index of [0, 1, 2]) {
+    root.querySelector<HTMLButtonElement>('.irodorite__controls .button--primary')!.click();
+    for (const index of [0, 1]) {
       root.querySelectorAll<HTMLButtonElement>('.candidate')[index]!.click();
     }
     root.querySelector<HTMLButtonElement>('.draft__controls .button--primary')!.click();
