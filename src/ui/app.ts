@@ -5,6 +5,7 @@
 import { RUN_CONTENT } from '../data/content';
 import { IRODORITE } from '../data/irodorite';
 import { MAX_MOVES } from '../engine/constants';
+import { nodeAt } from '../engine/map';
 import { chooseEventOption, leaveEvent, restHeal, restPowerUp, scoutRecruit, scoutSkip } from '../engine/nodes';
 import {
   chooseTeam,
@@ -163,7 +164,9 @@ export function startApp(root: HTMLElement, options: AppOptions): void {
     const shown =
       session !== null &&
       (playback === null || session.lastEvents.slice(0, playback.index + 1).some((e) => e.type === 'battleEnd'));
-    return { screen: 'battle', boss: phase.boss !== null, winner: shown ? (session?.state.winner ?? null) : null };
+    const opponent =
+      phase.boss !== null ? 'boss' : run.position !== null && nodeAt(run.map, run.position).kind === 'rival' ? 'rival' : 'normal';
+    return { screen: 'battle', opponent, winner: shown ? (session?.state.winner ?? null) : null };
   };
   /** 画面に合う BGM にする（音がオフなら止める） */
   function syncMusic(): void {

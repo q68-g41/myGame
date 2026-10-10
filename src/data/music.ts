@@ -8,8 +8,8 @@
  * - ドラムは1小節8文字。文字の意味は DRUMS を見る。`.` は鳴らさない
  */
 
-/** 鳴らす曲 */
-export type MusicId = 'field' | 'battle' | 'boss' | 'victory' | 'defeat';
+/** 鳴らす曲。rival はライバル・クロとの戦い（M8） */
+export type MusicId = 'field' | 'battle' | 'boss' | 'rival' | 'victory' | 'defeat';
 
 /** 音色。pulse は細い矩形波（数字は幅の％）、triangle はやわらかい三角波 */
 export type Voice = 'pulse12' | 'pulse25' | 'pulse50' | 'triangle';
@@ -162,6 +162,39 @@ export const TRACKS: Readonly<Record<MusicId, TrackDef>> = {
       },
       { kind: 'melody', voice: 'pulse50', volume: 0.07, notes: 'D4:8 | D4:8 | D4:8 | Eb4:8 | D4:8 | D4:8 | D4:8 | D4:8' },
       { kind: 'drums', volume: 0.6, steps: 'k.hks.hk|k.hks.hk|k.hks.hk|k.hks.hk|k.hks.hk|k.hks.hk|k.hks.hk|k.h.ssss' },
+    ],
+  },
+  // ライバル・クロとの戦い「好敵手」（M8）：戦闘の曲より速く、張りつめた決闘の曲（B の都節）。
+  // ほかの曲と聞き分けられるように、音の高さ・音色（主旋律は太い矩形波）・リズムを変えた
+  rival: {
+    bpm: 160,
+    loop: true,
+    echo: false,
+    parts: [
+      {
+        kind: 'melody',
+        voice: 'pulse50',
+        volume: 0.13,
+        notes:
+          'B4:1 r:1 B4:1 C5:1 E5:2 F#5:2 | G5:3 F#5:1 E5:2 C5:2 | B4:1 r:1 B4:1 C5:1 E5:2 G5:1 F#5:1 | E5:4 r:2 B4:1 C5:1 | ' +
+          'E5:2 F#5:1 G5:1 B5:3 G5:1 | F#5:2 E5:1 F#5:1 G5:2 F#5:1 E5:1 | C5:2 E5:1 C5:1 B4:2 G4:1 F#4:1 | B4:6 r:2',
+      },
+      {
+        kind: 'melody',
+        voice: 'pulse12',
+        volume: 0.08,
+        notes:
+          'r:4 E4:2 F#4:2 | G4:4 E4:4 | r:4 E4:2 G4:2 | B4:4 r:4 | ' +
+          'C5:4 B4:4 | B4:4 C5:4 | G4:4 F#4:4 | B3:6 r:2',
+      },
+      {
+        kind: 'bass',
+        voice: 'triangle',
+        volume: 0.42,
+        roots: ['B2', 'B2', 'E2', 'B2', 'E2', 'C3', 'C3', 'B2'],
+        pattern: [0, 12, 0, 12, 7, 12, 0, 12],
+      },
+      { kind: 'drums', volume: 0.55, steps: 'k.hsk.hs|k.hskths|k.hsk.hs|k.hsktss|k.hsk.hs|k.hskths|k.hsk.hs|ksksssss' },
     ],
   },
   // 勝ったとき：短いファンファーレ（C の陽音階）
