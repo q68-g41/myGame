@@ -188,10 +188,43 @@ shadow. {雰囲気} Original design that does not resemble any existing game, an
   - `A 'crow-rabbit' (karasu-usagi): a small, round, chubby rabbit with a white body and head (soft white with light gray shading), two long upright rabbit ears with light gray insides, two small black dot eyes, a small black triangular crow beak in place of a rabbit nose, a fluffy white chest ruff, short white rabbit feet, small black crow wings on both sides of its body, and a short tuft of black crow tail feathers at the back.`
 - コマ送りアニメは、上の「コマ送りアニメ」と同じ指示の形で、止まった絵の生成を参考画像にした。組み込みの手順もほかのキャラと同じ（48×48・32×32・192×48）
 
+## 彩り手（M8）
+
+主人公の「彩り手」19人（クロを含む。仕様書 4.6・5.1）。64×64 の全身のドット絵。モチーフにした人の見た目には似せず、みんな同じ旅笠と羽織の旅装束にして、顔は笠の影に入れ、顔立ちや性別は描き込まない。だれか分かるのは、持ち物と羽織の色だけにした。GPT Image 2.5（Higgsfield。quality high、1k、正方形）で、参考画像には採用済みの絵（ベニコウラとイナホイタチ）を渡して絵柄をそろえた。
+
+| ID | あだ名 | 生成のジョブID | 備考 |
+| --- | --- | --- | --- |
+| kuro | クロ | 971791f7-253e-4ab3-9a62-2b053d0f059e | 絵柄の試作 |
+| hina | ヒナ | ce2fb3c5-7484-4c33-a7ce-b5795b2f39d8 | 絵柄の試作 |
+| master | マスター | 51a33a08-32de-44b1-8aed-cb24e3404b16 | 絵柄の試作 |
+| dai | ダイ | afbd469b-342d-4775-b438-c7b915c90a68 | |
+| sunny | サニー | 96e637b3-7028-452b-9701-15555f535349 | |
+| morie | モリエ | f5d01c1a-94b2-4041-b09a-b521355ae13b | |
+| taisho | 大将 | 47dcd1cf-64dc-478b-8e29-1123f5e9af7c | |
+| miu | ミウ | 2428a2c7-c577-4e33-8ee2-662395fefe27 | |
+| wata | ワタ | 1478384e-a5f0-46a6-9e65-50f6351a8fb2 | |
+| shu | シュウ | 8c3d6b84-5cb6-4ff0-9c34-540e0dc7628c | |
+| maru | マル | 25a71683-f779-4414-96f2-17d2ea6f4bb8 | |
+| otakara | オタカラ | 1d5e823f-d3fb-426e-b9ac-ddab9e3a17d7 | |
+| yuhi | ユヒ | eb766671-0b3a-4c9a-94f6-aa5f3b941af7 | |
+| kasa | カサ | a456147c-c95c-4ed8-8106-7337ea8296c9 | |
+| taka | タカ先生 | 79b2b6ca-28b0-4a3d-a2ba-3d530a44f1b7 | |
+| kai | カイ | 1dcf93e1-f5c9-42ca-9052-c533c20ba9c3 | |
+| rin | リン | 2c59bf7b-f9da-4373-b898-e5d96754c98d | |
+| tatsumichi | タツミチ | 0b640d3c-90f3-4c12-b507-ed57a4265777 | |
+| sou | ソウ | eb7c96aa-070a-461e-80c0-93fa3d3c4895 | |
+
+- まず3人（クロ・ヒナ・マスター）で絵柄を決め、残りの16人を同じ指示の形で描いた。どれも1回目の生成を採用した（描き直しはない）
+- 指示は次の文で、`{羽織}` に羽織の色と柄、`{持ち物}` に4.6 の表の持ち物、`{色}` にいちばん多く使う色を入れた。残りの16人では、64×64 でも持ち物が読めるように「The held items are drawn large and clear so they read at small size.」を足し、避けるものに「sparkles and thin wisps」を足した
+  - `Pixel art game sprite of a single small chibi human traveler, an 'Irodorite' (a person who travels with color spirits) from a Japanese-style (wafu) fantasy world where colors are slowly fading. Match the art style, outline weight, shading and palette feel of the reference images, which are finished sprites from the same game, but draw only the person described here. The traveler wears a wide conical straw travel hat (kasa) pulled low so the face is mostly shaded and simple (no detailed facial features, gender-neutral), and a short {羽織} haori jacket over plain travel clothes and straw sandals. Held items: {持ち物}. Main accent color: {色}. Facing right in a three-quarter view, full body, standing, centered, filling about 85% of a square canvas, chibi proportions (big hat, small body). Bold, clearly readable silhouette that still reads when shrunk to 64x64 pixels; chunky pixels, limited palette of about 16 colors, dark 1-pixel outline, flat cel shading, no blur, no gradients; avoid tiny floating particles. Plain solid white background, no ground shadow, no text, no letters, no border. Original design that does not resemble any existing game, anime, or mascot character.`
+- 組み込みの手順はキャラと同じ（白い背景を抜き、16色に減らす）で、大きさだけ変えた。長い辺を62ピクセルに縮めて、64×64 の真ん中に置き、`src/assets/irodorite/<彩り手のID>.png` に保存する
+- 止まった絵だけで、コマ送りアニメと小さい絵はまだない
+
 ## 差し替えるとき
 
 - `src/assets/sprites/<キャラID>.png` を、48×48・右向きの PNG で上書きすれば、コードを変えずに差し替わる。バトルの場では `src/assets/anim/<キャラID>.png`（192×48・4コマ）を使うので、止まった絵を変えたらアニメも作り直す（アニメの1コマ目と止まった絵はそろえる）
 - 小さい絵は `src/assets/icons/<キャラID>.png`（32×32・右向き）。大きい絵を差し替えたら、小さい絵も同じ元の絵から作り直す
 - マップのアイコンは `src/assets/map/<マスの種類>.png`（24×24）。ファイルがないマスは、これまでの1文字で出る（テスト `tests/ui/sprites.test.ts` は、5種類そろっていることを確かめる）
 - 新しいキャラを足したときは、同じ名前で絵を置く。絵がなくても属性の色の四角で動く（テスト `tests/ui/sprites.test.ts` は、全キャラに絵があることを確かめるので、絵を足すまで失敗する）
+- 彩り手の絵は `src/assets/irodorite/<彩り手のID>.png`（64×64・右向き）。テスト `tests/ui/sprites.test.ts` は、19人そろっていることを確かめる
 - 差し替えたら、この表のジョブIDも書き換える
