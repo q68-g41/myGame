@@ -5,8 +5,8 @@ import { MAX_SELF_PLAY_TURNS, playCpuBattle } from '../../src/ai/selfPlay';
 import { chooseCommandStage2, chooseReplacementStage2, duelValue } from '../../src/ai/stage2';
 import { pickTeams, TEAM_SIZE_FOR_SIM } from '../../src/ai/teams';
 import { RUN_CONTENT } from '../../src/data/content';
-import { FIGHTERS } from '../../src/data/fighters';
-import { ATTRIBUTE_ORDER, CPU_LEVEL_BY_AREA } from '../../src/engine/constants';
+import { FIGHTERS, PARTNER_FIGHTERS } from '../../src/data/fighters';
+import { CPU_LEVEL_BY_AREA } from '../../src/engine/constants';
 import { createRng } from '../../src/engine/rng';
 import { chooseTeam, enterNode, runChoices, startRun } from '../../src/engine/run';
 import type { BattleState, Combatant } from '../../src/engine/types';
@@ -105,23 +105,22 @@ describe('CPU 段階2の強さ', () => {
     return results;
   };
 
-  // 段階2の強みは相性を読んだ交代。6色のキャラどうしで比べる
-  it('段階2は段階1に勝ち越す（6色のキャラどうし）', () => {
-    const colored = FIGHTERS.filter((fighter) => ATTRIBUTE_ORDER.includes(fighter.attribute));
-    const results = battles({ player: 1, enemy: 2 }, 300, colored);
+  // 段階2の強みは相性を読んだ交代。ふつうのキャラ（6色）どうしで比べる
+  it('段階2は段階1に勝ち越す（ふつうのキャラどうし）', () => {
+    const results = battles({ player: 1, enemy: 2 }, 300);
     const enemyWins = results.filter((result) => result.winner === 'enemy').length;
     expect(enemyWins / results.length).toBeGreaterThan(0.6);
   });
 
   // 白・黒は6色と相性がないので、交代で上を取れる場面が減る（3000戦で 0.63 → 0.60）。それでも勝ち越す
-  it('白・黒のキャラが入っても、段階2は段階1に勝ち越す', () => {
-    const results = battles({ player: 1, enemy: 2 }, 300);
+  it('彩り手の相棒（白・黒のカラスウサギを含む）が入っても、段階2は段階1に勝ち越す', () => {
+    const results = battles({ player: 1, enemy: 2 }, 300, [...FIGHTERS, ...PARTNER_FIGHTERS]);
     const enemyWins = results.filter((result) => result.winner === 'enemy').length;
     expect(enemyWins / results.length).toBeGreaterThan(0.55);
   });
 
   it('段階2どうしでも、どの対戦も最後まで決着する（交代や回復をくり返して止まらない、がない）', () => {
-    for (const result of battles({ player: 2, enemy: 2 }, 200)) {
+    for (const result of battles({ player: 2, enemy: 2 }, 200, [...FIGHTERS, ...PARTNER_FIGHTERS])) {
       expect(result.winner).not.toBeNull();
       expect(result.turns).toBeLessThan(MAX_SELF_PLAY_TURNS);
     }

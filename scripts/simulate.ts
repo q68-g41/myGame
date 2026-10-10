@@ -1,12 +1,13 @@
 /**
  * CPU 同士の自動対戦（バランス確認用）。
  * 使い方：
- *   npm run sim -- --battles 1000 --seed 1   3対3 の対戦を繰り返す（--player 2 --enemy 1 で CPU の段階を変えられる）
+ *   npm run sim -- --battles 1000 --seed 1   3対3 の対戦を繰り返す（--player 2 --enemy 1 で CPU の段階を変えられる）。
+ *                                            ふつうのキャラと彩り手の相棒をまぜて、キャラごとの勝率を見る
  *   npm run sim -- --runs 1000 --seed 1      CPU にランを遊ばせる（クリア率と、倒れた層を見る）
  */
 import { playCpuBattle, playCpuRun } from '../src/ai/selfPlay';
 import { RUN_CONTENT } from '../src/data/content';
-import { FIGHTERS, type FighterData } from '../src/data/fighters';
+import { FIGHTERS, PARTNER_FIGHTERS, type FighterData } from '../src/data/fighters';
 import { TEAM_SIZE_FOR_SIM, pickTeams } from '../src/ai/teams';
 import { createRng, nextInt } from '../src/engine/rng';
 import type { CpuLevel } from '../src/engine/types';
@@ -91,6 +92,9 @@ function simulateRuns(): void {
   }
 }
 
+/** 対戦に出すキャラ。相棒もほかのキャラと同じ強さか見たいので、まぜる */
+const BATTLE_POOL: readonly FighterData[] = [...FIGHTERS, ...PARTNER_FIGHTERS];
+
 function simulateBattles(): void {
   const battles = readOption('battles', 1000);
   const seed = readOption('seed', 1);
@@ -101,11 +105,11 @@ function simulateBattles(): void {
   let playerWins = 0;
   const turnCounts: number[] = [];
   const byFighter = new Map<string, { fighter: FighterData; played: number; won: number }>(
-    FIGHTERS.map((fighter) => [fighter.id, { fighter, played: 0, won: 0 }]),
+    BATTLE_POOL.map((fighter) => [fighter.id, { fighter, played: 0, won: 0 }]),
   );
 
   for (let i = 0; i < battles; i += 1) {
-    const teams = pickTeams(FIGHTERS, TEAM_SIZE_FOR_SIM, rng);
+    const teams = pickTeams(BATTLE_POOL, TEAM_SIZE_FOR_SIM, rng);
     rng = teams.rng;
     const battleSeed = nextInt(rng, 0, 0xffffffff);
     rng = battleSeed.rng;

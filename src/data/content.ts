@@ -11,6 +11,7 @@ import { MOVES } from './moves';
 const LEARNABLE_MOVES = Object.values(MOVES).filter((move) => !MONOCHROME_ATTRIBUTES.includes(move.attribute));
 
 export const RUN_CONTENT: RunContent = {
+  // ふつうのキャラだけ。彩り手の相棒（カラスウサギも）は、その彩り手の専用なので入れない（仕様書 4.6）
   fighters: FIGHTERS,
   moves: LEARNABLE_MOVES,
   charms: CHARMS,
