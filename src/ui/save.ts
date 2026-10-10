@@ -15,8 +15,9 @@ export const SAVE_KEY = 'sairei-no-michi.save';
 /**
  * 保存の形の版。形を変えて古いセーブが読めなくなるときに上げる（古い版のセーブは捨てる）。
  * 5：ランの状態に、選んだ彩り手（irodorite）を足した（M8。仕様書 4.6）
+ * 6：ランの状態に、マップの戦闘・強敵・ライバルのマスの相手（enemies）を足した（マップで相手の属性をヒントに出すため。4.3）
  */
-export const SAVE_VERSION = 5;
+export const SAVE_VERSION = 6;
 
 /** 保存したゲーム：ランの状態と、戦闘中ならバトルの状態 */
 export interface SavedGame {
@@ -57,6 +58,7 @@ export function parseSavedGame(text: string | null): SavedGame | null {
   if (
     typeof run.area !== 'number' ||
     !isObject(run.map) ||
+    !Array.isArray(run.enemies) ||
     !Array.isArray(run.team) ||
     !(run.irodorite === null || isObject(run.irodorite)) ||
     !isObject(run.phase) ||

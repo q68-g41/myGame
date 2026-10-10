@@ -128,7 +128,7 @@ export interface RewardChoice {
  * ランの段階。
  * - draft：候補からチームを選ぶ
  * - map：次のマスを選ぶ
- * - battle：戦闘中（相手のチーム・CPU の段階・ボスの行動パターン・バトルのシードは、マスに入ったときに決まる）
+ * - battle：戦闘中（相手のチームはマップを作るときに決めたもの。CPU の段階・ボスの行動パターン・バトルのシードは、マスに入ったときに決まる）
  * - reward：戦闘に勝って、報酬を選ぶ（強敵とボスなら2回。pick は何回目か、picks は全部で何回か）
  * - rest：休憩（HPを回復するか、技を強化するか）
  * - scout：スカウト（候補の1体とチームの1体を入れ替えるか、入れ替えずに進む）
@@ -165,6 +165,11 @@ export interface RunState {
   readonly area: number;
   /** いまのエリアのマップ */
   readonly map: AreaMap;
+  /**
+   * いまのエリアの、戦闘・強敵・ライバルのマスの相手。マップを作るときに決めておく（マップで相手の属性をヒントに出すため。4.3）。
+   * map.layers と同じ形で、相手が決まっていないマス（休憩・スカウト・イベント・ボス）は null
+   */
+  readonly enemies: readonly (readonly (readonly FighterDef[] | null)[])[];
   /** いまいるマス。スタート直後（まだどのマスにも入っていない）は null */
   readonly position: MapPosition | null;
   /** チーム。並び順が戦闘に出る順になる */
@@ -186,15 +191,17 @@ export function startRun(content: RunContent, seed: number, irodorite: Irodorite
   const map = areaMap(0, content, createRng(seed));
   const pool = irodorite === null ? content.fighters : content.fighters.filter((fighter) => fighter.id !== irodorite.partner.id);
   const candidates = pickDistinct(pool, DRAFT_CANDIDATE_COUNT, map.rng);
+  const enemies = areaEnemies(map.value, 0, content, candidates.rng);
   return {
     area: 0,
     map: map.value,
+    enemies: enemies.value,
     position: null,
     team: [],
     charms: [],
     irodorite,
     phase: { kind: 'draft', candidates: candidates.value },
-    rng: candidates.rng,
+    rng: enemies.rng,
   };
 }
 
@@ -262,6 +269,43 @@ function areaMap(area: number, content: RunContent, rng: RngState): RngResult<Ar
   return generateAreaMap(rng, { rival: content.rival !== null && area === RIVAL_AREA });
 }
 
+/**
+ * エリアのマップの、戦闘・強敵・ライバルのマスの相手を、下の層から順に決める（4.3）。
+ * 休憩・スカウト・イベントは相手がいないので null。ボスはエリアで決まっているので null（enterNode でボスを出す）
+ */
+export function areaEnemies(
+  map: AreaMap,
+  area: number,
+  content: RunContent,
+  rng: RngState,
+): RngResult<readonly (readonly (readonly FighterDef[] | null)[])[]> {
+  let current = rng;
+  const enemies = map.layers.map((layer, l) =>
+    layer.map((node): readonly FighterDef[] | null => {
+      if (node.kind === 'battle' || node.kind === 'elite') {
+        const team = enemyTeam(node.kind, l, area, content, current);
+        current = team.rng;
+        return team.value;
+      }
+      if (node.kind === 'rival') {
+        if (content.rival === null) {
+          throw new Error('ライバルのデータがありません');
+        }
+        const team = rivalTeam(content.rival, area, content, current);
+        current = team.rng;
+        return team.value;
+      }
+      return null;
+    }),
+  );
+  return { value: enemies, rng: current };
+}
+
+/** マスの相手（戦闘・強敵・ライバル）。相手が決まっていないマス（休憩・スカウト・イベント・ボス）は null */
+export function nodeEnemies(run: RunState, position: MapPosition): readonly FighterDef[] | null {
+  return run.enemies[position.layer]?.[position.index] ?? null;
+}
+
 /** 次に進めるマス（次の層での位置） */
 export function runChoices(run: RunState): readonly number[] {
   return run.phase.kind === 'map' ? nextChoices(run.map, run.position) : [];
@@ -311,7 +355,7 @@ function rivalTeam(rival: RivalDef, area: number, content: RunContent, rng: RngS
 
 /**
  * 次のマスに進む。index は次の層での位置（runChoices のどれか）。
- * 戦闘・強敵なら相手のチームを決めて、ボスならそのエリアのボスと、戦闘の段階に入る。休憩・スカウト・イベントは、そのマスの段階に入る。
+ * 戦闘・強敵・ライバルならマップを作るときに決めておいた相手と、ボスならそのエリアのボスと、戦闘の段階に入る。休憩・スカウト・イベントは、そのマスの段階に入る。
  */
 export function enterNode(run: RunState, index: number, content: RunContent): RunState {
   if (!runChoices(run).includes(index)) {
@@ -324,12 +368,8 @@ export function enterNode(run: RunState, index: number, content: RunContent): Ru
     return { ...run, position, phase: phase.value, rng: phase.rng };
   }
   if (node.kind === 'rival') {
-    if (content.rival === null) {
-      throw new Error('ライバルのデータがありません');
-    }
-    const enemy = rivalTeam(content.rival, run.area, content, run.rng);
-    const seed = nextSeed(enemy.rng);
-    const phase: RunPhase = { kind: 'battle', enemy: enemy.value, cpu: RIVAL_CPU_LEVEL, boss: null, seed: seed.value };
+    const seed = nextSeed(run.rng);
+    const phase: RunPhase = { kind: 'battle', enemy: decidedEnemies(run, position), cpu: RIVAL_CPU_LEVEL, boss: null, seed: seed.value };
     return { ...run, position, phase, rng: seed.rng };
   }
   const cpu = node.kind === 'elite' ? ELITE_CPU_LEVEL : CPU_LEVEL_BY_AREA[run.area];
@@ -345,10 +385,18 @@ export function enterNode(run: RunState, index: number, content: RunContent): Ru
     const phase: RunPhase = { kind: 'battle', enemy: [boss.fighter], cpu, boss: boss.pattern, seed: seed.value };
     return { ...run, position, phase, rng: seed.rng };
   }
-  const enemy = enemyTeam(node.kind, position.layer, run.area, content, run.rng);
-  const seed = nextSeed(enemy.rng);
-  const phase: RunPhase = { kind: 'battle', enemy: enemy.value, cpu, boss: null, seed: seed.value };
+  const seed = nextSeed(run.rng);
+  const phase: RunPhase = { kind: 'battle', enemy: decidedEnemies(run, position), cpu, boss: null, seed: seed.value };
   return { ...run, position, phase, rng: seed.rng };
+}
+
+/** マップを作るときに決めておいた、マスの相手。なければエラー */
+function decidedEnemies(run: RunState, position: MapPosition): readonly FighterDef[] {
+  const enemy = nodeEnemies(run, position);
+  if (enemy === null) {
+    throw new Error(`マップの ${position.layer + 1} 層目・${position.index + 1} 番目のマスの相手が決まっていません`);
+  }
+  return enemy;
 }
 
 /** いまの戦闘を始める。チームは並び順のまま、持ち越したHPで出る */
@@ -409,8 +457,10 @@ function atBoss(run: RunState): boolean {
 
 /** 次のエリアに進む。新しいマップを作り、1層目の手前から始める */
 function enterNextArea(run: RunState, content: RunContent): RunState {
-  const map = areaMap(run.area + 1, content, run.rng);
-  return { ...run, area: run.area + 1, map: map.value, position: null, phase: { kind: 'map' }, rng: map.rng };
+  const area = run.area + 1;
+  const map = areaMap(area, content, run.rng);
+  const enemies = areaEnemies(map.value, area, content, map.rng);
+  return { ...run, area, map: map.value, enemies: enemies.value, position: null, phase: { kind: 'map' }, rng: enemies.rng };
 }
 
 /**

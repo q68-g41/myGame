@@ -14,6 +14,7 @@ import { nodeAt, type MapPosition, type NodeKind } from '../engine/map';
 import { isAttackMove } from '../engine/moves';
 import {
   draftPickCount,
+  nodeEnemies,
   runChoices,
   type RewardChoice,
   type RewardOffer,
@@ -205,6 +206,13 @@ export interface MapIconView {
   readonly size: number;
 }
 
+/** マップのヒント：戦うマスの相手1体の属性（4.3） */
+export interface EnemyHintView {
+  /** 属性の表示名（紅・蒼など） */
+  readonly name: string;
+  readonly color: string;
+}
+
 export interface MapNodeView {
   readonly layer: number;
   readonly index: number;
@@ -219,6 +227,8 @@ export interface MapNodeView {
   readonly letter: string | null;
   /** つながっている次の層のマス */
   readonly next: readonly number[];
+  /** 戦うマスなら、相手の属性（出る順に1体ずつ）。戦わないマスは空 */
+  readonly enemies: readonly EnemyHintView[];
 }
 
 /** 次のマスを選ぶボタン */
@@ -228,6 +238,8 @@ export interface MapChoiceView {
   readonly name: string;
   /** マスのアイコン。絵がなければ null */
   readonly icon: MapIconView | null;
+  /** 戦うマスなら、相手の属性（出る順に1体ずつ）。戦わないマスは空 */
+  readonly enemies: readonly EnemyHintView[];
 }
 
 export interface MapView {
@@ -303,6 +315,16 @@ function mapIcon(run: RunState, kind: NodeKind): MapIconView | null {
   return url === null ? null : { url, size: kind === 'rival' ? SPRITE_SIZE : MAP_ICON_SIZE };
 }
 
+/**
+ * マスの相手の属性（4.3）。戦闘・強敵・ライバルは、マップを作るときに決めておいた相手。
+ * ボスは、そのエリアのボス。戦わないマス（休憩・スカウト・イベント）は空
+ */
+function enemyHints(run: RunState, position: MapPosition, kind: NodeKind): EnemyHintView[] {
+  const fighters: readonly FighterDef[] =
+    kind === 'boss' ? (BOSSES[run.area] ? [BOSSES[run.area]!.fighter] : []) : (nodeEnemies(run, position) ?? []);
+  return fighters.map((fighter) => ({ name: ATTRIBUTE_NAMES[fighter.attribute], color: ATTRIBUTE_COLORS[fighter.attribute] }));
+}
+
 /** 次に進めるマスから、この先たどり着けるマスを層ごとに集める */
 function reachableFrom(run: RunState, layer: number, choices: readonly number[]): ReadonlySet<string> {
   const reached = new Set<string>();
@@ -356,6 +378,7 @@ export function buildMapView(run: RunState, notice: string | null = null, ui: Ma
         state: nodeState(run.position, l, index, letter, reachable),
         letter,
         next: node.next,
+        enemies: enemyHints(run, { layer: l, index }, node.kind),
       };
     }),
   );
@@ -363,8 +386,15 @@ export function buildMapView(run: RunState, notice: string | null = null, ui: Ma
   return {
     layers,
     choices: choices.map((index) => {
-      const kind = nodeAt(run.map, { layer: nextLayer, index }).kind;
-      return { index, letter: letterOf(index)!, name: NODE_KIND_NAMES[kind], icon: mapIcon(run, kind) };
+      const position = { layer: nextLayer, index };
+      const kind = nodeAt(run.map, position).kind;
+      return {
+        index,
+        letter: letterOf(index)!,
+        name: NODE_KIND_NAMES[kind],
+        icon: mapIcon(run, kind),
+        enemies: enemyHints(run, position, kind),
+      };
     }),
     team: teamViews(run.team),
     charms: charmNames(run),

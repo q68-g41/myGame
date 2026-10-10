@@ -17,6 +17,7 @@ import {
   createRunBattle,
   enterNode,
   finishBattle,
+  nodeEnemies,
   runChoices,
   startRun,
   swapTeamOrder,
@@ -26,6 +27,7 @@ import {
 } from '../../src/engine/run';
 import type { BattleState, FighterDef } from '../../src/engine/types';
 import { deepFreeze } from '../helpers/fixtures';
+import { withEnemies } from '../helpers/run';
 
 const CONTENT: RunContent = RUN_CONTENT;
 
@@ -52,7 +54,7 @@ const member = (fighter: FighterDef, hp = fighter.stats.hp): RunMember => ({ fig
 
 /** マップの段階のランを作る */
 function runAt(position: MapPosition | null, team: readonly RunMember[] = FIGHTERS.slice(0, 3).map((f) => member(f))): RunState {
-  return { area: 0, map: TEST_MAP, position, team, charms: [], irodorite: null, phase: { kind: 'map' }, rng: createRng(3) };
+  return withEnemies({ area: 0, map: TEST_MAP, position, team, charms: [], irodorite: null, phase: { kind: 'map' }, rng: createRng(3) });
 }
 
 /** プレイヤーの HP を決めて、決着したバトルを作る */
@@ -197,6 +199,40 @@ describe('マップを進む', () => {
   });
 });
 
+describe('マップの相手（4.3）', () => {
+  const run = startRun(CONTENT, 21);
+
+  it('ランを始めると、エリア1の戦闘・強敵のマスの相手がもう決まっている（休憩・スカウト・イベント・ボスは null）', () => {
+    expect(run.enemies.map((layer) => layer.length)).toEqual(run.map.layers.map((layer) => layer.length));
+    run.map.layers.forEach((layer, l) =>
+      layer.forEach((node, index) => {
+        const enemy = nodeEnemies(run, { layer: l, index });
+        if (node.kind === 'battle') {
+          expect(enemy).toHaveLength(BATTLE_ENEMY_COUNT[0]![l]!);
+        } else if (node.kind === 'elite') {
+          expect(enemy).toHaveLength(ELITE_ENEMY_COUNT[0]!);
+        } else {
+          expect(enemy, node.kind).toBeNull();
+        }
+      }),
+    );
+  });
+
+  it('マスに入ると、決めておいた相手と戦う（マップで見えていた相手と同じ）', () => {
+    const chosen = chooseTeam(run, [0, 1, 2]);
+    for (const index of runChoices(chosen)) {
+      const entered = enterNode(chosen, index, CONTENT);
+      expect(entered.phase.kind).toBe('battle');
+      expect(entered.phase.kind === 'battle' ? entered.phase.enemy : null).toEqual(nodeEnemies(chosen, { layer: 0, index }));
+    }
+  });
+
+  it('同じシードなら、同じ相手', () => {
+    expect(startRun(CONTENT, 21).enemies).toEqual(run.enemies);
+    expect(startRun(CONTENT, 22).enemies).not.toEqual(run.enemies);
+  });
+});
+
 describe('戦闘とHPの持ち越し', () => {
   const team = [member(FIGHTERS[0]!, 40), member(FIGHTERS[1]!), member(FIGHTERS[2]!, 7)];
   const inBattle = () => enterNode(runAt(null, team), 0, CONTENT);
@@ -261,8 +297,9 @@ describe('戦闘とHPの持ち越し', () => {
 
   it('エリアが進むほど相手が多く・強くなる（エリアの倍率と、強敵・ボスの倍率をかけ合わせる）', () => {
     for (const area of [0, 1, 2]) {
-      const battle = enterNode({ ...runAt(null), area }, 1, CONTENT);
-      const elite = enterNode({ ...runAt({ layer: 0, index: 0 }), area }, 0, CONTENT);
+      // エリアを変えたら、相手もそのエリアで決め直す（マップを作るときに決まるので）
+      const battle = enterNode(withEnemies({ ...runAt(null), area }), 1, CONTENT);
+      const elite = enterNode(withEnemies({ ...runAt({ layer: 0, index: 0 }), area }), 0, CONTENT);
       if (battle.phase.kind !== 'battle' || elite.phase.kind !== 'battle') {
         throw new Error('戦闘の段階のはず');
       }

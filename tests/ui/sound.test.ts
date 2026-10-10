@@ -15,6 +15,7 @@ import { SAVE_KEY, serializeGame, SETTINGS_KEY } from '../../src/ui/save';
 import { playMove } from '../../src/ui/session';
 import { createSoundPlayer, type SoundPlayer } from '../../src/ui/sound';
 import { firstBattleSession } from '../helpers/app';
+import { withEnemies } from '../helpers/run';
 
 describe('効果音のデータ（M7-2）', () => {
   it('どの場面にも音の粒があり、長さは正、大きさは 0〜1', () => {
@@ -342,7 +343,7 @@ describe('アプリの効果音', () => {
     // エリア2の休憩のあと（ライバルの手前）から続ける
     const run = chooseTeam(startRun(RUN_CONTENT, 5, IRODORITE[0]!), [0, 1]);
     const map = generateAreaMap(createRng(9), { rival: true }).value;
-    storage.data.set(SAVE_KEY, serializeGame({ ...run, area: RIVAL_AREA, map, position: { layer: 5, index: 0 } }, null));
+    storage.data.set(SAVE_KEY, serializeGame(withEnemies({ ...run, area: RIVAL_AREA, map, position: { layer: 5, index: 0 } }), null));
     open();
     root.querySelector<HTMLButtonElement>('.screen__controls .button--primary')!.click();
     expect(root.querySelector('.map-choice__name')?.textContent).toBe('ライバル');

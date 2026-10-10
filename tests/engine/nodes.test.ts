@@ -17,6 +17,7 @@ import {
 } from '../../src/engine/nodes';
 import { enterNode, type RunMember, type RunState } from '../../src/engine/run';
 import { deepFreeze } from '../helpers/fixtures';
+import { withEnemies } from '../helpers/run';
 
 /** 1層目：休憩・スカウト・イベント */
 const MAP: AreaMap = {
@@ -36,17 +37,18 @@ const team: readonly RunMember[] = [
   { fighter: yellow, hp: 1 },
 ];
 
-const baseRun = (overrides: Partial<RunState> = {}): RunState => ({
-  area: 0,
-  map: MAP,
-  position: null,
-  team,
-  charms: [],
-  irodorite: null,
-  phase: { kind: 'map' },
-  rng: 5,
-  ...overrides,
-});
+const baseRun = (overrides: Partial<RunState> = {}): RunState =>
+  withEnemies({
+    area: 0,
+    map: MAP,
+    position: null,
+    team,
+    charms: [],
+    irodorite: null,
+    phase: { kind: 'map' },
+    rng: 5,
+    ...overrides,
+  });
 
 const enter = (index: number, overrides: Partial<RunState> = {}) => enterNode(baseRun(overrides), index, RUN_CONTENT);
 

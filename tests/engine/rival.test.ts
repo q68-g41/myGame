@@ -12,8 +12,9 @@ import {
 } from '../../src/engine/constants';
 import { generateAreaMap, type AreaMap } from '../../src/engine/map';
 import { createRng } from '../../src/engine/rng';
-import { createRunBattle, enterNode, finishBattle, startRun, type RunContent, type RunState } from '../../src/engine/run';
+import { areaEnemies, createRunBattle, enterNode, finishBattle, startRun, type RunContent, type RunState } from '../../src/engine/run';
 import { deepFreeze } from '../helpers/fixtures';
+import { withEnemies } from '../helpers/run';
 
 describe('ライバルのマス（仕様書 4.6）', () => {
   it('ライバルと戦うエリアのマップは8層で、休憩とボスのあいだにライバルのマスが1つある', () => {
@@ -51,7 +52,7 @@ describe('ライバル・クロとの戦い（仕様書 4.6）', () => {
     const map: AreaMap = generateAreaMap(createRng(seed), { rival: true }).value;
     const base = startRun(RUN_CONTENT, seed, IRODORITE[0]!);
     const team = [IRODORITE[0]!.partner, FIGHTERS[0]!, FIGHTERS[1]!].map((fighter) => ({ fighter, hp: fighter.stats.hp }));
-    return { ...base, area: RIVAL_AREA, map, team, position: { layer: 5, index: 0 }, phase: { kind: 'map' } };
+    return withEnemies({ ...base, area: RIVAL_AREA, map, team, position: { layer: 5, index: 0 }, phase: { kind: 'map' } });
   };
 
   it('クロのデータ：相棒はカラスウサギ2体で、ふつうのキャラから1体足す。あだ名と口ぐせは仕様書の表のとおり', () => {
@@ -93,7 +94,8 @@ describe('ライバル・クロとの戦い（仕様書 4.6）', () => {
     expect(RIVAL_REWARD_PICKS).toBe(2);
   });
 
-  it('ライバルのデータがないのにライバルのマスに入るとエラー', () => {
-    expect(() => enterNode(beforeRival(), 0, { ...RUN_CONTENT, rival: null })).toThrow('ライバル');
+  it('ライバルのデータがないのに、ライバルのマスがあるマップの相手を決めるとエラー', () => {
+    const map = generateAreaMap(createRng(3), { rival: true }).value;
+    expect(() => areaEnemies(map, RIVAL_AREA, { ...RUN_CONTENT, rival: null }, createRng(1))).toThrow('ライバル');
   });
 });

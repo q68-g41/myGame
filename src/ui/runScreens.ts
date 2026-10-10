@@ -6,6 +6,7 @@ import { el } from './dom';
 import type {
   DraftView,
   FighterDetailView,
+  EnemyHintView,
   MapNodeView,
   MapView,
   RewardView,
@@ -252,11 +253,33 @@ function mapNode(doc: Document, view: MapView, node: MapNodeView): HTMLElement {
   element.dataset.index = String(node.index);
   element.setAttribute('role', 'img');
   const letter = node.letter === null ? '' : `${node.letter}・`;
-  element.setAttribute('aria-label', `${node.layer + 1}層目 ${node.name}（${letter}${NODE_STATE_LABELS[node.state]}）`);
+  const enemies = node.enemies.length === 0 ? '' : ` 相手：${node.enemies.map((enemy) => enemy.name).join('・')}`;
+  element.setAttribute('aria-label', `${node.layer + 1}層目 ${node.name}（${letter}${NODE_STATE_LABELS[node.state]}）${enemies}`);
   if (node.letter !== null) {
     element.append(el(doc, 'span', 'map-node__letter', node.letter));
   }
+  // 戦うマスには、相手の属性の色を小さな四角で、出る順に並べる（ヒント。4.3）
+  if (node.enemies.length > 0) {
+    const hint = el(doc, 'span', 'map-node__hint');
+    for (const enemy of node.enemies) {
+      const pip = el(doc, 'span', 'map-node__pip');
+      pip.style.background = enemy.color;
+      hint.append(pip);
+    }
+    element.append(hint);
+  }
   return element;
+}
+
+/** 選ぶボタンに出す、相手の属性（色と名前の札を、出る順に） */
+function enemyChips(doc: Document, enemies: readonly EnemyHintView[]): HTMLElement {
+  const chips = el(doc, 'span', 'map-choice__hint');
+  for (const enemy of enemies) {
+    const chip = el(doc, 'span', 'enemy-chip', enemy.name);
+    chip.style.setProperty('--chip-color', enemy.color);
+    chips.append(chip);
+  }
+  return chips;
 }
 
 export function renderMapScreen(root: HTMLElement, view: MapView, handlers: MapScreenHandlers): void {
@@ -286,6 +309,9 @@ export function renderMapScreen(root: HTMLElement, view: MapView, handlers: MapS
       choose.append(mapIconElement(doc, { url: choice.icon.url, size: choice.icon.size, className: 'map-choice__icon' }));
     }
     choose.append(el(doc, 'span', 'map-choice__name', choice.name));
+    if (choice.enemies.length > 0) {
+      choose.append(enemyChips(doc, choice.enemies));
+    }
     choices.append(choose);
   }
   const order = el(doc, 'p', 'team-order-hint', '出る順：2体をタップすると入れ替え');
