@@ -1,7 +1,7 @@
 // @vitest-environment happy-dom
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 import { RUN_CONTENT } from '../../src/data/content';
-import { getIrodorite } from '../../src/data/irodorite';
+import { getIrodorite, IRODORITE } from '../../src/data/irodorite';
 import { chooseTeam, startRun } from '../../src/engine/run';
 import { startApp } from '../../src/ui/app';
 import {
@@ -16,6 +16,7 @@ import {
   SETTINGS_KEY,
 } from '../../src/ui/save';
 import { playMove } from '../../src/ui/session';
+import { irodoriteUrl } from '../../src/ui/sprites';
 import { renderTopScreen } from '../../src/ui/top';
 import { firstBattleSession } from '../helpers/app';
 
@@ -97,6 +98,23 @@ describe('保存の形', () => {
     expect(() => store.save(run, null)).not.toThrow();
     expect(() => store.clear()).not.toThrow();
     expect(createSaveStore(null).load()).toBeNull();
+  });
+});
+
+describe('トップ画面の絵（彩り手と相棒）', () => {
+  const featuredSrc = (root: HTMLElement) => root.querySelector('img.top__irodorite')?.getAttribute('src');
+
+  it('保存したランがあれば、そのランの彩り手を出す。なければ、新しいシードで選んだ彩り手を出す', () => {
+    document.body.innerHTML = '<div id="app"></div>';
+    const root = document.querySelector<HTMLElement>('#app')!;
+    const run = chooseTeam(startRun(RUN_CONTENT, 3, getIrodorite('taka')), [0, 1]);
+    startApp(root, { buildId: 'test', newSeed: () => 4, storage: memoryStorage({ [SAVE_KEY]: serializeGame(run, null) }) });
+    expect(featuredSrc(root)).toBe(irodoriteUrl('taka'));
+
+    document.body.innerHTML = '<div id="app"></div>';
+    const fresh = document.querySelector<HTMLElement>('#app')!;
+    startApp(fresh, { buildId: 'test', newSeed: () => 4, storage: memoryStorage() });
+    expect(featuredSrc(fresh)).toBe(irodoriteUrl(IRODORITE[4 % IRODORITE.length]!.id));
   });
 });
 

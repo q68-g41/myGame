@@ -193,21 +193,17 @@ body {
   color: var(--color-accent-text);
 }
 
-.top__subtitle {
-  margin: 0;
-  font-size: 14px;
-  color: var(--color-muted);
-}
-
 .top__title {
   margin: 0;
   font-size: 24px;
   line-height: 1.3;
 }
 
-.top__team {
+/* 彩り手（64×64 を2倍）と相棒（48×48 を2倍）を、足もとをそろえて並べる */
+.top__scene {
   display: flex;
-  gap: 16px;
+  align-items: flex-end;
+  gap: 4px;
 }
 
 .top__message {
@@ -1705,7 +1701,6 @@ h2,
 .button,
 .menu__button,
 .top__title,
-.top__subtitle,
 .battle__caption,
 .order-preview,
 .fighter__name,

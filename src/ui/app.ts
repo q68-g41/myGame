@@ -326,7 +326,10 @@ export function startApp(root: HTMLElement, options: AppOptions): void {
     session = null;
     const saved = store.load();
     root.dataset.sky = skyOf(null);
+    // トップの絵：続きのランがあればその彩り手、なければ毎回ちがう彩り手と相棒
+    const featured = saved?.run.irodorite?.id ?? IRODORITE[Math.abs(options.newSeed()) % IRODORITE.length]!.id;
     renderTopScreen(root, {
+      featured,
       buildId: options.buildId,
       sound: ui.sound,
       onToggleSound: toggleSound,
