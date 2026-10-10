@@ -14,11 +14,13 @@
     "build": "tsc -b && vite build",
     "zip:itch": "cd dist && rm -f sairei-itch.zip ../sairei-itch.zip && zip -qr ../sairei-itch.zip . && mv ../sairei-itch.zip .",
     "preview": "vite preview --host",
-    "sim": "tsx scripts/simulate.ts"
+    "sim": "tsx scripts/simulate.ts",
+    "fonts": "tsx scripts/subset-fonts.ts"
   },
   "devDependencies": {
     "@types/node": "^24.19.1",
     "happy-dom": "^20.14.5",
+    "subset-font": "^2.9.0",
     "tsx": "^4.23.15",
     "typescript": "^7.0.2",
     "vite": "^8.3.3",

@@ -1,3 +1,28 @@
+/*
+ * フォント（仕様書 5・B案）。見出し・名前・数字・ボタンはドット風の DotGothic16、文章は Zen Kaku Gothic New。
+ * どちらも SIL Open Font License で、ゲームで使う文字だけに絞って同梱している（npm run fonts で作り直す。ライセンスは public/licenses）
+ */
+@font-face {
+  font-family: 'DotGothic16';
+  src: url('../assets/fonts/dotgothic16-400.woff2') format('woff2');
+  font-weight: 400;
+  font-display: swap;
+}
+
+@font-face {
+  font-family: 'Zen Kaku Gothic New';
+  src: url('../assets/fonts/zen-kaku-gothic-new-400.woff2') format('woff2');
+  font-weight: 400;
+  font-display: swap;
+}
+
+@font-face {
+  font-family: 'Zen Kaku Gothic New';
+  src: url('../assets/fonts/zen-kaku-gothic-new-700.woff2') format('woff2');
+  font-weight: 700;
+  font-display: swap;
+}
+
 :root {
   color-scheme: dark;
   --color-bg: #14141f;
@@ -8,9 +33,12 @@
   --color-accent: #f0b445;
   --color-accent-text: #1a1408;
 
-  font-family:
-    system-ui, -apple-system, 'Hiragino Sans', 'Hiragino Kaku Gothic ProN', 'Noto Sans JP',
+  --font-text:
+    'Zen Kaku Gothic New', system-ui, -apple-system, 'Hiragino Sans', 'Hiragino Kaku Gothic ProN', 'Noto Sans JP',
     sans-serif;
+  --font-dot: 'DotGothic16', var(--font-text);
+
+  font-family: var(--font-text);
   font-size: 16px;
   line-height: 1.5;
   -webkit-text-size-adjust: 100%;
@@ -1373,4 +1401,74 @@ body {
 .reward-members .reward-option__name,
 .node-members .node-pick__name {
   font-size: 14px;
+}
+
+/*
+ * 見出し・名前・数字・ボタンはドット風（B案）。ドット風のフォントには太字がないので、太さは標準にする。
+ * ほかのクラスの指定より後に書いて、こちらを効かせる
+ */
+h1,
+h2,
+.button,
+.menu__button,
+.top__title,
+.top__subtitle,
+.battle__caption,
+.order-preview,
+.fighter__name,
+.fighter__hp,
+.fighter-detail__title,
+.fighter-detail__name,
+.fighter-detail__attribute,
+.fighter-detail__stats,
+.move-button__name,
+.move-button__power,
+.move-button__kind,
+.move-detail__name,
+.bench-button__name,
+.bench-button__hp,
+.candidate__name,
+.candidate__order,
+.draft-slot__name,
+.draft-slot__order,
+.member__name,
+.member__hp,
+.charm-line__name,
+.reward-offer__title,
+.reward-offer__kind,
+.reward-detail__title,
+.reward-option__name,
+.map__progress,
+.map-choice__letter,
+.map-choice__name,
+.node__title,
+.node-option__title,
+.node-pick__name,
+.result__text {
+  font-family: var(--font-dot);
+  font-weight: 400;
+}
+
+/*
+ * 幅の狭い画面（390px より狭い）では、3列のキャラ選びのボタンが狭くなり、6文字の名前（イナホイタチなど）が折り返してしまう。
+ * 左右の余白と字の間を少し詰めて、1行に収める
+ */
+@media (max-width: 389px) {
+  .reward-members .reward-option,
+  .node-members .node-pick,
+  .node-moves .node-pick {
+    padding-inline: 6px;
+  }
+
+  .reward-members .reward-option__name,
+  .node-members .node-pick__name {
+    letter-spacing: -0.06em;
+  }
+}
+
+@media (max-width: 374px) {
+  /* チーム選択の候補：名前を少し小さくする */
+  .candidate__name {
+    font-size: 14px;
+  }
 }
