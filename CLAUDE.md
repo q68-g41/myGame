@@ -67,3 +67,4 @@ docs/
 - `npm test`：テスト
 - `npm run build`：ビルド
 - `npm run sim`：CPU同士の自動対戦（M2以降）
+- `npm run fonts`：同梱するフォントを作り直す（文言に新しい文字を足したとき）

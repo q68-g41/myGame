@@ -102,12 +102,13 @@ itch.io の画面の項目名は、2026年10月時点の理解で書いていま
 
 ■ 制作について
 Claude Code（AI）と一緒に作っています。キャラとマップのアイコンの絵は、画像生成AI（GPT Image 2.5）で描いたものを、ドット絵に整えて使っています。効果音と BGM は、プログラムでその場で作っています。
+フォント：DotGothic16、Zen Kaku Gothic New（SIL Open Font License）
 ```
 
 説明文の最後に、日本語が読めない人向けの一文を足す。
 
 ```
-Japanese only. A portrait, one-handed roguelite command battle game: read your opponent's next move and win with type matchups and switching. Made with Claude Code; the character and icon art was generated with an AI image model (GPT Image 2.5) and converted to pixel art.
+Japanese only. A portrait, one-handed roguelite command battle game: read your opponent's next move and win with type matchups and switching. Made with Claude Code; the character and icon art was generated with an AI image model (GPT Image 2.5) and converted to pixel art. Fonts: DotGothic16 and Zen Kaku Gothic New (SIL Open Font License).
 ```
 
 ## アップデートのしかた
