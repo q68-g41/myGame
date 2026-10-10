@@ -995,6 +995,134 @@ button.member {
   text-align: center;
 }
 
+/* 彩り手を選ぶ画面（M8） */
+.irodorite__view {
+  justify-content: flex-start;
+  align-items: stretch;
+  gap: 8px;
+  text-align: left;
+}
+
+.irodorite__title {
+  margin: 0;
+  font-size: 20px;
+}
+
+/* 彩り手の絵（64×64 を2倍）の横に、あだ名・口ぐせ・特性 */
+.irodorite-detail {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 8px 12px;
+  border-left: 6px solid var(--color-border);
+  border-radius: 8px;
+  background: var(--color-panel);
+}
+
+.irodorite-detail__portrait {
+  flex: none;
+}
+
+.irodorite-detail__text {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  min-width: 0;
+}
+
+.irodorite-detail__name {
+  font-family: var(--font-dot);
+  font-size: 20px;
+}
+
+.irodorite-detail__catchphrase {
+  font-size: 14px;
+  line-height: 1.4;
+}
+
+.irodorite-detail__trait,
+.irodorite-detail__partner {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0 6px;
+  margin: 0;
+  font-size: 14px;
+  line-height: 1.4;
+}
+
+.irodorite-detail__label {
+  color: var(--color-muted);
+}
+
+.irodorite-detail__trait-name {
+  font-weight: bold;
+  color: var(--color-accent);
+}
+
+.irodorite-detail__trait-effect {
+  flex-basis: 100%;
+}
+
+.irodorite__hint {
+  margin: 0;
+  font-size: 14px;
+  color: var(--color-muted);
+}
+
+.irodorite__controls {
+  gap: 12px;
+}
+
+/* 一覧：絵（64×64 を等倍）の下にあだ名。人数が増えたら、この中だけ縦にスクロールする */
+.irodorite-choices {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 8px;
+  max-height: 240px;
+  overflow-y: auto;
+}
+
+.irodorite-choice {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 2px;
+  min-height: 44px;
+  padding: 6px 4px;
+  border: 2px solid var(--color-border);
+  border-bottom-width: 4px;
+  border-radius: 8px;
+  background: var(--color-bg);
+  color: var(--color-text);
+  font: inherit;
+  touch-action: manipulation;
+  -webkit-tap-highlight-color: transparent;
+  user-select: none;
+  cursor: pointer;
+}
+
+.irodorite-choice--selected {
+  border-top-color: var(--color-accent);
+  border-left-color: var(--color-accent);
+  border-right-color: var(--color-accent);
+  background: rgba(240, 180, 69, 0.15);
+}
+
+.irodorite-choice__portrait {
+  flex: none;
+}
+
+.irodorite-choice__name {
+  font-family: var(--font-dot);
+  font-size: 14px;
+}
+
+/* チーム選択の相棒の枠（はじめから入っていて、外せない） */
+.draft-slot--partner {
+  border-style: double;
+  border-width: 3px;
+}
+
 /* マップ：下から上へ進む */
 .map__view {
   justify-content: flex-start;

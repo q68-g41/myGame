@@ -112,7 +112,8 @@ describe('報酬の画面', () => {
       root = document.querySelector<HTMLElement>('#app')!;
       startApp(root, { buildId: 'test', newSeed: () => seed });
       root.querySelector<HTMLButtonElement>('.screen__controls button')!.click();
-      for (const index of [0, 1, 2]) {
+      root.querySelector<HTMLButtonElement>('.irodorite__controls .button--primary')!.click();
+      for (const index of [0, 1]) {
         root.querySelectorAll<HTMLButtonElement>('.candidate')[index]!.click();
       }
       root.querySelector<HTMLButtonElement>('.draft__controls .button--primary')!.click();
@@ -157,12 +158,12 @@ describe('報酬の画面', () => {
     expect(root.querySelector('.map__message')?.textContent).toMatch(/が \d+ 上がった$/);
   });
 
-  it('お守りを受け取ると、マップに出る', () => {
+  it('お守りを受け取ると、マップに出る（彩り手の特性のあと）', () => {
     reachReward();
     const name = offer('お守り').querySelector('.reward-offer__title')?.textContent;
     offer('お守り').click();
     confirm().click();
-    expect(root.querySelector('.charm-line')?.textContent).toBe(`お守り：${name}`);
+    expect(root.querySelector('.charm-line')?.textContent).toBe(`お守り：宣伝の旗（特性）・${name}`);
   });
 
   it('技は、覚えさせるキャラ → 忘れる技 の順に選ぶ。「戻る」で1つ前に戻れる', () => {

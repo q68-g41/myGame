@@ -2,6 +2,7 @@ import { describe, expect, it } from 'vitest';
 import { BOSSES } from '../../src/data/bosses';
 import { RUN_CONTENT } from '../../src/data/content';
 import { FIGHTERS } from '../../src/data/fighters';
+import { getIrodorite } from '../../src/data/irodorite';
 import type { AreaMap } from '../../src/engine/map';
 import { chooseTeam, enterNode, startRun, type RunState } from '../../src/engine/run';
 import {
@@ -72,6 +73,25 @@ describe('チーム選択', () => {
     expect(view.detail?.name).toBe(view.candidates[0]!.name);
     expect(view.canConfirm).toBe(false);
     expect(buildDraftView(run, { picks: [2, 0, 1], focused: 1 }).canConfirm).toBe(true);
+  });
+
+  it('彩り手がいれば、1番目の枠は相棒で、候補からは2体。候補の数字は相棒のあとの出る順', () => {
+    const run = startRun(RUN_CONTENT, 1, getIrodorite('wata'));
+    const empty = buildDraftView(run);
+    expect(empty.pickCount).toBe(2);
+    expect(empty.slots.map((slot) => [slot.partner, slot.name])).toEqual([
+      [true, 'キビタキ'],
+      [false, null],
+      [false, null],
+    ]);
+
+    const view = buildDraftView(run, { picks: [2, 0], focused: 0 });
+    expect(view.candidates.map((c) => c.order)).toEqual([3, null, 2, null, null]);
+    expect(view.slots.map((slot) => slot.name)).toEqual(['キビタキ', view.candidates[2]!.name, view.candidates[0]!.name]);
+    expect(view.canConfirm).toBe(true);
+    expect(buildDraftView(run, { picks: [2], focused: 2 }).canConfirm).toBe(false);
+    // 選べるのは2体まで
+    expect(toggleDraftPick({ picks: [2, 0], focused: 0 }, 4, 2)).toEqual({ picks: [2, 0], focused: 4 });
   });
 
   it('長押しでは、選んだかどうかを変えずに、詳細だけそのキャラにする', () => {

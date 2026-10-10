@@ -1,13 +1,15 @@
 /**
- * 画面の切り替え（トップ → チーム選択 → マップ ⇔ 各マス（バトル・報酬・休憩・スカウト・イベント）→ ランの結果）と、
+ * 画面の切り替え（トップ → 彩り手を選ぶ → チーム選択 → マップ ⇔ 各マス（バトル・報酬・休憩・スカウト・イベント）→ ランの結果）と、
  * ターンの演出の再生。
  */
 import { RUN_CONTENT } from '../data/content';
+import { IRODORITE } from '../data/irodorite';
 import { MAX_MOVES } from '../engine/constants';
 import { chooseEventOption, leaveEvent, restHeal, restPowerUp, scoutRecruit, scoutSkip } from '../engine/nodes';
 import {
   chooseTeam,
   createRunBattle,
+  draftPickCount,
   enterNode,
   finishBattle,
   startRun,
@@ -32,6 +34,13 @@ import {
   type RestUiState,
   type ScoutUiState,
 } from './nodeView';
+import { renderIrodoriteScreen } from './irodoriteScreen';
+import {
+  buildIrodoriteSelectView,
+  INITIAL_IRODORITE_UI,
+  selectIrodorite,
+  type IrodoriteUiState,
+} from './irodoriteView';
 import { buildFrames, stepDuration, type PlaybackFrame } from './playback';
 import { renderDraftScreen, renderMapScreen, renderRewardScreen, renderRunEndScreen } from './runScreens';
 import {
@@ -91,6 +100,8 @@ export function startApp(root: HTMLElement, options: AppOptions): void {
   const store = createSaveStore(options.storage ?? null);
   const settings = createSettingsStore(options.storage ?? null);
   let run: RunState | null = null;
+  /** 彩り手を選んでいるあいだだけ持つ（ランはまだ始まっていない） */
+  let choosing: IrodoriteUiState | null = null;
   let draft: DraftUiState = INITIAL_DRAFT_UI;
   let mapUi: MapUiState = INITIAL_MAP_UI;
   let reward: RewardUiState = INITIAL_REWARD_UI;
@@ -165,6 +176,9 @@ export function startApp(root: HTMLElement, options: AppOptions): void {
 
   const draw = () => {
     if (run === null) {
+      if (choosing !== null) {
+        renderIrodoriteScreen(root, buildIrodoriteSelectView(IRODORITE, choosing), irodoriteHandlers);
+      }
       return;
     }
     persist();
@@ -243,6 +257,7 @@ export function startApp(root: HTMLElement, options: AppOptions): void {
 
   /** 画面だけが持つ状態を、最初に戻す（演出の速さは残す） */
   const resetScreens = () => {
+    choosing = null;
     draft = INITIAL_DRAFT_UI;
     reward = INITIAL_REWARD_UI;
     rest = INITIAL_REST_UI;
@@ -252,12 +267,33 @@ export function startApp(root: HTMLElement, options: AppOptions): void {
     notice = null;
   };
 
+  /** 「はじめから」：まず彩り手を選ぶ（4.6）。ランは「この彩り手で進む」で始める */
   const startNewRun = () => {
     stopPlayback();
-    run = startRun(RUN_CONTENT, options.newSeed());
+    run = null;
     session = null;
     resetScreens();
+    choosing = INITIAL_IRODORITE_UI;
     render();
+  };
+
+  const irodoriteHandlers = {
+    onSelect: (index: number) => {
+      if (choosing === null) {
+        return;
+      }
+      choosing = selectIrodorite(choosing, index);
+      render();
+    },
+    onConfirm: () => {
+      const chosen = choosing === null ? undefined : IRODORITE[choosing.selected];
+      if (chosen === undefined) {
+        return;
+      }
+      run = startRun(RUN_CONTENT, options.newSeed(), chosen);
+      choosing = null;
+      render();
+    },
   };
 
   /** 保存したランの続きから遊ぶ。読めないセーブだったら捨てて、トップに戻る */
@@ -279,6 +315,7 @@ export function startApp(root: HTMLElement, options: AppOptions): void {
   const showTop = () => {
     stopPlayback();
     run = null;
+    choosing = null;
     session = null;
     const saved = store.load();
     renderTopScreen(root, {
@@ -297,7 +334,7 @@ export function startApp(root: HTMLElement, options: AppOptions): void {
         suppressNextPick = false;
         return;
       }
-      draft = toggleDraftPick(draft, index);
+      draft = toggleDraftPick(draft, index, run === null ? undefined : draftPickCount(run));
       render();
     },
     onConfirm: () => {

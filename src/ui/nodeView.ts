@@ -8,7 +8,7 @@ import { getMove } from '../data/moves';
 import { REST_POWER_UP } from '../engine/constants';
 import { isAttackMove } from '../engine/moves';
 import { restHealPercent, type EventOutcome } from '../engine/nodes';
-import type { RunState } from '../engine/run';
+import { partnerIndex, type RunState } from '../engine/run';
 import {
   BOOST_STAT_NAMES,
   charmNames,
@@ -27,6 +27,8 @@ export interface NodeMemberView {
   /** 小さい絵の URL。絵がなければ null */
   readonly icon: string | null;
   readonly note: string;
+  /** 選べない（スカウトで、彩り手の相棒は入れ替えられない） */
+  readonly disabled?: boolean;
 }
 
 const nameOf = (run: RunState, member: number) => getFighter(run.team[member]!.fighter.id).name;
@@ -183,13 +185,18 @@ export function buildScoutView(run: RunState, ui: ScoutUiState = INITIAL_SCOUT_U
     detail: selected ? fighterDetail(selected) : null,
     members:
       ui.step === 'member'
-        ? run.team.map((m, index) => ({
-            index,
-            name: getFighter(m.fighter.id).name,
-            color: ATTRIBUTE_COLORS[m.fighter.attribute],
-            icon: iconUrl(m.fighter.id),
-            note: `HP ${m.hp} / ${m.fighter.stats.hp}`,
-          }))
+        ? run.team.map((m, index) => {
+            // 彩り手の相棒は入れ替えられない（4.6）
+            const partner = index === partnerIndex(run);
+            return {
+              index,
+              name: getFighter(m.fighter.id).name,
+              color: ATTRIBUTE_COLORS[m.fighter.attribute],
+              icon: iconUrl(m.fighter.id),
+              note: partner ? '相棒（入れ替えられない）' : `HP ${m.hp} / ${m.fighter.stats.hp}`,
+              disabled: partner,
+            };
+          })
         : [],
     team: teamViews(run.team),
     charms: charmNames(run),
