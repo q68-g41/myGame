@@ -147,7 +147,7 @@ export const PARTNER_FIGHTERS: readonly FighterData[] = [
     'orange-burst',
     'orange-quick',
     'dazzle',
-  ], '小麦色の猫。すばしこく、相手をまどわす'),
+  ], '焼きたての食パンのように丸い猫。相手をまどわす'),
   // ユヒの相棒。闘志で力をためて押し切る
   fighter('yuhi-partner', 'green', 'カラクサジシ', { hp: 110, attack: 65, defense: 55, speed: 45 }, [
     'green-strike',
