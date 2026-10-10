@@ -96,6 +96,19 @@ export const FIGHTERS: readonly FighterData[] = [
     'corrode',
     'haze',
   ]),
+  // M8：主人公の相棒、白と黒のカラスウサギ。白は守りと回復、黒は速攻
+  fighter('white-twin', 'white', 'シラハウサギ', { hp: 105, attack: 55, defense: 60, speed: 45 }, [
+    'white-strike',
+    'white-burst',
+    'mend',
+    'brace',
+  ]),
+  fighter('black-twin', 'black', 'クロハウサギ', { hp: 90, attack: 60, defense: 45, speed: 60 }, [
+    'black-strike',
+    'black-burst',
+    'violet-quick',
+    'hinder',
+  ]),
 ];
 
 /**
