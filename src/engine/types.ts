@@ -6,7 +6,7 @@
 
 /**
  * 属性の ID。表示名（紅・橙・黄・翠・蒼・紫・白・黒）はデータ側で差し替える。
- * white・black は相性のない属性（3.3）
+ * white・black は6色の円に入らない属性。6色とは等倍で、白と黒はお互いに有利（3.3）
  */
 export type AttributeId = 'crimson' | 'orange' | 'yellow' | 'green' | 'blue' | 'violet' | 'white' | 'black';
 

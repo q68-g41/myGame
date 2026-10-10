@@ -1,4 +1,4 @@
-import { AFFINITY_MULTIPLIER, ATTRIBUTE_ORDER, NEUTRAL_ATTRIBUTES, RESONANCE_MULTIPLIER } from './constants';
+import { AFFINITY_MULTIPLIER, ATTRIBUTE_ORDER, MONOCHROME_ATTRIBUTES, RESONANCE_MULTIPLIER } from './constants';
 import type { AttributeId, Effectiveness } from './types';
 
 function attributeIndex(attribute: AttributeId): number {
@@ -12,11 +12,13 @@ function attributeIndex(attribute: AttributeId): number {
 /**
  * 技の属性と受ける側の属性から相性を決める（3.3）。
  * d = (守る側 − 攻める側 + 6) % 6 が 1・2 なら有利、4・5 なら不利、0・3 なら等倍。
- * どちらかが相性のない属性（白・黒）なら等倍。
+ * 白・黒は円に入らない。白と黒のあいだはお互いに有利で、どちらかだけが白・黒（6色が相手）なら等倍。
  */
 export function getEffectiveness(moveAttribute: AttributeId, defenderAttribute: AttributeId): Effectiveness {
-  if (NEUTRAL_ATTRIBUTES.includes(moveAttribute) || NEUTRAL_ATTRIBUTES.includes(defenderAttribute)) {
-    return 'neutral';
+  const moveIsMonochrome = MONOCHROME_ATTRIBUTES.includes(moveAttribute);
+  const defenderIsMonochrome = MONOCHROME_ATTRIBUTES.includes(defenderAttribute);
+  if (moveIsMonochrome || defenderIsMonochrome) {
+    return moveIsMonochrome && defenderIsMonochrome && moveAttribute !== defenderAttribute ? 'advantage' : 'neutral';
   }
   const count = ATTRIBUTE_ORDER.length;
   const d = (attributeIndex(defenderAttribute) - attributeIndex(moveAttribute) + count) % count;
