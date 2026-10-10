@@ -75,6 +75,7 @@ import {
 import type { SoundId } from '../data/sounds';
 import { chooseMusic, type MusicScene } from './music';
 import { SILENT_PLAYER, type SoundPlayer } from './sound';
+import { skyOf } from './sky';
 import { renderTopScreen } from './top';
 
 export interface AppOptions {
@@ -179,6 +180,8 @@ export function startApp(root: HTMLElement, options: AppOptions): void {
   };
 
   const draw = () => {
+    // 上半分の背景（空と山並み）は、エリアごとに色を変える
+    root.dataset.sky = skyOf(run);
     if (run === null) {
       if (choosing !== null) {
         renderIrodoriteScreen(root, buildIrodoriteSelectView(IRODORITE, choosing), irodoriteHandlers);
@@ -322,6 +325,7 @@ export function startApp(root: HTMLElement, options: AppOptions): void {
     choosing = null;
     session = null;
     const saved = store.load();
+    root.dataset.sky = skyOf(null);
     renderTopScreen(root, {
       buildId: options.buildId,
       sound: ui.sound,

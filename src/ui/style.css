@@ -76,6 +76,9 @@ body {
 }
 
 .screen__view {
+  /* 背景の空と山並み（下の [data-sky]）を、中身の後ろに重ねる */
+  position: relative;
+  isolation: isolate;
   display: flex;
   flex-direction: column;
   align-items: center;
@@ -83,6 +86,75 @@ body {
   gap: 16px;
   padding: calc(16px + env(safe-area-inset-top)) 16px 16px;
   text-align: center;
+  background:
+    radial-gradient(70% 38% at 74% 14%, var(--sky-glow), transparent 70%),
+    linear-gradient(180deg, var(--sky-top) 0%, var(--sky-mid) 55%, var(--sky-bottom) 100%);
+}
+
+/* 上半分の下のほうに、ドット絵の山並みを2重に置く（遠い山・近い山）。形は SVG、色は空ごとに変える */
+.screen__view::before,
+.screen__view::after {
+  content: '';
+  position: absolute;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  height: 120px;
+  z-index: -1;
+  pointer-events: none;
+  -webkit-mask: var(--mountain-shape) repeat-x left bottom / 480px 120px;
+  mask: var(--mountain-shape) repeat-x left bottom / 480px 120px;
+}
+
+.screen__view::before {
+  --mountain-shape: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='240' height='60' viewBox='0 0 240 60' shape-rendering='crispEdges'%3E%3Cpath d='M0 60V22H4V20H8V20H12V20H16V22H20V24H24V24H28V24H32V22H36V18H40V16H44V14H48V14H52V18H56V22H60V30H64V36H68V42H72V46H76V48H80V48H84V44H88V42H92V38H96V36H100V36H104V36H108V38H112V40H116V40H120V38H124V34H128V30H132V22H136V16H140V12H144V10H148V10H152V12H156V18H160V22H164V28H168V30H172V32H176V32H180V30H184V30H188V30H192V32H196V34H200V40H204V44H208V48H212V52H216V52H220V48H224V44H228V38H232V32H236V22H240V60Z'/%3E%3C/svg%3E");
+  background: var(--mountain-far);
+}
+
+.screen__view::after {
+  --mountain-shape: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='240' height='60' viewBox='0 0 240 60' shape-rendering='crispEdges'%3E%3Cpath d='M0 60V38H4V38H8V40H12V46H16V52H20V54H24V54H28V52H32V50H36V50H40V52H44V54H48V52H52V48H56V42H60V38H64V38H68V40H72V42H76V44H80V44H84V42H88V42H92V46H96V50H100V56H104V58H108V56H112V52H116V48H120V48H124V48H128V50H132V48H136V44H140V38H144V36H148V36H152V40H156V46H160V48H164V48H168V46H172V46H176V50H180V54H184V56H188V56H192V54H196V48H200V44H204V44H208V44H212V46H216V44H220V42H224V38H228V36H232V38H236V38H240V60Z'/%3E%3C/svg%3E");
+  background: var(--mountain-near);
+}
+
+/*
+ * 空の色（src/data/sky.ts）。ランの外は藍色の夜。エリアが進むと、紅の夕暮れ → 深い藍の夜 → くすんだ紫 になる。
+ * どの空も暗めにして、白い文字が読めるようにする
+ */
+:root,
+[data-sky='night'] {
+  --sky-top: #262a5a;
+  --sky-mid: #1c1e3f;
+  --sky-bottom: #15162c;
+  --sky-glow: rgba(240, 180, 69, 0.1);
+  --mountain-far: #24264a;
+  --mountain-near: #1a1b36;
+}
+
+[data-sky='dusk'] {
+  --sky-top: #4a2340;
+  --sky-mid: #2c1b35;
+  --sky-bottom: #181524;
+  --sky-glow: rgba(255, 140, 90, 0.18);
+  --mountain-far: #3a1d36;
+  --mountain-near: #251629;
+}
+
+[data-sky='deep'] {
+  --sky-top: #183358;
+  --sky-mid: #142540;
+  --sky-bottom: #111a2c;
+  --sky-glow: rgba(160, 210, 255, 0.12);
+  --mountain-far: #1a2c4a;
+  --mountain-near: #122037;
+}
+
+[data-sky='kusumi'] {
+  --sky-top: #3a2a52;
+  --sky-mid: #241c36;
+  --sky-bottom: #171320;
+  --sky-glow: rgba(190, 160, 230, 0.1);
+  --mountain-far: #2c2341;
+  --mountain-near: #1e182d;
 }
 
 .screen__controls {
@@ -91,7 +163,8 @@ body {
   justify-content: center;
   gap: 16px;
   padding: 16px 16px calc(16px + env(safe-area-inset-bottom));
-  background: var(--color-panel);
+  /* 上半分の空の色を、ほんの少しだけ引きつぐ */
+  background: linear-gradient(180deg, color-mix(in srgb, var(--sky-bottom) 45%, var(--color-panel)), var(--color-panel) 40%);
   border-top: 2px solid var(--color-border);
 }
 
