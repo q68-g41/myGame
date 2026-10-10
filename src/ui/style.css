@@ -436,23 +436,29 @@ body {
 
 /* ===== キャラの動き（M7-1）。左右反転（transform）とぶつからないように、translate で動かす ===== */
 
-/* 待機中：ゆっくり上下する。相手と自分で半周ずらす。--idle-delay は描き直しても途切れないための開始位置 */
-.fighter__sprite .sprite {
-  animation: idle-bob 2.4s ease-in-out infinite;
-  animation-delay: var(--idle-delay, 0ms);
+/*
+ * 待機中：コマ送りアニメ（M7-3）。4コマを横に並べた絵を、1コマぶんの窓の中で左へずらしていく。
+ * 相手と自分で半周ずらす。--anim-delay は描き直しても最初のコマに戻らないための開始位置
+ */
+.sprite--anim {
+  overflow: hidden;
 }
 
-.fighter--enemy .fighter__sprite .sprite {
-  animation-delay: calc(var(--idle-delay, 0ms) - 1200ms);
+.sprite__frames {
+  display: block;
+  max-width: none;
+  image-rendering: pixelated;
+  animation: idle-frames 0.8s steps(4) infinite;
+  animation-delay: var(--anim-delay, 0ms);
 }
 
-@keyframes idle-bob {
-  0%,
-  100% {
-    translate: 0 0;
-  }
-  50% {
-    translate: 0 -4px;
+.fighter--enemy .sprite__frames {
+  animation-delay: calc(var(--anim-delay, 0ms) - 400ms);
+}
+
+@keyframes idle-frames {
+  to {
+    transform: translateX(-100%);
   }
 }
 
@@ -505,8 +511,9 @@ body {
   animation: faint 0.45s ease-in forwards;
 }
 
-.fighter--faint .fighter__sprite .sprite,
-.fighter--fainted .fighter__sprite .sprite {
+/* 倒れたら、コマ送りも止める（1コマ目のまま） */
+.fighter--faint .sprite__frames,
+.fighter--fainted .sprite__frames {
   animation: none;
 }
 
@@ -544,7 +551,7 @@ body {
 /* 端末の「動きを減らす」設定がオンなら動かさない（倒れたあとの薄い表示は残す） */
 @media (prefers-reduced-motion: reduce) {
   .fighter__sprite,
-  .fighter__sprite .sprite {
+  .sprite__frames {
     animation: none !important;
   }
 }

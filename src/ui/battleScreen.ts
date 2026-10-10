@@ -13,10 +13,7 @@ import type {
 } from './battleView';
 import { el } from './dom';
 import type { MotionKind } from './playback';
-import { iconElement, spriteElement } from './sprites';
-
-/** 待機中の上下の動きの1周の長さ（style.css の idle-bob と同じ） */
-const IDLE_CYCLE_MS = 2400;
+import { ANIM_CYCLE_MS, animatedSpriteElement, iconElement } from './sprites';
 
 export interface BattleScreenHandlers {
   onMove(moveId: string): void;
@@ -66,11 +63,13 @@ function fighterPanel(
   panel.dataset.side = side;
   panel.dataset.fighter = view.id;
 
-  // ドット絵を2倍で出す。後ろに属性の色をうすく敷いて、暗い色の絵（ボス）も背景に埋もれないようにする。相手は左右反転
+  // ドット絵（待機中はコマ送り）を2倍で出す。後ろに属性の色をうすく敷いて、暗い色の絵（ボス）も背景に埋もれないようにする。相手は左右反転
   const sprite = el(doc, 'div', 'fighter__sprite');
   sprite.style.setProperty('--sprite-glow', `${view.color}66`);
   sprite.setAttribute('aria-hidden', 'true');
-  sprite.append(spriteElement(doc, { url: view.sprite, color: view.color, scale: 2, flipped: side === 'enemy' }));
+  sprite.append(
+    animatedSpriteElement(doc, { anim: view.anim, url: view.sprite, color: view.color, scale: 2, flipped: side === 'enemy' }),
+  );
 
   const info = el(doc, 'div', 'fighter__info');
   const header = el(doc, 'div', 'fighter__header');
@@ -320,8 +319,8 @@ export function renderBattleScreen(root: HTMLElement, view: BattleView, handlers
   controls.append(bench, menu(doc, view, handlers));
 
   const screen = el(doc, 'div', `screen battle battle--${view.phase}${view.speed === 2 ? ' battle--fast' : ''}`);
-  // 待機中の上下の動きは、描き直しても途切れないように、いまの時刻から続きの位置で始める
-  screen.style.setProperty('--idle-delay', `-${Math.round(performance.now() % IDLE_CYCLE_MS)}ms`);
+  // 待機中のコマ送りは、描き直しても最初のコマに戻らないように、いまの時刻から続きのコマで始める
+  screen.style.setProperty('--anim-delay', `-${Math.round(performance.now() % ANIM_CYCLE_MS)}ms`);
   screen.append(display, controls);
   if (view.phase === 'playing') {
     // 演出中は画面全体を覆い、どこをタップしても早送りする（速さの切り替えだけはこの上に出す）

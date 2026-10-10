@@ -5,6 +5,7 @@ import { createBattle } from '../../src/engine/battle';
 import { renderBattleScreen } from '../../src/ui/battleScreen';
 import { buildBattleView } from '../../src/ui/battleView';
 import { createSession } from '../../src/ui/session';
+import { animUrl } from '../../src/ui/sprites';
 import { startAppBattle } from '../helpers/app';
 
 const INTERACTIVE = 'button, a, input, select, textarea';
@@ -60,11 +61,17 @@ describe('バトル画面', () => {
     expect(controls.querySelectorAll('.bench-button')).toHaveLength(2);
   });
 
-  it('場のキャラはドット絵を2倍で出し、相手側だけ左右反転する', () => {
-    const player = root.querySelector<HTMLImageElement>('[data-side="player"] img.sprite')!;
-    const enemy = root.querySelector<HTMLImageElement>('[data-side="enemy"] img.sprite')!;
-    expect(player.getAttribute('width')).toBe('96');
-    expect(enemy.getAttribute('width')).toBe('96');
+  it('場のキャラはコマ送りのドット絵を2倍で出し（1コマぶんの窓に4コマ並べた絵）、相手側だけ左右反転する', () => {
+    const player = root.querySelector<HTMLElement>('[data-side="player"] .sprite--anim')!;
+    const enemy = root.querySelector<HTMLElement>('[data-side="enemy"] .sprite--anim')!;
+    for (const frame of [player, enemy]) {
+      expect(frame.style.width).toBe('96px');
+      const strip = frame.querySelector<HTMLImageElement>('img.sprite__frames')!;
+      expect(strip.getAttribute('width')).toBe('384');
+      expect(strip.getAttribute('height')).toBe('96');
+    }
+    const fighter = (side: string) => root.querySelector<HTMLElement>(`[data-side="${side}"]`)!.dataset.fighter!;
+    expect(player.querySelector('img')!.getAttribute('src')).toBe(animUrl(fighter('player')));
     expect(player.classList.contains('sprite--flipped')).toBe(false);
     expect(enemy.classList.contains('sprite--flipped')).toBe(true);
   });
@@ -312,8 +319,8 @@ describe('キャラの動き（M7-1）', () => {
     expect(panel('enemy').classList.contains('fighter--fainted')).toBe(false);
   });
 
-  it('待機中の上下の動きは、描き直しても途切れないように、いまの時刻から続きの位置で始める', () => {
+  it('待機中のコマ送りは、描き直しても最初のコマに戻らないように、いまの時刻から続きのコマで始める', () => {
     renderBattleScreen(root, view, handlers);
-    expect(root.querySelector<HTMLElement>('.battle')!.style.getPropertyValue('--idle-delay')).toMatch(/^-\d+ms$/);
+    expect(root.querySelector<HTMLElement>('.battle')!.style.getPropertyValue('--anim-delay')).toMatch(/^-\d+ms$/);
   });
 });

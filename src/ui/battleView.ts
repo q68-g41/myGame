@@ -17,7 +17,7 @@ import { describeEvents } from './messages';
 import { describeMove, MOVE_KIND_NAMES, summarizeEffects } from './moveInfo';
 import type { FrameMotion } from './playback';
 import { needsPlayerReplacement, type BattleSession } from './session';
-import { iconUrl, spriteUrl } from './sprites';
+import { animUrl, iconUrl, spriteUrl } from './sprites';
 
 /** command：技を選ぶ、replacement：倒れたので控えから選ぶ、playing：演出中、ended：決着 */
 export type BattlePhase = 'command' | 'replacement' | 'playing' | 'ended';
@@ -30,6 +30,8 @@ export interface FighterPanelView {
   readonly color: string;
   /** ドット絵の URL。絵がなければ null（属性の色の四角を出す） */
   readonly sprite: string | null;
+  /** 待機中のコマ送りアニメの絵の URL。なければ null（止まった絵を出す） */
+  readonly anim: string | null;
   readonly hp: number;
   readonly maxHp: number;
   /** 状態異常の表示名。なければ null */
@@ -156,6 +158,7 @@ function panel(state: BattleSession['state'], side: Side): FighterPanelView {
     name: getFighter(active.id).name,
     color: ATTRIBUTE_COLORS[active.attribute],
     sprite: spriteUrl(active.id),
+    anim: animUrl(active.id),
     hp: active.hp,
     maxHp: active.stats.hp,
     status: active.status ? STATUS_NAMES[active.status.id] : null,

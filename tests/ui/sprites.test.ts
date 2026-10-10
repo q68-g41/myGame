@@ -2,6 +2,9 @@
 import { describe, expect, it } from 'vitest';
 import { BOSS_FIGHTERS, FIGHTERS } from '../../src/data/fighters';
 import {
+  ANIM_FRAMES,
+  animatedSpriteElement,
+  animUrl,
   ICON_SIZE,
   iconElement,
   iconUrl,
@@ -17,6 +20,7 @@ import {
 const FILES = import.meta.glob<string>('../../src/assets/sprites/*.png', { eager: true, query: '?inline', import: 'default' });
 const ICON_FILES = import.meta.glob<string>('../../src/assets/icons/*.png', { eager: true, query: '?inline', import: 'default' });
 const MAP_FILES = import.meta.glob<string>('../../src/assets/map/*.png', { eager: true, query: '?inline', import: 'default' });
+const ANIM_FILES = import.meta.glob<string>('../../src/assets/anim/*.png', { eager: true, query: '?inline', import: 'default' });
 
 /** PNG の幅と高さ（IHDR の値） */
 function pngSize(dataUri: string): { width: number; height: number } {
@@ -58,6 +62,24 @@ describe('小さい絵のファイル（候補一覧・選んだ順の枠・控�
   it('どれも32×32', () => {
     for (const [path, dataUri] of Object.entries(ICON_FILES)) {
       expect(pngSize(dataUri), path).toEqual({ width: ICON_SIZE, height: ICON_SIZE });
+    }
+  });
+});
+
+describe('コマ送りアニメのファイル（M7-3）', () => {
+  it('キャラ12体とボス3体のすべてにあり、キャラにない絵はない', () => {
+    const ids = [...FIGHTERS, ...BOSS_FIGHTERS].map((fighter) => fighter.id);
+    for (const id of ids) {
+      expect(animUrl(id), id).toBeTypeOf('string');
+    }
+    const files = Object.keys(ANIM_FILES).map((path) => path.split('/').pop()!.replace(/\.png$/, ''));
+    expect(files.sort()).toEqual([...ids].sort());
+    expect(animUrl('unknown')).toBeNull();
+  });
+
+  it('どれも 48×48 のコマを4つ横に並べた 192×48', () => {
+    for (const [path, dataUri] of Object.entries(ANIM_FILES)) {
+      expect(pngSize(dataUri), path).toEqual({ width: SPRITE_SIZE * ANIM_FRAMES, height: SPRITE_SIZE });
     }
   });
 });
@@ -106,6 +128,32 @@ describe('ドット絵の要素', () => {
     expect(box.classList.contains('sprite--placeholder')).toBe(true);
     expect(box.style.width).toBe('96px');
     expect(box.style.background).toContain('rgb(217, 71, 63)');
+  });
+});
+
+describe('コマ送りアニメの要素', () => {
+  it('1コマぶんの窓の中に、コマを並べた絵を置く。相手側は左右反転する', () => {
+    const frame = animatedSpriteElement(document, {
+      anim: animUrl('crimson-trial'),
+      url: spriteUrl('crimson-trial'),
+      color: '#d9473f',
+      scale: 2,
+      flipped: true,
+    });
+    expect(frame.classList.contains('sprite--anim')).toBe(true);
+    expect(frame.classList.contains('sprite--flipped')).toBe(true);
+    expect(frame.style.width).toBe('96px');
+    expect(frame.style.height).toBe('96px');
+    const strip = frame.querySelector('img')!;
+    expect(strip.getAttribute('src')).toBe(animUrl('crimson-trial'));
+    expect(strip.getAttribute('width')).toBe('384');
+    expect(strip.getAttribute('alt')).toBe('');
+  });
+
+  it('コマ送りの絵がなければ、止まった絵を出す', () => {
+    const img = animatedSpriteElement(document, { anim: null, url: spriteUrl('crimson-trial'), color: '#d9473f', scale: 2 });
+    expect(img.tagName).toBe('IMG');
+    expect(img.getAttribute('src')).toBe(spriteUrl('crimson-trial'));
   });
 });
 
