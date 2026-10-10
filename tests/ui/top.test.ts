@@ -5,12 +5,13 @@ import { renderTopScreen } from '../../src/ui/top';
 describe('トップ画面', () => {
   let root: HTMLElement;
   const onStart = vi.fn();
+  const onToggleSound = vi.fn(() => false);
 
   beforeEach(() => {
     onStart.mockClear();
     document.body.innerHTML = '<div id="app"></div>';
     root = document.querySelector<HTMLElement>('#app')!;
-    renderTopScreen(root, { buildId: 'abc1234', onStart });
+    renderTopScreen(root, { buildId: 'abc1234', onStart, sound: true, onToggleSound });
   });
 
   it('タイトルを表示する', () => {
@@ -44,7 +45,7 @@ describe('トップ画面', () => {
   });
 
   it('もう一度描画しても要素が重複しない', () => {
-    renderTopScreen(root, { buildId: 'abc1234', onStart });
+    renderTopScreen(root, { buildId: 'abc1234', onStart, sound: true, onToggleSound });
     expect(root.querySelectorAll('.screen')).toHaveLength(1);
   });
 });

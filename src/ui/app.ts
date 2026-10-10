@@ -56,6 +56,8 @@ import {
   restoreSession,
   type BattleSession,
 } from './session';
+import type { SoundId } from '../data/sounds';
+import { SILENT_PLAYER, type SoundPlayer } from './sound';
 import { renderTopScreen } from './top';
 
 export interface AppOptions {
@@ -65,6 +67,8 @@ export interface AppOptions {
   readonly newSeed: () => number;
   /** 自動保存の保存先（ブラウザでは localStorage）。省くと保存しない */
   readonly storage?: Pick<Storage, 'getItem' | 'setItem' | 'removeItem'> | null;
+  /** 効果音を鳴らす仕組み（ブラウザでは Web Audio）。省くと鳴らさない */
+  readonly sound?: SoundPlayer;
 }
 
 /** 技ボタンを長押しして、詳細を出すまでの時間 */
@@ -90,8 +94,24 @@ export function startApp(root: HTMLElement, options: AppOptions): void {
   let notice: string | null = null;
   /** 戦闘中だけ持つ */
   let session: BattleSession | null = null;
-  /** 演出の速さは、前に開いたときの設定から始める */
-  let ui: UiState = { ...INITIAL_UI_STATE, speed: settings.load().speed };
+  /** 演出の速さと音のオン/オフは、前に開いたときの設定から始める */
+  const loadedSettings = settings.load();
+  let ui: UiState = { ...INITIAL_UI_STATE, speed: loadedSettings.speed, sound: loadedSettings.sound };
+  const player = options.sound ?? SILENT_PLAYER;
+  /** 効果音を鳴らす（音がオフなら鳴らさない） */
+  const playSound = (id: SoundId | null) => {
+    if (id !== null && ui.sound) {
+      player.play(id);
+    }
+  };
+  const saveSettings = () => settings.save({ speed: ui.speed, sound: ui.sound });
+  /** 音のオン ⇔ オフを切り替えて保存する。オンにしたときは、確かめのために鳴らす */
+  const toggleSound = () => {
+    ui = { ...ui, sound: !ui.sound };
+    saveSettings();
+    playSound('tap');
+    return ui.sound;
+  };
   let playback: Playback | null = null;
   let pressTimer: ReturnType<typeof setTimeout> | null = null;
   /** 長押しで詳細を出したあと、指を離したときのタップでは技を使わない */
@@ -166,6 +186,7 @@ export function startApp(root: HTMLElement, options: AppOptions): void {
         playback = null;
       }
       render();
+      playSound(current.frames[current.index]?.sound ?? null);
       scheduleNextFrame();
     }, stepDuration(current.frames.length, ui.speed));
   };
@@ -183,6 +204,7 @@ export function startApp(root: HTMLElement, options: AppOptions): void {
       scheduleNextFrame();
     }
     render();
+    playSound(frames[0]?.sound ?? null);
   };
 
   /** 画面だけが持つ状態を、最初に戻す（演出の速さは残す） */
@@ -192,7 +214,7 @@ export function startApp(root: HTMLElement, options: AppOptions): void {
     rest = INITIAL_REST_UI;
     scout = INITIAL_SCOUT_UI;
     event = INITIAL_EVENT_UI;
-    ui = { ...INITIAL_UI_STATE, speed: ui.speed };
+    ui = { ...INITIAL_UI_STATE, speed: ui.speed, sound: ui.sound };
     notice = null;
   };
 
@@ -227,6 +249,8 @@ export function startApp(root: HTMLElement, options: AppOptions): void {
     const saved = store.load();
     renderTopScreen(root, {
       buildId: options.buildId,
+      sound: ui.sound,
+      onToggleSound: toggleSound,
       onStart: startNewRun,
       ...(saved === null ? {} : { onContinue: () => resume(saved) }),
     });
@@ -259,7 +283,7 @@ export function startApp(root: HTMLElement, options: AppOptions): void {
       event = INITIAL_EVENT_UI;
       if (run.phase.kind === 'battle') {
         session = createSession(createRunBattle(run), run.phase.seed, run.phase.cpu, run.phase.boss);
-        ui = { ...INITIAL_UI_STATE, speed: ui.speed };
+        ui = { ...INITIAL_UI_STATE, speed: ui.speed, sound: ui.sound };
       }
       render();
     },
@@ -305,12 +329,19 @@ export function startApp(root: HTMLElement, options: AppOptions): void {
     },
     onToggleSpeed: () => {
       ui = { ...ui, speed: ui.speed === 1 ? 2 : 1 };
-      settings.save({ speed: ui.speed });
+      saveSettings();
+      render();
+    },
+    onToggleSound: () => {
+      toggleSound();
       render();
     },
     onSkip: () => {
+      // 早送りしても、勝ち負けの音は鳴らす
+      const ending = playback?.frames.slice(playback.index + 1).find((frame) => frame.sound === 'win' || frame.sound === 'lose');
       stopPlayback();
       render();
+      playSound(ending?.sound ?? null);
     },
   };
 
@@ -489,6 +520,27 @@ export function startApp(root: HTMLElement, options: AppOptions): void {
   };
   root.addEventListener('pointerup', endPress);
   root.addEventListener('pointercancel', endPress);
+
+  // 効果音（M7-2）：ブラウザは最初のタップまで音を鳴らせないので、タップのたびに鳴らせるようにする（2回目からは何もしない）
+  root.addEventListener('pointerdown', () => player.unlock());
+  // ボタンを押したら短い音。マスを選んだとき・報酬を決めたときは、それぞれの音。技の音は演出で、音のオン/オフは切り替えのときに鳴らす
+  root.addEventListener('click', (event) => {
+    player.unlock();
+    const target = (event.target as Element | null)?.closest?.('button');
+    if (!target || target.disabled || target.getAttribute('aria-disabled') === 'true') {
+      return;
+    }
+    if (target.dataset.moveId !== undefined || target.classList.contains('sound-toggle')) {
+      return;
+    }
+    if (target.classList.contains('map-choice')) {
+      playSound('select');
+    } else if (target.classList.contains('button--primary') && target.closest('.reward__controls') !== null) {
+      playSound('reward');
+    } else {
+      playSound('tap');
+    }
+  });
 
   showTop();
 }

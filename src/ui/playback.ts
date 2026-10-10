@@ -2,6 +2,7 @@
  * ターンの演出（仕様書 5）。エンジンが返したイベントを1つずつ「コマ」にして順番に見せる。
  * ルールの計算はせず、イベントに入っている結果（残りHPなど）を画面用の状態に写すだけ。
  */
+import type { SoundId } from '../data/sounds';
 import { memberAt, withActive } from '../engine/team';
 import type { BattleEvent, BattleState, Combatant, Side } from '../engine/types';
 import { describeEvents } from './messages';
@@ -36,6 +37,34 @@ export interface PlaybackFrame {
   readonly hit: Side | null;
   /** このコマで動く場のキャラ。なければ null */
   readonly motion: FrameMotion | null;
+  /** このコマで鳴らす効果音（M7-2）。なければ null */
+  readonly sound: SoundId | null;
+}
+
+/** イベントから、鳴らす効果音を決める */
+function soundOf(event: BattleEvent): SoundId | null {
+  switch (event.type) {
+    case 'moveUsed':
+      return 'move';
+    case 'damage':
+      return event.effectiveness === 'advantage' ? 'hitStrong' : event.effectiveness === 'disadvantage' ? 'hitWeak' : 'hit';
+    case 'statusDamage':
+      return 'hit';
+    case 'healed':
+      return event.amount > 0 ? 'heal' : null;
+    case 'statusApplied':
+      return 'status';
+    case 'statChanged':
+      return event.delta !== 0 ? 'status' : null;
+    case 'switched':
+      return 'switch';
+    case 'fainted':
+      return 'faint';
+    case 'battleEnd':
+      return event.winner === 'player' ? 'win' : 'lose';
+    default:
+      return null;
+  }
 }
 
 /** イベントから、場のキャラの動きを決める */
@@ -95,7 +124,7 @@ export function buildFrames(
   return events.map((event, index) => {
     state = applyForDisplay(state, event, final);
     const hit = event.type === 'damage' || event.type === 'statusDamage' ? event.side : null;
-    return { state, log: logs[index]!, hit, motion: motionOf(event) };
+    return { state, log: logs[index]!, hit, motion: motionOf(event), sound: soundOf(event) };
   });
 }
 

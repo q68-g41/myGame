@@ -14,6 +14,10 @@ export interface TopScreenOptions {
   onStart: () => void;
   /** 保存したランがあれば、その続きから遊ぶ。なければ省く */
   onContinue?: () => void;
+  /** 効果音を鳴らすか */
+  sound: boolean;
+  /** 効果音のオン ⇔ オフを切り替える。切り替えたあとの状態を返す */
+  onToggleSound: () => boolean;
 }
 
 function button(doc: Document, className: string, text: string, onClick: () => void): HTMLButtonElement {
@@ -72,8 +76,15 @@ export function renderTopScreen(root: HTMLElement, options: TopScreenOptions, co
     );
   }
 
+  // 効果音のオン/オフ（設定として保存する。M7-2）
+  const sound = button(doc, 'menu__button sound-toggle top__sound', options.sound ? '音 オン' : '音 オフ', () => {
+    renderTopScreen(root, { ...options, sound: options.onToggleSound() }, confirmingNewRun);
+  });
+  sound.setAttribute('aria-pressed', String(options.sound));
+  sound.setAttribute('aria-label', `効果音（いまは${options.sound ? 'オン' : 'オフ'}）`);
+
   const build = el(doc, 'p', 'top__build', `build: ${options.buildId}`);
-  controls.append(build);
+  controls.append(sound, build);
 
   const screen = el(doc, 'div', 'screen');
   screen.append(view, controls);

@@ -97,6 +97,8 @@ export interface UiState {
   readonly selectedBench: number | null;
   /** 演出の速さ（1倍・2倍） */
   readonly speed: 1 | 2;
+  /** 効果音を鳴らすか */
+  readonly sound: boolean;
   /** 長押しで詳細を出している技。出していなければ null */
   readonly detailMoveId: string | null;
 }
@@ -109,7 +111,7 @@ export interface FrameOverlay {
   readonly motion?: FrameMotion | null;
 }
 
-export const INITIAL_UI_STATE: UiState = { selectedBench: null, speed: 1, detailMoveId: null };
+export const INITIAL_UI_STATE: UiState = { selectedBench: null, speed: 1, sound: true, detailMoveId: null };
 
 export interface BattleView {
   readonly phase: BattlePhase;
@@ -127,6 +129,8 @@ export interface BattleView {
   readonly motion: FrameMotion | null;
   /** 演出の速さ（メニューの表示に使う） */
   readonly speed: 1 | 2;
+  /** 効果音を鳴らすか（メニューの表示に使う） */
+  readonly sound: boolean;
   /** 行動順の予告 */
   readonly orderPreview: OrderPreview;
   /** 長押しで出している技の詳細。なければ null */
@@ -274,6 +278,7 @@ export function buildBattleView(
     hit: frame?.hit ?? null,
     motion: frame?.motion ?? null,
     speed: ui.speed,
+    sound: ui.sound,
     orderPreview: orderPreview(session, state),
     detail: detailView(state, ui),
     result: phase === 'ended' ? (winner === 'player' ? 'win' : 'lose') : null,

@@ -59,6 +59,12 @@ describe('保存の形', () => {
     expect(parseSavedGame(JSON.stringify({ version: SAVE_VERSION, run: battleRun, battle: null }))).toBeNull();
   });
 
+  it('音の設定がない（M7-2 より前の）保存は、音をオンとして読む。音の値がおかしいときもオン', () => {
+    expect(parseSettings('{"speed":2}')).toEqual({ speed: 2, sound: true });
+    expect(parseSettings('{"speed":1,"sound":false}')).toEqual({ speed: 1, sound: false });
+    expect(parseSettings('{"speed":1,"sound":"off"}')).toEqual({ speed: 1, sound: true });
+  });
+
   it('保存先が使えなくても（例外を出しても）止まらない', () => {
     const broken = {
       getItem: () => {
@@ -83,14 +89,14 @@ describe('トップ画面（保存したランがあるとき）', () => {
   let root: HTMLElement;
   const onStart = vi.fn();
   const onContinue = vi.fn();
-  const buttons = () => [...root.querySelectorAll<HTMLButtonElement>('.screen__controls button')].map((b) => b.textContent);
+  const buttons = () => [...root.querySelectorAll<HTMLButtonElement>('.screen__controls button:not(.sound-toggle)')].map((b) => b.textContent);
 
   beforeEach(() => {
     onStart.mockClear();
     onContinue.mockClear();
     document.body.innerHTML = '<div id="app"></div>';
     root = document.querySelector<HTMLElement>('#app')!;
-    renderTopScreen(root, { buildId: 'test', onStart, onContinue });
+    renderTopScreen(root, { buildId: 'test', onStart, onContinue, sound: true, onToggleSound: () => true });
   });
 
   it('「つづきから」と「はじめから」を出す', () => {
@@ -133,7 +139,7 @@ describe('自動保存と再開（アプリ）', () => {
   });
 
   it('はじめは保存したランがないので「はじめる」だけ', () => {
-    expect([...root.querySelectorAll('.screen__controls button')].map((b) => b.textContent)).toEqual(['はじめる']);
+    expect([...root.querySelectorAll('.screen__controls button:not(.sound-toggle)')].map((b) => b.textContent)).toEqual(['はじめる']);
   });
 
   it('マップで閉じても、同じマップの同じ場所から再開できる', () => {
@@ -229,7 +235,7 @@ describe('自動保存と再開（アプリ）', () => {
     expect(root.querySelector('.run-end')).not.toBeNull();
     expect(storage.data.has(SAVE_KEY)).toBe(false);
     reopen();
-    expect([...root.querySelectorAll('.screen__controls button')].map((b) => b.textContent)).toEqual(['はじめる']);
+    expect([...root.querySelectorAll('.screen__controls button:not(.sound-toggle)')].map((b) => b.textContent)).toEqual(['はじめる']);
   });
 
   it('読めないセーブは捨てて、トップに戻る', () => {
@@ -241,7 +247,7 @@ describe('自動保存と再開（アプリ）', () => {
     tap('.screen__controls .button--primary');
     expect(root.querySelector('h1')).not.toBeNull();
     expect(storage.data.has(SAVE_KEY)).toBe(false);
-    expect([...root.querySelectorAll('.screen__controls button')].map((b) => b.textContent)).toEqual(['はじめる']);
+    expect([...root.querySelectorAll('.screen__controls button:not(.sound-toggle)')].map((b) => b.textContent)).toEqual(['はじめる']);
   });
 });
 
@@ -253,13 +259,13 @@ describe('保存のキー', () => {
   });
 });
 
-describe('設定（演出の速さ）の保存', () => {
+describe('設定（演出の速さ・音）の保存', () => {
   it('保存した設定を読み戻せる。読めない・形がおかしいときは最初の設定（×1）', () => {
     const storage = memoryStorage();
     const store = createSettingsStore(storage);
     expect(store.load()).toEqual(DEFAULT_SETTINGS);
-    store.save({ speed: 2 });
-    expect(store.load()).toEqual({ speed: 2 });
+    store.save({ speed: 2, sound: false });
+    expect(store.load()).toEqual({ speed: 2, sound: false });
     for (const text of [null, '{', '{"speed":3}', '[]', '"2"']) {
       expect(parseSettings(text)).toEqual(DEFAULT_SETTINGS);
     }
@@ -276,7 +282,7 @@ describe('設定（演出の速さ）の保存', () => {
     };
     const store = createSettingsStore(broken);
     expect(store.load()).toEqual(DEFAULT_SETTINGS);
-    expect(() => store.save({ speed: 2 })).not.toThrow();
+    expect(() => store.save({ speed: 2, sound: true })).not.toThrow();
   });
 
   it('バトルで2倍速にすると、開き直しても2倍速のまま。ランの保存を消しても残る', () => {
@@ -297,7 +303,7 @@ describe('設定（演出の速さ）の保存', () => {
     expect(root.querySelector('.menu__button')?.textContent).toBe('速さ ×1');
     root.querySelector<HTMLButtonElement>('.menu__button')!.click();
     expect(root.querySelector('.menu__button')?.textContent).toBe('速さ ×2');
-    expect(JSON.parse(storage.data.get(SETTINGS_KEY)!)).toEqual({ speed: 2 });
+    expect(JSON.parse(storage.data.get(SETTINGS_KEY)!)).toEqual({ speed: 2, sound: true });
 
     // 開き直して、つづきから
     root = open();
