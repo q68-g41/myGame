@@ -13,5 +13,8 @@ export default defineConfig({
   test: {
     include: ['tests/**/*.test.ts'],
     environment: 'node',
+    // Vitest は CSS の中身を空にするので、?raw で文字列として読むときだけそのまま返す
+    // （フォントのテストが style.css の文字を確かめるため）。画面に読み込む CSS は今までどおり処理しない
+    css: { include: [/[?&]raw(?:&|$)/] },
   },
 });
