@@ -1,9 +1,10 @@
 // @vitest-environment happy-dom
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
+import { ATTRIBUTE_NAMES } from '../../src/data/attributes';
 import { RUN_CONTENT } from '../../src/data/content';
 import { getFighter } from '../../src/data/fighters';
 import { IRODORITE } from '../../src/data/irodorite';
-import { chooseTeam, runChoices, startRun } from '../../src/engine/run';
+import { chooseTeam, nodeEnemies, runChoices, startRun } from '../../src/engine/run';
 import { startApp } from '../../src/ui/app';
 
 const INTERACTIVE = 'button, a, input, select, textarea';
@@ -273,6 +274,23 @@ describe('マップの画面', () => {
     expect(choiceIcons).toHaveLength(root.querySelectorAll('.map-choice').length);
     // 読み上げでは、マスの種類が分かる
     expect(boss?.closest('.map-node')?.getAttribute('aria-label')).toContain('ボス');
+  });
+
+  it('ヒント：戦うマスの下に相手の属性の色、選ぶボタンに相手の属性の名前を、出る順に出す（仕様書 4.3）', () => {
+    const run = chooseTeam(startRun(RUN_CONTENT, 1, IRODORITE[0]!), [0, 1]);
+    const names = (index: number) => nodeEnemies(run, { layer: 0, index })!.map((fighter) => ATTRIBUTE_NAMES[fighter.attribute]);
+    const chips = [...root.querySelectorAll('.screen__controls .map-choice')].map((choice) =>
+      [...choice.querySelectorAll('.enemy-chip')].map((chip) => chip.textContent),
+    );
+    expect(chips).toEqual(runChoices(run).map(names));
+    // マップでは、戦うマス（戦闘・強敵・ボス）にだけ色の四角が付く
+    for (const node of root.querySelectorAll<HTMLElement>('.screen__view .map-node')) {
+      const fights = ['battle', 'elite', 'boss', 'rival'].some((kind) => node.classList.contains(`map-node--${kind}`));
+      expect(node.querySelectorAll('.map-node__pip').length > 0, node.className).toBe(fights);
+    }
+    const first = root.querySelector<HTMLElement>('.map-node[data-layer="0"][data-index="0"]')!;
+    expect(first.querySelectorAll('.map-node__pip')).toHaveLength(names(0).length);
+    expect(first.getAttribute('aria-label')).toContain(`相手：${names(0).join('・')}`);
   });
 
   it('選択肢の文字（A・B…）が、マップの進めるマスにも付いている', () => {

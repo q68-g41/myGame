@@ -10,6 +10,7 @@ import { buildBattleView } from '../../src/ui/battleView';
 import { charmLine } from '../../src/ui/runScreens';
 import { buildMapView, buildRewardView, INITIAL_REWARD_UI, rewardNotice } from '../../src/ui/runView';
 import { createSession } from '../../src/ui/session';
+import { withEnemies } from '../helpers/run';
 
 const INTERACTIVE = 'button, a, input, select, textarea';
 
@@ -19,16 +20,17 @@ const OFFERS: readonly RewardOffer[] = [
   { kind: 'stat', member: 0, stat: 'attack', amount: 7 },
   { kind: 'charm', charm: CHARMS[0]! },
 ];
-const rewardRun = (pick = 1, picks = 1, members = team): RunState => ({
-  area: 0,
-  map: { layers: [[{ kind: 'battle', next: [] }]] },
-  position: { layer: 0, index: 0 },
-  team: members,
-  charms: [],
-  irodorite: null,
-  phase: { kind: 'reward', offers: OFFERS, pick, picks },
-  rng: 1,
-});
+const rewardRun = (pick = 1, picks = 1, members = team): RunState =>
+  withEnemies({
+    area: 0,
+    map: { layers: [[{ kind: 'battle', next: [] }]] },
+    position: { layer: 0, index: 0 },
+    team: members,
+    charms: [],
+    irodorite: null,
+    phase: { kind: 'reward', offers: OFFERS, pick, picks },
+    rng: 1,
+  });
 
 describe('報酬の画面に出す内容', () => {
   it('選択肢は 技・能力・お守り。選ぶまでは決定できない', () => {

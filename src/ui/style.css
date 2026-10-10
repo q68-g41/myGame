@@ -1302,6 +1302,23 @@ button.member {
   text-align: center;
 }
 
+/* 戦うマスの下に、相手の属性の色を小さな四角で、出る順に並べる（ヒント。仕様書 4.3） */
+.map-node__hint {
+  position: absolute;
+  top: calc(100% + 2px);
+  left: 50%;
+  display: flex;
+  gap: 2px;
+  transform: translateX(-50%);
+  pointer-events: none;
+}
+
+.map-node__pip {
+  width: 7px;
+  height: 7px;
+  box-shadow: 0 0 0 1px rgba(0, 0, 0, 0.6);
+}
+
 .map__controls {
   justify-content: flex-start;
   gap: 12px;
@@ -1347,6 +1364,33 @@ button.member {
 
 .map-choice:active {
   transform: translateY(2px);
+}
+
+/* 選ぶボタンの2行目に、相手の属性を「色の四角＋名前」の札で出す（色だけに頼らない） */
+.map-choice__hint {
+  display: flex;
+  flex-basis: 100%;
+  flex-wrap: wrap;
+  justify-content: center;
+  gap: 2px 6px;
+}
+
+.enemy-chip {
+  display: inline-flex;
+  align-items: center;
+  gap: 3px;
+  font-family: var(--font-dot);
+  font-size: 14px;
+  font-weight: 400;
+  line-height: 1.2;
+}
+
+.enemy-chip::before {
+  content: '';
+  width: 10px;
+  height: 10px;
+  background: var(--chip-color);
+  box-shadow: 0 0 0 1px rgba(0, 0, 0, 0.6);
 }
 
 .map-choice__letter {

@@ -7,6 +7,7 @@ import { createRunBattle, enterNode, finishBattle, statBoostAmount, takeReward, 
 import type { AreaMap } from '../../src/engine/map';
 import type { BattleState, FighterDef } from '../../src/engine/types';
 import { deepFreeze } from '../helpers/fixtures';
+import { withEnemies } from '../helpers/run';
 
 /** 1層目：戦闘・強敵 → ボス */
 const MAP: AreaMap = {
@@ -20,17 +21,18 @@ const MAP: AreaMap = {
 };
 
 const team = FIGHTERS.slice(0, 3).map((fighter) => ({ fighter, hp: fighter.stats.hp }));
-const mapRun = (overrides: Partial<RunState> = {}): RunState => ({
-  area: 0,
-  map: MAP,
-  position: null,
-  team,
-  charms: [],
-  irodorite: null,
-  phase: { kind: 'map' },
-  rng: 11,
-  ...overrides,
-});
+const mapRun = (overrides: Partial<RunState> = {}): RunState =>
+  withEnemies({
+    area: 0,
+    map: MAP,
+    position: null,
+    team,
+    charms: [],
+    irodorite: null,
+    phase: { kind: 'map' },
+    rng: 11,
+    ...overrides,
+  });
 
 /** 自分が勝ったことにしたバトル */
 function won(run: RunState): BattleState {
@@ -198,5 +200,10 @@ describe('報酬を受け取る', () => {
     expect(next.map).not.toEqual(MAP);
     // チームとお守りはそのまま持ち越す
     expect(next.team.map((m) => m.fighter.id)).toEqual(team.map((m) => m.fighter.id));
+    // 新しいマップの相手も、エリアに入ったときに決まっている。ライバルのマスはカラスウサギ2体のあとに1体（4.3・4.6）
+    expect(next.enemies.map((layer) => layer.length)).toEqual(next.map.layers.map((layer) => layer.length));
+    const rival = next.enemies[6]![0]!;
+    expect(rival.map((fighter) => fighter.id).slice(0, 2)).toEqual(['white-twin', 'black-twin']);
+    expect(rival).toHaveLength(3);
   });
 });

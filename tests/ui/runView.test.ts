@@ -1,10 +1,12 @@
 import { describe, expect, it } from 'vitest';
+import { ATTRIBUTE_COLORS, ATTRIBUTE_NAMES } from '../../src/data/attributes';
 import { BOSSES } from '../../src/data/bosses';
 import { RUN_CONTENT } from '../../src/data/content';
 import { FIGHTERS } from '../../src/data/fighters';
 import { getIrodorite } from '../../src/data/irodorite';
 import type { AreaMap } from '../../src/engine/map';
-import { chooseTeam, enterNode, startRun, type RunState } from '../../src/engine/run';
+import { chooseTeam, enterNode, nodeEnemies, startRun, type RunState } from '../../src/engine/run';
+import type { FighterDef } from '../../src/engine/types';
 import {
   battleCaption,
   battleOpening,
@@ -17,6 +19,7 @@ import {
   toggleDraftPick,
 } from '../../src/ui/runView';
 import { irodoriteUrl, MAP_ICON_SIZE, mapIconUrl, SPRITE_SIZE, spriteUrl } from '../../src/ui/sprites';
+import { withEnemies } from '../helpers/run';
 
 /** テスト用のマップ：1層目 2マス → 2層目 3マス → ボス */
 const MAP: AreaMap = {
@@ -35,16 +38,17 @@ const MAP: AreaMap = {
 };
 
 const team = FIGHTERS.slice(0, 3).map((fighter) => ({ fighter, hp: fighter.stats.hp }));
-const runAt = (position: RunState['position'], phase: RunState['phase'] = { kind: 'map' }): RunState => ({
-  area: 0,
-  map: MAP,
-  position,
-  team,
-  charms: [],
-  irodorite: null,
-  phase,
-  rng: 1,
-});
+const runAt = (position: RunState['position'], phase: RunState['phase'] = { kind: 'map' }): RunState =>
+  withEnemies({
+    area: 0,
+    map: MAP,
+    position,
+    team,
+    charms: [],
+    irodorite: null,
+    phase,
+    rng: 1,
+  });
 
 describe('チーム選択', () => {
   it('タップした順に選び、もう一度タップで外す。3体選んだら、それ以上は選ばない', () => {
@@ -121,7 +125,7 @@ describe('マップ', () => {
     expect(view.progress).toBe('エリア1・スタート');
     expect(view.message).toBe('進むマスを選んでください');
     const battleIcon = { url: mapIconUrl('battle'), size: MAP_ICON_SIZE };
-    expect(view.choices).toEqual([
+    expect(view.choices).toMatchObject([
       { index: 0, letter: 'A', name: '戦闘', icon: battleIcon },
       { index: 1, letter: 'B', name: '戦闘', icon: battleIcon },
     ]);
@@ -131,6 +135,27 @@ describe('マップ', () => {
     ]);
     expect(view.layers[1]!.every((node) => node.state === 'reachable')).toBe(true);
     expect(view.layers[2]![0]).toMatchObject({ state: 'reachable', mark: 'ボ', name: 'ボス' });
+  });
+
+  it('ヒント：戦うマスには、相手の属性を出る順に出す（マップを作るときに決めた相手）。ボスはエリアのボス、戦わないマスは空（仕様書 4.3）', () => {
+    const run = runAt(null);
+    const view = buildMapView(run);
+    const hint = (fighters: readonly FighterDef[]) =>
+      fighters.map((fighter) => ({ name: ATTRIBUTE_NAMES[fighter.attribute], color: ATTRIBUTE_COLORS[fighter.attribute] }));
+    view.layers.forEach((layer, l) =>
+      layer.forEach((node, index) => {
+        if (node.kind === 'battle' || node.kind === 'elite') {
+          expect(node.enemies).toEqual(hint(nodeEnemies(run, { layer: l, index })!));
+          expect(node.enemies.length).toBeGreaterThan(0);
+        } else if (node.kind === 'boss') {
+          expect(node.enemies).toEqual(hint([BOSSES[0]!.fighter]));
+        } else {
+          expect(node.enemies, node.kind).toEqual([]);
+        }
+      }),
+    );
+    // 選ぶボタンにも、同じマスの相手を出す
+    expect(view.choices.map((choice) => choice.enemies)).toEqual(view.choices.map((choice) => view.layers[0]![choice.index]!.enemies));
   });
 
   it('マスにはアイコンの絵（24×24）を出す。ボスのマスは、そのエリアのボスのドット絵（48×48）', () => {

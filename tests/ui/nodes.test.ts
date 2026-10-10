@@ -16,20 +16,22 @@ import {
   restNotice,
   scoutNotice,
 } from '../../src/ui/nodeView';
+import { withEnemies } from '../helpers/run';
 
 const INTERACTIVE = 'button, a, input, select, textarea';
 
 const team = FIGHTERS.slice(0, 3).map((fighter) => ({ fighter, hp: 50 }));
-const runIn = (phase: RunState['phase']): RunState => ({
-  area: 0,
-  map: { layers: [[{ kind: 'rest', next: [] }]] },
-  position: { layer: 0, index: 0 },
-  team,
-  charms: [],
-  irodorite: null,
-  phase,
-  rng: 3,
-});
+const runIn = (phase: RunState['phase']): RunState =>
+  withEnemies({
+    area: 0,
+    map: { layers: [[{ kind: 'rest', next: [] }]] },
+    position: { layer: 0, index: 0 },
+    team,
+    charms: [],
+    irodorite: null,
+    phase,
+    rng: 3,
+  });
 
 describe('休憩の画面に出す内容', () => {
   const run = runIn({ kind: 'rest' });

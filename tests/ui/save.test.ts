@@ -68,6 +68,12 @@ describe('保存の形', () => {
     expect(parseSavedGame(JSON.stringify({ version: SAVE_VERSION, run: oldRun, battle: null }))).toBeNull();
   });
 
+  it('マップの相手（enemies）を持たない前の形（版5）のセーブは捨てる', () => {
+    const { enemies: _dropped, ...oldRun } = run;
+    expect(parseSavedGame(JSON.stringify({ version: 5, run: oldRun, battle: null }))).toBeNull();
+    expect(parseSavedGame(JSON.stringify({ version: SAVE_VERSION, run: oldRun, battle: null }))).toBeNull();
+  });
+
   it('音の設定がない（M7-2 より前の）保存は、音をオンとして読む。音の値がおかしいときもオン', () => {
     expect(parseSettings('{"speed":2}')).toEqual({ speed: 2, sound: true });
     expect(parseSettings('{"speed":1,"sound":false}')).toEqual({ speed: 1, sound: false });
