@@ -934,9 +934,13 @@ button.member {
   margin: 4px 0;
 }
 
+/* 2行になる文は、行の長さをそろえて、2行目に1〜2文字だけ残らないようにする。
+   文節で折り返せるブラウザ（auto-phrase）では、言葉の途中でも折り返さない */
 .fighter-detail__description {
   font-size: 14px;
   line-height: 1.4;
+  text-wrap: balance;
+  word-break: auto-phrase;
 }
 
 .fighter-detail__moves {
@@ -1035,9 +1039,12 @@ button.member {
   font-size: 20px;
 }
 
+/* 口ぐせも、キャラの説明と同じ折り返しにする */
 .irodorite-detail__catchphrase {
   font-size: 14px;
   line-height: 1.4;
+  text-wrap: balance;
+  word-break: auto-phrase;
 }
 
 .irodorite-detail__trait {
@@ -1058,8 +1065,10 @@ button.member {
   color: var(--color-accent);
 }
 
+/* 特性の効果は、文節で折り返すと3行になるもの（ユヒ）があり、上半分に収まらなくなるので、行の長さだけそろえる */
 .irodorite-detail__trait-effect {
   flex-basis: 100%;
+  text-wrap: balance;
 }
 
 .irodorite__hint {
