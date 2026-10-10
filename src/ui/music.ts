@@ -99,7 +99,8 @@ export type MusicScene =
   | { readonly screen: 'top' | 'draft' | 'map' | 'reward' | 'rest' | 'scout' | 'event' | 'ended' }
   | {
       readonly screen: 'battle';
-      readonly boss: boolean;
+      /** 相手：ふつう（戦闘・強敵）・ボス・ライバル（クロ） */
+      readonly opponent: 'normal' | 'boss' | 'rival';
       /** 決着を画面に出したあとなら、勝った側。まだなら null */
       readonly winner: Side | null;
     };
@@ -111,7 +112,7 @@ export function chooseMusic(scene: MusicScene): MusicId | null {
       if (scene.winner !== null) {
         return scene.winner === 'player' ? 'victory' : 'defeat';
       }
-      return scene.boss ? 'boss' : 'battle';
+      return scene.opponent === 'normal' ? 'battle' : scene.opponent;
     // ランの結果の画面は、直前の勝ち負けの曲の余韻を残すため鳴らさない
     case 'ended':
       return null;

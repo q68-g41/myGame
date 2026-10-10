@@ -82,11 +82,13 @@ describe('場面に合う曲を選ぶ', () => {
     }
   });
 
-  it('バトルは戦闘の曲、ボス戦はボスの曲。決着を見せたら勝ち負けの曲', () => {
-    expect(chooseMusic({ screen: 'battle', boss: false, winner: null })).toBe('battle');
-    expect(chooseMusic({ screen: 'battle', boss: true, winner: null })).toBe('boss');
-    expect(chooseMusic({ screen: 'battle', boss: true, winner: 'player' })).toBe('victory');
-    expect(chooseMusic({ screen: 'battle', boss: false, winner: 'enemy' })).toBe('defeat');
+  it('バトルは戦闘の曲、ボス戦はボスの曲、クロ戦は「好敵手」。決着を見せたら勝ち負けの曲', () => {
+    expect(chooseMusic({ screen: 'battle', opponent: 'normal', winner: null })).toBe('battle');
+    expect(chooseMusic({ screen: 'battle', opponent: 'boss', winner: null })).toBe('boss');
+    expect(chooseMusic({ screen: 'battle', opponent: 'rival', winner: null })).toBe('rival');
+    expect(chooseMusic({ screen: 'battle', opponent: 'boss', winner: 'player' })).toBe('victory');
+    expect(chooseMusic({ screen: 'battle', opponent: 'rival', winner: 'player' })).toBe('victory');
+    expect(chooseMusic({ screen: 'battle', opponent: 'normal', winner: 'enemy' })).toBe('defeat');
   });
 
   it('ランの結果の画面では鳴らさない', () => {

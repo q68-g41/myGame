@@ -1,11 +1,17 @@
 // @vitest-environment happy-dom
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
+import { RUN_CONTENT } from '../../src/data/content';
+import { IRODORITE } from '../../src/data/irodorite';
 import { TRACKS, type MusicId } from '../../src/data/music';
 import { SOUNDS, type SoundId } from '../../src/data/sounds';
 import { startApp } from '../../src/ui/app';
 import { partEvents } from '../../src/ui/music';
 import { buildFrames } from '../../src/ui/playback';
-import { SETTINGS_KEY } from '../../src/ui/save';
+import { RIVAL_AREA } from '../../src/engine/constants';
+import { generateAreaMap } from '../../src/engine/map';
+import { createRng } from '../../src/engine/rng';
+import { chooseTeam, startRun } from '../../src/engine/run';
+import { SAVE_KEY, serializeGame, SETTINGS_KEY } from '../../src/ui/save';
 import { playMove } from '../../src/ui/session';
 import { createSoundPlayer, type SoundPlayer } from '../../src/ui/sound';
 import { firstBattleSession } from '../helpers/app';
@@ -330,6 +336,18 @@ describe('アプリの効果音', () => {
     expect(musics).toEqual(['field']);
     enterFirstBattle();
     expect(musics).toEqual(['field', 'battle']);
+  });
+
+  it('ライバル・クロとの戦いでは、専用の曲「好敵手」', () => {
+    // エリア2の休憩のあと（ライバルの手前）から続ける
+    const run = chooseTeam(startRun(RUN_CONTENT, 5, IRODORITE[0]!), [0, 1]);
+    const map = generateAreaMap(createRng(9), { rival: true }).value;
+    storage.data.set(SAVE_KEY, serializeGame({ ...run, area: RIVAL_AREA, map, position: { layer: 5, index: 0 } }, null));
+    open();
+    root.querySelector<HTMLButtonElement>('.screen__controls .button--primary')!.click();
+    expect(root.querySelector('.map-choice__name')?.textContent).toBe('ライバル');
+    root.querySelector<HTMLButtonElement>('.map-choice')!.click();
+    expect(musics).toEqual(['field', 'rival']);
   });
 
   it('決着の演出まで進むと、勝ち負けの短い曲に変わる。早送りしても変わる。報酬の画面で旅の曲に戻る', () => {
