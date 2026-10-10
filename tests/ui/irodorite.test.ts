@@ -9,17 +9,22 @@ import { charmNames } from '../../src/ui/runView';
 
 const INTERACTIVE = 'button, a, input, select, textarea';
 
+/** 一覧の中の、その彩り手の位置 */
+const indexOf = (id: string): number => IRODORITE.findIndex((data) => data.id === id);
+
 describe('彩り手を選ぶ画面に出す内容（仕様書 4.6・5）', () => {
   it('一覧は彩り手の表の順で、はじめは1人目を選んでいる', () => {
     const view = buildIrodoriteSelectView(IRODORITE);
-    expect(view.choices.map((choice) => choice.name)).toEqual(['ヒナ', 'ワタ', 'ソウ']);
-    expect(view.choices.map((choice) => choice.selected)).toEqual([true, false, false]);
+    expect(view.choices.map((choice) => choice.name)).toEqual(IRODORITE.map((data) => data.name));
+    expect(view.choices[0]!.name).toBe('ヒナ');
+    expect(view.choices.map((choice) => choice.selected)).toEqual(IRODORITE.map((_data, index) => index === 0));
     expect(view.choices.every((choice) => typeof choice.portrait === 'string')).toBe(true);
   });
 
   it('選んでいる彩り手の、あだ名・口ぐせ・特性と、相棒の詳細', () => {
-    const view = buildIrodoriteSelectView(IRODORITE, selectIrodorite(INITIAL_IRODORITE_UI, 1));
-    expect(view.choices.map((choice) => choice.selected)).toEqual([false, true, false]);
+    const wata = indexOf('wata');
+    const view = buildIrodoriteSelectView(IRODORITE, selectIrodorite(INITIAL_IRODORITE_UI, wata));
+    expect(view.choices.map((choice) => choice.selected)).toEqual(IRODORITE.map((_data, index) => index === wata));
     expect(view.detail).toMatchObject({
       name: 'ワタ',
       catchphrase: '道具は、使う人の器を映す鏡',
@@ -31,11 +36,11 @@ describe('彩り手を選ぶ画面に出す内容（仕様書 4.6・5）', () =>
   });
 
   it('いない彩り手を選んでいるとエラー', () => {
-    expect(() => buildIrodoriteSelectView(IRODORITE, { selected: 9 })).toThrow('9');
+    expect(() => buildIrodoriteSelectView(IRODORITE, { selected: 99 })).toThrow('99');
   });
 
   it('お守りの行には、彩り手の特性を先に「（特性）」を付けて出す', () => {
-    const run = chooseTeam(startRun(RUN_CONTENT, 1, IRODORITE[2]!), [0, 1]);
+    const run = chooseTeam(startRun(RUN_CONTENT, 1, IRODORITE[indexOf('sou')]!), [0, 1]);
     expect(charmNames(run)).toEqual(['段取りの帳面（特性）']);
     expect(charmNames(chooseTeam(startRun(RUN_CONTENT, 1), [0, 1, 2]))).toEqual([]);
   });
@@ -74,21 +79,25 @@ describe('彩り手を選ぶ画面', () => {
     expect(root.querySelector('.irodorite-detail__name')?.textContent).toBe('ヒナ');
     expect(root.querySelector('.irodorite-detail__catchphrase')?.textContent).toBe('「宣伝！！！」');
     expect(root.querySelector('.irodorite-detail__trait')?.textContent).toBe('特性宣伝の旗紅属性の技の威力 +20%');
-    expect(root.querySelector('.irodorite-detail__partner')?.textContent).toBe('相棒サクラシバ');
+    // 相棒の詳細には、属性の前に「相棒」と出す
     expect(root.querySelector('.screen__view .fighter-detail__name')?.textContent).toBe('サクラシバ');
+    expect(root.querySelector('.screen__view .fighter-detail__attribute')?.textContent).toBe('相棒・紅属性');
     expect(root.querySelector('.screen__view img.fighter-detail__sprite')?.getAttribute('width')).toBe('96');
     expect(root.querySelectorAll('.screen__view .fighter-detail__moves li')).toHaveLength(4);
   });
 
   it('一覧をタップすると、その彩り手を選ぶ（詳細が変わる）', () => {
-    choices()[2]!.click();
-    expect(choices().map((choice) => choice.getAttribute('aria-pressed'))).toEqual(['false', 'false', 'true']);
+    const sou = indexOf('sou');
+    choices()[sou]!.click();
+    expect(choices().map((choice) => choice.getAttribute('aria-pressed'))).toEqual(
+      IRODORITE.map((_data, index) => String(index === sou)),
+    );
     expect(root.querySelector('.irodorite-detail__name')?.textContent).toBe('ソウ');
     expect(root.querySelector('.screen__view .fighter-detail__name')?.textContent).toBe('ヨイミミズク');
   });
 
   it('「この彩り手で進む」で、選んだ彩り手の相棒が1番目に入ったチーム選択になる', () => {
-    choices()[1]!.click();
+    choices()[indexOf('wata')]!.click();
     root.querySelector<HTMLButtonElement>('.irodorite__controls .button--primary')!.click();
     expect(root.querySelector('.draft')).not.toBeNull();
     expect(root.querySelector('.draft-slot--partner .draft-slot__name')?.textContent).toBe('キビタキ');

@@ -1040,8 +1040,7 @@ button.member {
   line-height: 1.4;
 }
 
-.irodorite-detail__trait,
-.irodorite-detail__partner {
+.irodorite-detail__trait {
   display: flex;
   flex-wrap: wrap;
   gap: 0 6px;

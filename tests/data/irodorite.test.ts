@@ -19,10 +19,13 @@ function sameKind(a: CharmEffect, b: CharmEffect): boolean {
 }
 
 describe('彩り手のデータ（仕様書 4.6）', () => {
-  it('最初の3人は、ヒナ・ワタ・ソウ（あだ名と口ぐせは仕様書の表のとおり）', () => {
+  it('いまは6人（ヒナ・モリエ・ワタ・ユヒ・リン・ソウ）。仕様書の表の順で、あだ名と口ぐせも表のとおり', () => {
     expect(IRODORITE.map(({ id, name, catchphrase }) => ({ id, name, catchphrase }))).toEqual([
       { id: 'hina', name: 'ヒナ', catchphrase: '宣伝！！！' },
+      { id: 'morie', name: 'モリエ', catchphrase: 'やってみる！' },
       { id: 'wata', name: 'ワタ', catchphrase: '道具は、使う人の器を映す鏡' },
+      { id: 'yuhi', name: 'ユヒ', catchphrase: 'ユヒは信じないです' },
+      { id: 'rin', name: 'リン', catchphrase: 'やりてぇ' },
       { id: 'sou', name: 'ソウ', catchphrase: 'すみません、僕の方でやりますね！' },
     ]);
   });

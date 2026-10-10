@@ -141,6 +141,27 @@ export const PARTNER_FIGHTERS: readonly FighterData[] = [
     'haze',
     'mend',
   ], '宵色のミミズク。打たれ強く、粘って戦う'),
+  // モリエの相棒。素早く、目くらましで相手の攻撃を下げる
+  fighter('morie-partner', 'orange', 'コムギネコ', { hp: 90, attack: 55, defense: 45, speed: 65 }, [
+    'orange-strike',
+    'orange-burst',
+    'orange-quick',
+    'dazzle',
+  ], '小麦色の猫。すばしこく、相手をまどわす'),
+  // ユヒの相棒。闘志で力をためて押し切る
+  fighter('yuhi-partner', 'green', 'カラクサジシ', { hp: 110, attack: 65, defense: 55, speed: 45 }, [
+    'green-strike',
+    'green-burst',
+    'focus',
+    'sprout',
+  ], '唐草模様の獅子。力をためて押し切る'),
+  // リンの相棒。静水で相手を遅くしながら戦う
+  fighter('rin-partner', 'blue', 'ミナモイヌ', { hp: 100, attack: 55, defense: 55, speed: 55 }, [
+    'blue-strike',
+    'blue-burst',
+    'blue-quick',
+    'stillwater',
+  ], '水面色の犬。相手の足を止めて戦う'),
 ];
 
 /**

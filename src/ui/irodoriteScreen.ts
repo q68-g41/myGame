@@ -18,8 +18,9 @@ export function renderIrodoriteScreen(root: HTMLElement, view: IrodoriteSelectVi
   const doc = root.ownerDocument;
   const { detail } = view;
 
-  // 上半分：選んでいる彩り手（絵・あだ名・口ぐせ・特性・相棒の名前）と、相棒の詳細。
-  // 基準の画面で上半分に収めるため、見出しと案内は下半分に置く
+  // 上半分：選んでいる彩り手（絵・あだ名・口ぐせ・特性）と、相棒の詳細（属性の前に「相棒」と出す）。
+  // 基準の画面で上半分に収めるため、見出しと案内は下半分に置く。口ぐせと特性が2行ずつになっても収まるように、
+  // 相棒の名前は彩り手の横に出さず、相棒の詳細の側で示す
   const display = el(doc, 'section', 'irodorite__view');
   const card = el(doc, 'div', 'irodorite-detail');
   card.style.borderLeftColor = detail.color;
@@ -30,19 +31,17 @@ export function renderIrodoriteScreen(root: HTMLElement, view: IrodoriteSelectVi
     el(doc, 'span', 'irodorite-detail__trait-name', detail.traitName),
     el(doc, 'span', 'irodorite-detail__trait-effect', detail.traitDescription),
   );
-  const partner = el(doc, 'p', 'irodorite-detail__partner');
-  partner.append(el(doc, 'span', 'irodorite-detail__label', '相棒'), el(doc, 'span', '', detail.partner.name));
   text.append(
     el(doc, 'span', 'irodorite-detail__name', detail.name),
     el(doc, 'span', 'irodorite-detail__catchphrase', `「${detail.catchphrase}」`),
     trait,
-    partner,
   );
   card.append(
     irodoriteElement(doc, { url: detail.portrait, color: detail.color, scale: 2, className: 'irodorite-detail__portrait' }),
     text,
   );
-  display.append(card, fighterDetailCard(doc, detail.partner));
+  const partner = { ...detail.partner, attributeName: `相棒・${detail.partner.attributeName}` };
+  display.append(card, fighterDetailCard(doc, partner));
 
   // 下半分：見出しと案内、彩り手の一覧、進むボタン
   const controls = el(doc, 'section', 'irodorite__controls');
