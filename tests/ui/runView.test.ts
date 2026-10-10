@@ -10,6 +10,7 @@ import {
   buildMapView,
   buildRunEndView,
   fighterDetail,
+  focusDraftCandidate,
   INITIAL_DRAFT_UI,
   toggleDraftPick,
 } from '../../src/ui/runView';
@@ -72,13 +73,20 @@ describe('チーム選択', () => {
     expect(buildDraftView(run, { picks: [2, 0, 1], focused: 1 }).canConfirm).toBe(true);
   });
 
-  it('詳細には、属性・能力・技（種類と威力、補助技は効果）を出す', () => {
+  it('長押しでは、選んだかどうかを変えずに、詳細だけそのキャラにする', () => {
+    const picked = toggleDraftPick(toggleDraftPick(INITIAL_DRAFT_UI, 0), 2);
+    expect(focusDraftCandidate(picked, 4)).toEqual({ picks: [0, 2], focused: 4 });
+    expect(focusDraftCandidate(INITIAL_DRAFT_UI, 1)).toEqual({ picks: [], focused: 1 });
+  });
+
+  it('詳細には、属性・説明・能力・技（種類と威力、補助技は効果）を出す', () => {
     const crimson = FIGHTERS.find((fighter) => fighter.id === 'crimson-trial')!;
     expect(fighterDetail(crimson)).toEqual({
       name: 'ベニギツネ',
       color: expect.any(String),
       sprite: spriteUrl('crimson-trial'),
       attributeName: '紅属性',
+      description: '炎のしっぽの狐。素早く、攻撃が高い',
       stats: 'HP 95・攻撃 65・防御 45・素早さ 60',
       moves: ['緋の爪（通常・威力60）', '紅炎落とし（大技・威力100）', '火花突き（先制・威力35）', '闘志（補助・攻撃↑2）'],
     });

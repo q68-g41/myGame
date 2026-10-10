@@ -65,6 +65,8 @@ export interface FighterDetailView {
   readonly sprite: string | null;
   /** 例：「紅属性」 */
   readonly attributeName: string;
+  /** どんな彩霊で、どう戦うか。例：「炎のしっぽの狐。素早く、攻撃が高い」 */
+  readonly description: string;
   /** 例：「HP 95・攻撃 65・防御 45・素早さ 60」 */
   readonly stats: string;
   /** 例：「紅撃（通常・威力60）」 */
@@ -104,8 +106,10 @@ function moveLine(fighter: FighterDef, index: number): string {
 /** キャラの能力と技の詳細 */
 export function fighterDetail(fighter: FighterDef): FighterDetailView {
   const { stats } = fighter;
+  const data = getFighter(fighter.id);
   return {
-    name: getFighter(fighter.id).name,
+    name: data.name,
+    description: data.description,
     color: ATTRIBUTE_COLORS[fighter.attribute],
     sprite: spriteUrl(fighter.id),
     attributeName: `${ATTRIBUTE_NAMES[fighter.attribute]}属性`,
@@ -117,6 +121,11 @@ export function fighterDetail(fighter: FighterDef): FighterDetailView {
     ].join('・'),
     moves: fighter.moves.map((_move, index) => moveLine(fighter, index)),
   };
+}
+
+/** 候補を長押ししたあとの状態。選んだかどうかは変えず、詳細だけそのキャラにする */
+export function focusDraftCandidate(ui: DraftUiState, index: number): DraftUiState {
+  return { ...ui, focused: index };
 }
 
 /** 候補をタップしたあとの状態。選んでいれば外し、3体に満たなければ選ぶ。どちらでも詳細はそのキャラにする */

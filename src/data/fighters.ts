@@ -1,5 +1,5 @@
 /**
- * キャラ（彩霊）のデータ。属性ごとに2体で、全部で12体。
+ * キャラ（彩霊）のデータ。6色は属性ごとに2体、白・黒はカラスウサギが1体ずつで、全部で14体。
  * 名前は和風の世界観での仮置き（仕様書 8）。ID は名前と切り離してあり、名前を変えても ID は変えない
  * （はじめの6体の ID が `〜-trial` なのは、M2 の仮キャラの ID をそのまま使っているため）。
  * 能力値の目安（仕様書 3.2）：HP 80〜120、攻撃・防御・素早さ 30〜70
@@ -7,8 +7,12 @@
 import type { AttributeId, FighterDef, Stats } from '../engine/types';
 import { getMove } from './moves';
 
-/** 画面に出す名前つきのキャラ */
-export type FighterData = FighterDef & { readonly name: string };
+/** 画面に出す名前と説明つきのキャラ */
+export type FighterData = FighterDef & {
+  readonly name: string;
+  /** どんな彩霊で、どう戦うか（チーム選択やスカウトの詳細で、絵の横に出す。24文字まで） */
+  readonly description: string;
+};
 
 function fighter(
   id: string,
@@ -16,8 +20,9 @@ function fighter(
   name: string,
   stats: Stats,
   moveIds: readonly string[],
+  description: string,
 ): FighterData {
-  return { id, name, attribute, stats, moves: moveIds.map(getMove) };
+  return { id, name, description, attribute, stats, moves: moveIds.map(getMove) };
 }
 
 /** キャラの一覧（スタートの候補・スカウト・ふつうの相手に出る） */
@@ -28,87 +33,87 @@ export const FIGHTERS: readonly FighterData[] = [
     'crimson-burst',
     'quick-jab',
     'focus',
-  ]),
+  ], '炎のしっぽの狐。素早く、攻撃が高い'),
   fighter('orange-trial', 'orange', 'ユウヒダヌキ', { hp: 115, attack: 55, defense: 60, speed: 40 }, [
     'orange-strike',
     'orange-burst',
     'green-strike',
     'mend',
-  ]),
+  ], '風呂敷を背負った狸。HPが高く、手当てで粘る'),
   fighter('yellow-trial', 'yellow', 'イナホイタチ', { hp: 85, attack: 60, defense: 40, speed: 70 }, [
     'yellow-strike',
     'yellow-burst',
     'quick-dart',
     'hinder',
-  ]),
+  ], '稲穂のしっぽのいたち。いちばん速い'),
   fighter('green-trial', 'green', 'ヨモギガエル', { hp: 110, attack: 55, defense: 60, speed: 50 }, [
     'green-strike',
     'green-burst',
     'blue-strike',
     'corrode',
-  ]),
+  ], 'よもぎを背負った蛙。HPが高く、侵蝕を使う'),
   fighter('blue-trial', 'blue', 'シズクサギ', { hp: 100, attack: 55, defense: 65, speed: 45 }, [
     'blue-strike',
     'blue-burst',
     'crimson-strike',
     'break',
-  ]),
+  ], 'しずく模様の鷺。防御が高く、相手の守りを崩す'),
   fighter('violet-trial', 'violet', 'フジチョウ', { hp: 90, attack: 70, defense: 45, speed: 55 }, [
     'violet-strike',
     'violet-burst',
     'yellow-strike',
     'brace',
-  ]),
+  ], '藤の花の羽の蝶。攻撃が高く、打たれ弱い'),
   // 2体目：1体目と役割を変えたキャラ
   fighter('crimson-guard', 'crimson', 'ベニコウラ', { hp: 120, attack: 50, defense: 65, speed: 30 }, [
     'crimson-heavy',
     'crimson-burst',
     'kindle',
     'green-strike',
-  ]),
+  ], '漆塗りの甲羅の亀。遅いが、とても硬い'),
   fighter('orange-raider', 'orange', 'カキザル', { hp: 100, attack: 65, defense: 50, speed: 55 }, [
     'orange-heavy',
     'orange-quick',
     'yellow-strike',
     'brace',
-  ]),
+  ], '柿を持った身軽な猿。先制技で攻める'),
   fighter('yellow-trickster', 'yellow', 'ナノハナバチ', { hp: 90, attack: 55, defense: 50, speed: 60 }, [
     'yellow-heavy',
     'yellow-burst',
     'violet-strike',
     'dazzle',
-  ]),
+  ], '花びらの羽の蜂。速く、相手の攻撃を下げる'),
   fighter('green-charger', 'green', 'タケジカ', { hp: 100, attack: 65, defense: 50, speed: 55 }, [
     'green-heavy',
     'green-quick',
     'crimson-strike',
     'sprout',
-  ]),
+  ], '青竹の角の鹿。攻撃寄りで、先制技も使う'),
   fighter('blue-skirmisher', 'blue', 'アオシャチ', { hp: 95, attack: 60, defense: 50, speed: 60 }, [
     'blue-heavy',
     'blue-quick',
     'orange-strike',
     'stillwater',
-  ]),
+  ], '波模様のしゃち。速めで、相手を遅くする'),
   fighter('violet-warden', 'violet', 'スミレヘビ', { hp: 105, attack: 60, defense: 60, speed: 50 }, [
     'violet-heavy',
     'violet-quick',
     'corrode',
     'haze',
-  ]),
+  ], 'すみれ模様の蛇。守りながら相手を弱らせる'),
   // M8：主人公の相棒、白と黒のカラスウサギ。白は守りと回復、黒は速攻
   fighter('white-twin', 'white', 'シラハウサギ', { hp: 105, attack: 55, defense: 60, speed: 45 }, [
     'white-strike',
     'white-burst',
     'mend',
     'brace',
-  ]),
+  ], '白いカラスウサギ。守りと回復が得意'),
   fighter('black-twin', 'black', 'クロハウサギ', { hp: 90, attack: 60, defense: 45, speed: 60 }, [
     'black-strike',
     'black-burst',
     'violet-quick',
     'hinder',
-  ]),
+  ], '黒いカラスウサギ。素早さで攻める'),
 ];
 
 /**
@@ -121,19 +126,19 @@ export const BOSS_FIGHTERS: readonly FighterData[] = [
     'crimson-burst',
     'quick-jab',
     'focus',
-  ]),
+  ], 'エリア1のボス。くすんだ紅色の大きな猿'),
   fighter('blue-boss', 'blue', 'くすみ大鯉', { hp: 290, attack: 62, defense: 65, speed: 45 }, [
     'blue-strike',
     'blue-burst',
     'corrode',
     'mend',
-  ]),
+  ], 'エリア2のボス。くすんだ蒼色の大きな鯉'),
   fighter('violet-boss', 'violet', 'くすみの主', { hp: 360, attack: 78, defense: 65, speed: 65 }, [
     'violet-strike',
     'violet-burst',
     'quick-dart',
     'hinder',
-  ]),
+  ], 'エリア3のボス。正体のはっきりしない影'),
 ];
 
 const FIGHTER_BY_ID: ReadonlyMap<string, FighterData> = new Map(
