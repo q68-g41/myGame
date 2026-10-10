@@ -235,6 +235,7 @@ shadow. {雰囲気} Original design that does not resemble any existing game, an
   - `Pixel art game sprite of a single small chibi human traveler, an 'Irodorite' (a person who travels with color spirits) from a Japanese-style (wafu) fantasy world where colors are slowly fading. Match the art style, outline weight, shading and palette feel of the reference images, which are finished sprites from the same game, but draw only the person described here. The traveler wears a wide conical straw travel hat (kasa) pulled low so the face is mostly shaded and simple (no detailed facial features, gender-neutral), and a short {羽織} haori jacket over plain travel clothes and straw sandals. Held items: {持ち物}. Main accent color: {色}. Facing right in a three-quarter view, full body, standing, centered, filling about 85% of a square canvas, chibi proportions (big hat, small body). Bold, clearly readable silhouette that still reads when shrunk to 64x64 pixels; chunky pixels, limited palette of about 16 colors, dark 1-pixel outline, flat cel shading, no blur, no gradients; avoid tiny floating particles. Plain solid white background, no ground shadow, no text, no letters, no border. Original design that does not resemble any existing game, anime, or mascot character.`
 - 組み込みの手順はキャラと同じ（白い背景を抜き、16色に減らす）で、大きさだけ変えた。長い辺を62ピクセルに縮めて、64×64 の真ん中に置き、`src/assets/irodorite/<彩り手のID>.png` に保存する
 - 止まった絵だけで、コマ送りアニメと小さい絵はまだない
+- クロの絵は、マップの「ライバル」のマスのアイコンにも使う。同じ元の絵から、長い辺を46ピクセルにして 48×48 の真ん中に置き、16色に減らした（`src/assets/map/rival.png`。ボスのマスと同じ大きさ）
 
 ## 差し替えるとき
 

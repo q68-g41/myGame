@@ -20,6 +20,9 @@ import {
   ELITE_STAT_MULTIPLIER,
   REVIVE_HP_PERCENT,
   REWARD_OFFER_COUNT,
+  RIVAL_AREA,
+  RIVAL_CPU_LEVEL,
+  RIVAL_REWARD_PICKS,
   RUN_TEAM_SIZE,
 } from './constants';
 import { percentOfMaxHp } from './effects';
@@ -58,6 +61,16 @@ export interface IrodoriteDef {
   readonly trait: CharmDef;
 }
 
+/**
+ * ライバル（4.6）：決まったエリアのボスの手前で、必ず1回戦う。
+ * チームは相棒（partners）と、ふつうのキャラから extraCount 体（ランダム）。能力は強敵と同じ倍率で強くする
+ */
+export interface RivalDef {
+  readonly id: string;
+  readonly partners: readonly FighterDef[];
+  readonly extraCount: number;
+}
+
 /** ボス（仕様書 4.2・6）：エリアの最後に1体で出て、行動パターンで動く */
 export interface BossDef {
   readonly fighter: FighterDef;
@@ -76,6 +89,8 @@ export interface RunContent {
   readonly events: readonly EventDef[];
   /** エリアごとのボス（添字はエリア） */
   readonly bosses: readonly BossDef[];
+  /** ライバル。いなければ null（ライバルのマスを置かない） */
+  readonly rival: RivalDef | null;
 }
 
 /** チームの1体 */
@@ -168,7 +183,7 @@ export interface RunState {
  * 彩り手を選んでいれば、その彩り手と相棒を持たせる（相棒は候補に出さない）
  */
 export function startRun(content: RunContent, seed: number, irodorite: IrodoriteDef | null = null): RunState {
-  const map = generateAreaMap(createRng(seed));
+  const map = areaMap(0, content, createRng(seed));
   const pool = irodorite === null ? content.fighters : content.fighters.filter((fighter) => fighter.id !== irodorite.partner.id);
   const candidates = pickDistinct(pool, DRAFT_CANDIDATE_COUNT, map.rng);
   return {
@@ -242,6 +257,11 @@ export function swapTeamOrder(run: RunState, a: number, b: number): RunState {
   return { ...run, team };
 }
 
+/** エリアのマップを作る。ライバルと戦うエリアなら、ライバルのマスを置く */
+function areaMap(area: number, content: RunContent, rng: RngState): RngResult<AreaMap> {
+  return generateAreaMap(rng, { rival: content.rival !== null && area === RIVAL_AREA });
+}
+
 /** 次に進めるマス（次の層での位置） */
 export function runChoices(run: RunState): readonly number[] {
   return run.phase.kind === 'map' ? nextChoices(run.map, run.position) : [];
@@ -277,6 +297,18 @@ function enemyTeam(
   return { value: team, rng: picked.rng };
 }
 
+/** ライバルのチーム：相棒のあとに、ふつうのキャラからランダムに足す。能力は強敵と同じ倍率で強くする */
+function rivalTeam(rival: RivalDef, area: number, content: RunContent, rng: RngState): RngResult<readonly FighterDef[]> {
+  const areaMultiplier = AREA_STAT_MULTIPLIER[area];
+  if (areaMultiplier === undefined) {
+    throw new Error(`エリア${area + 1} の相手の強さが決まっていません`);
+  }
+  const others = content.fighters.filter((fighter) => !rival.partners.some((partner) => partner.id === fighter.id));
+  const extra = pickDistinct(others, rival.extraCount, rng);
+  const multiplier = areaMultiplier * ELITE_STAT_MULTIPLIER;
+  return { value: [...rival.partners, ...extra.value].map((fighter) => strengthen(fighter, multiplier)), rng: extra.rng };
+}
+
 /**
  * 次のマスに進む。index は次の層での位置（runChoices のどれか）。
  * 戦闘・強敵なら相手のチームを決めて、ボスならそのエリアのボスと、戦闘の段階に入る。休憩・スカウト・イベントは、そのマスの段階に入る。
@@ -290,6 +322,15 @@ export function enterNode(run: RunState, index: number, content: RunContent): Ru
   if (node.kind === 'rest' || node.kind === 'scout' || node.kind === 'event') {
     const phase = nodePhase(node.kind, run, content, run.rng);
     return { ...run, position, phase: phase.value, rng: phase.rng };
+  }
+  if (node.kind === 'rival') {
+    if (content.rival === null) {
+      throw new Error('ライバルのデータがありません');
+    }
+    const enemy = rivalTeam(content.rival, run.area, content, run.rng);
+    const seed = nextSeed(enemy.rng);
+    const phase: RunPhase = { kind: 'battle', enemy: enemy.value, cpu: RIVAL_CPU_LEVEL, boss: null, seed: seed.value };
+    return { ...run, position, phase, rng: seed.rng };
   }
   const cpu = node.kind === 'elite' ? ELITE_CPU_LEVEL : CPU_LEVEL_BY_AREA[run.area];
   if (cpu === undefined) {
@@ -367,8 +408,8 @@ function atBoss(run: RunState): boolean {
 }
 
 /** 次のエリアに進む。新しいマップを作り、1層目の手前から始める */
-function enterNextArea(run: RunState): RunState {
-  const map = generateAreaMap(run.rng);
+function enterNextArea(run: RunState, content: RunContent): RunState {
+  const map = areaMap(run.area + 1, content, run.rng);
   return { ...run, area: run.area + 1, map: map.value, position: null, phase: { kind: 'map' }, rng: map.rng };
 }
 
@@ -405,7 +446,8 @@ export function finishBattle(run: RunState, battle: BattleState, content: RunCon
   if (kind === 'boss' && run.area >= AREA_COUNT - 1) {
     return { ...run, team, phase: { kind: 'ended', result: 'cleared' } };
   }
-  const picks = kind === 'boss' ? BOSS_REWARD_PICKS : kind === 'elite' ? ELITE_REWARD_PICKS : 1;
+  const picks =
+    kind === 'boss' ? BOSS_REWARD_PICKS : kind === 'elite' ? ELITE_REWARD_PICKS : kind === 'rival' ? RIVAL_REWARD_PICKS : 1;
   return enterReward({ ...run, team }, content, 1, picks);
 }
 
@@ -443,5 +485,5 @@ export function takeReward(run: RunState, choice: RewardChoice, content: RunCont
   if (phase.pick < phase.picks) {
     return enterReward(next, content, phase.pick + 1, phase.picks);
   }
-  return atBoss(next) ? enterNextArea(next) : { ...next, phase: { kind: 'map' } };
+  return atBoss(next) ? enterNextArea(next, content) : { ...next, phase: { kind: 'map' } };
 }

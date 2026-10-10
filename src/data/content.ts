@@ -6,6 +6,7 @@ import { CHARMS } from './charms';
 import { EVENTS } from './events';
 import { FIGHTERS } from './fighters';
 import { MOVES } from './moves';
+import { RIVAL } from './rival';
 
 /** 報酬で覚えられる技。白・黒の技はカラスウサギ専用なので入れない（仕様書 3.6） */
 const LEARNABLE_MOVES = Object.values(MOVES).filter((move) => !MONOCHROME_ATTRIBUTES.includes(move.attribute));
@@ -17,4 +18,6 @@ export const RUN_CONTENT: RunContent = {
   charms: CHARMS,
   events: EVENTS,
   bosses: BOSSES,
+  // エリア2のボスの手前で戦う、ライバル・クロ（仕様書 4.6）
+  rival: RIVAL,
 };

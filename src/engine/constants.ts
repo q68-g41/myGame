@@ -115,6 +115,15 @@ export const ELITE_REWARD_PICKS = 2;
 /** ボスに勝ったときに選べる報酬の回数（仮）。最後のエリアのボスはクリアなので報酬はない */
 export const BOSS_REWARD_PICKS = 2;
 
+/** ライバル（4.6）と戦うエリア（0 がエリア1）。そのエリアのマップの、休憩とボスのあいだに「ライバル」のマスを1つ置く */
+export const RIVAL_AREA = 1;
+
+/** ライバルの CPU の段階（4.6：段階3）。能力の倍率は強敵と同じ（エリアの倍率 × 強敵の倍率） */
+export const RIVAL_CPU_LEVEL: CpuLevel = 3;
+
+/** ライバルに勝ったときに選べる報酬の回数（4.6：強敵と同じ） */
+export const RIVAL_REWARD_PICKS = 2;
+
 /** 能力強化で上がる量。いまの値の % （四捨五入、最低1）（4.4：10%前後） */
 export const STAT_BOOST_PERCENT = 10;
 
