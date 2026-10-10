@@ -223,11 +223,38 @@ export interface MapView {
   readonly charms: readonly string[];
   /** 下半分に出す案内1行 */
   readonly message: string;
+  /** 並び順を入れ替えるために選んでいるチームの位置。なければ null */
+  readonly selectedMember: number | null;
   /** 例：「エリア2・3層目 / 7層」。そのエリアでまだどのマスにも入っていなければ「エリア2・スタート」 */
   readonly progress: string;
 }
 
 const CHOICE_LETTERS = ['A', 'B', 'C', 'D'] as const;
+
+/** マップ画面で、画面だけが持つ状態 */
+export interface MapUiState {
+  /** 並び順を入れ替えるために、先にタップしたチームの位置。なければ null */
+  readonly selectedMember: number | null;
+}
+
+export const INITIAL_MAP_UI: MapUiState = { selectedMember: null };
+
+/**
+ * チームの1体をタップしたあと。1体目なら選んだ状態にし、同じ1体ならやめる。
+ * 2体目なら、入れ替える2体（swap）を返して、選んだ状態を解く
+ */
+export function tapMapMember(
+  ui: MapUiState,
+  index: number,
+): { readonly ui: MapUiState; readonly swap: readonly [number, number] | null } {
+  if (ui.selectedMember === null) {
+    return { ui: { selectedMember: index }, swap: null };
+  }
+  if (ui.selectedMember === index) {
+    return { ui: INITIAL_MAP_UI, swap: null };
+  }
+  return { ui: INITIAL_MAP_UI, swap: [ui.selectedMember, index] };
+}
 
 export function charmNames(run: RunState): string[] {
   return run.charms.map((charm) => getCharm(charm.id).name);
@@ -288,7 +315,7 @@ function nodeState(position: MapPosition | null, layer: number, index: number, l
 }
 
 /** マップ画面の内容。notice があれば、案内の代わりに出す（直前に起きたこと） */
-export function buildMapView(run: RunState, notice: string | null = null): MapView {
+export function buildMapView(run: RunState, notice: string | null = null, ui: MapUiState = INITIAL_MAP_UI): MapView {
   const choices = runChoices(run);
   const nextLayer = run.position === null ? 0 : run.position.layer + 1;
   const letterOf = (index: number): string | null => {
@@ -322,7 +349,11 @@ export function buildMapView(run: RunState, notice: string | null = null): MapVi
     }),
     team: teamViews(run.team),
     charms: charmNames(run),
-    message: notice ?? '進むマスを選んでください',
+    message:
+      ui.selectedMember === null
+        ? (notice ?? '進むマスを選んでください')
+        : `${getFighter(run.team[ui.selectedMember]!.fighter.id).name}と入れ替える仲間を選んでください`,
+    selectedMember: ui.selectedMember,
     progress:
       run.position === null
         ? `エリア${run.area + 1}・スタート`
