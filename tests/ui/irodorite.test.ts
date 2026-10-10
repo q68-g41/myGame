@@ -96,6 +96,13 @@ describe('彩り手を選ぶ画面', () => {
     expect(root.querySelector('.screen__view .fighter-detail__name')?.textContent).toBe('ヨイミミズク');
   });
 
+  it('一覧をスクロールしてから選んでも、一覧のスクロール位置はそのまま（先頭に戻らない）', () => {
+    root.querySelector<HTMLElement>('.irodorite-choices')!.scrollTop = 150;
+    choices()[indexOf('kai')]!.click();
+    expect(root.querySelector('.irodorite-detail__name')?.textContent).toBe('カイ');
+    expect(root.querySelector<HTMLElement>('.irodorite-choices')!.scrollTop).toBe(150);
+  });
+
   it('「この彩り手で進む」で、選んだ彩り手の相棒が1番目に入ったチーム選択になる', () => {
     choices()[indexOf('wata')]!.click();
     root.querySelector<HTMLButtonElement>('.irodorite__controls .button--primary')!.click();

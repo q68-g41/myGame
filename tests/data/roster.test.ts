@@ -99,7 +99,7 @@ describe('キャラのデータ（仕様書 3.2 の目安）', () => {
 });
 
 describe('彩り手の相棒（仕様書 4.6）', () => {
-  it('カラスウサギ2体と、いまの彩り手6人（ヒナ・ワタ・ソウ・モリエ・ユヒ・リン）の相棒がいる', () => {
+  it('カラスウサギ2体と、彩り手18人の相棒がいる（先の6人のあとに、残りの12人を仕様書の表の順で）', () => {
     expect(PARTNER_FIGHTERS.map((fighter) => fighter.id)).toEqual([
       'white-twin',
       'black-twin',
@@ -109,6 +109,18 @@ describe('彩り手の相棒（仕様書 4.6）', () => {
       'morie-partner',
       'yuhi-partner',
       'rin-partner',
+      'master-partner',
+      'dai-partner',
+      'sunny-partner',
+      'taisho-partner',
+      'miu-partner',
+      'shu-partner',
+      'maru-partner',
+      'otakara-partner',
+      'kasa-partner',
+      'taka-partner',
+      'kai-partner',
+      'tatsumichi-partner',
     ]);
   });
 

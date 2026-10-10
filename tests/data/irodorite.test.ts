@@ -19,13 +19,25 @@ function sameKind(a: CharmEffect, b: CharmEffect): boolean {
 }
 
 describe('彩り手のデータ（仕様書 4.6）', () => {
-  it('いまは6人（ヒナ・モリエ・ワタ・ユヒ・リン・ソウ）。仕様書の表の順で、あだ名と口ぐせも表のとおり', () => {
+  it('18人（クロを除く全員）。仕様書の表の順で、あだ名と口ぐせも表のとおり', () => {
     expect(IRODORITE.map(({ id, name, catchphrase }) => ({ id, name, catchphrase }))).toEqual([
       { id: 'hina', name: 'ヒナ', catchphrase: '宣伝！！！' },
+      { id: 'master', name: 'マスター', catchphrase: '今回の豆は、これです' },
+      { id: 'dai', name: 'ダイ', catchphrase: 'すぐ直します！' },
+      { id: 'sunny', name: 'サニー', catchphrase: '昨日より高度を上げれたかしら' },
       { id: 'morie', name: 'モリエ', catchphrase: 'やってみる！' },
+      { id: 'taisho', name: '大将', catchphrase: 'ポジティブに考えると…' },
+      { id: 'miu', name: 'ミウ', catchphrase: 'あわわわ' },
       { id: 'wata', name: 'ワタ', catchphrase: '道具は、使う人の器を映す鏡' },
+      { id: 'shu', name: 'シュウ', catchphrase: 'このヒリつき…好きだな' },
+      { id: 'maru', name: 'マル', catchphrase: '今日もコン助が冴えている。' },
+      { id: 'otakara', name: 'オタカラ', catchphrase: 'すぐ納品できます〜' },
       { id: 'yuhi', name: 'ユヒ', catchphrase: 'ユヒは信じないです' },
+      { id: 'kasa', name: 'カサ', catchphrase: '想像できることは、実現できる' },
+      { id: 'taka', name: 'タカ先生', catchphrase: 'ここからはスーパー雑談です' },
+      { id: 'kai', name: 'カイ', catchphrase: 'きたー！！' },
       { id: 'rin', name: 'リン', catchphrase: 'やりてぇ' },
+      { id: 'tatsumichi', name: 'タツミチ', catchphrase: 'くすみに挑む男……' },
       { id: 'sou', name: 'ソウ', catchphrase: 'すみません、僕の方でやりますね！' },
     ]);
   });
