@@ -116,7 +116,7 @@ export const SETTINGS_KEY = 'sairei-no-michi.settings';
 export interface Settings {
   /** 演出の速さ */
   readonly speed: PlaybackSpeed;
-  /** 効果音を鳴らすか（M7-2）。はじめはオン */
+  /** 音（効果音と BGM）を鳴らすか（M7-2・M7-3）。はじめはオン */
   readonly sound: boolean;
 }
 

@@ -29,7 +29,7 @@ export interface BattleScreenHandlers {
   onContinue(): void;
   /** 演出の速さを 1倍 ⇔ 2倍 に切り替える */
   onToggleSpeed(): void;
-  /** 効果音のオン ⇔ オフを切り替える */
+  /** 音（効果音と BGM）のオン ⇔ オフを切り替える */
   onToggleSound(): void;
   /** 演出を最後まで早送りする */
   onSkip(): void;
@@ -230,7 +230,7 @@ function menu(doc: Document, view: BattleView, handlers: BattleScreenHandlers): 
   const sound = el(doc, 'button', 'menu__button sound-toggle', view.sound ? '音 オン' : '音 オフ');
   sound.type = 'button';
   sound.setAttribute('aria-pressed', String(view.sound));
-  sound.setAttribute('aria-label', `効果音（いまは${view.sound ? 'オン' : 'オフ'}）`);
+  sound.setAttribute('aria-label', `効果音と BGM（いまは${view.sound ? 'オン' : 'オフ'}）`);
   sound.addEventListener('click', () => handlers.onToggleSound());
   row.append(speed, sound);
   if (view.phase === 'playing') {

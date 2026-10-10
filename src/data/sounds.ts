@@ -16,9 +16,7 @@ export type SoundId =
   | 'heal'
   | 'status'
   | 'switch'
-  | 'faint'
-  | 'win'
-  | 'lose';
+  | 'faint';
 
 /** 音の粒：波の形・高さ（Hz）・長さ（秒）・大きさ（0〜1） */
 export interface ToneDef {
@@ -41,13 +39,9 @@ export const MASTER_VOLUME = 0.25;
 
 /** 音の高さ（Hz） */
 const NOTE = {
-  C4: 261.63,
-  E4: 329.63,
-  G4: 392,
   C5: 523.25,
   E5: 659.25,
   G5: 783.99,
-  B5: 987.77,
   C6: 1046.5,
 } as const;
 
@@ -91,18 +85,4 @@ export const SOUNDS: Readonly<Record<SoundId, readonly ToneDef[]>> = {
   switch: [{ wave: 'square', from: NOTE.C5, to: NOTE.G5, duration: 0.1, volume: 0.45 }],
   // 倒れた：長く下がる
   faint: [{ wave: 'square', from: 440, to: 110, duration: 0.42, volume: 0.45 }],
-  // 勝った：明るく上がる4音
-  win: [
-    { wave: 'square', from: NOTE.C5, duration: 0.1, volume: 0.45 },
-    { wave: 'square', from: NOTE.E5, at: 0.1, duration: 0.1, volume: 0.45 },
-    { wave: 'square', from: NOTE.G5, at: 0.2, duration: 0.1, volume: 0.45 },
-    { wave: 'square', from: NOTE.C6, at: 0.3, duration: 0.32, volume: 0.45 },
-    { wave: 'triangle', from: NOTE.B5, at: 0.3, duration: 0.32, volume: 0.25 },
-  ],
-  // 全滅：低く下がる3音
-  lose: [
-    { wave: 'triangle', from: NOTE.G4, duration: 0.16, volume: 0.6 },
-    { wave: 'triangle', from: NOTE.E4, at: 0.16, duration: 0.16, volume: 0.6 },
-    { wave: 'triangle', from: NOTE.C4, at: 0.32, duration: 0.45, volume: 0.6 },
-  ],
 };

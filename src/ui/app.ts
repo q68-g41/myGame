@@ -57,6 +57,7 @@ import {
   type BattleSession,
 } from './session';
 import type { SoundId } from '../data/sounds';
+import { chooseMusic, type MusicScene } from './music';
 import { SILENT_PLAYER, type SoundPlayer } from './sound';
 import { renderTopScreen } from './top';
 
@@ -67,7 +68,7 @@ export interface AppOptions {
   readonly newSeed: () => number;
   /** 自動保存の保存先（ブラウザでは localStorage）。省くと保存しない */
   readonly storage?: Pick<Storage, 'getItem' | 'setItem' | 'removeItem'> | null;
-  /** 効果音を鳴らす仕組み（ブラウザでは Web Audio）。省くと鳴らさない */
+  /** 効果音と BGM を鳴らす仕組み（ブラウザでは Web Audio）。省くと鳴らさない */
   readonly sound?: SoundPlayer;
 }
 
@@ -105,11 +106,12 @@ export function startApp(root: HTMLElement, options: AppOptions): void {
     }
   };
   const saveSettings = () => settings.save({ speed: ui.speed, sound: ui.sound });
-  /** 音のオン ⇔ オフを切り替えて保存する。オンにしたときは、確かめのために鳴らす */
+  /** 音（効果音と BGM）のオン ⇔ オフを切り替えて保存する。オンにしたときは、確かめのために鳴らす */
   const toggleSound = () => {
     ui = { ...ui, sound: !ui.sound };
     saveSettings();
     playSound('tap');
+    syncMusic();
     return ui.sound;
   };
   let playback: Playback | null = null;
@@ -129,7 +131,31 @@ export function startApp(root: HTMLElement, options: AppOptions): void {
     }
   };
 
+  /** いまの画面（BGM を選ぶため）。バトルの勝ち負けは、決着の演出まで進んでから出す */
+  const musicScene = (): MusicScene => {
+    if (run === null) {
+      return { screen: 'top' };
+    }
+    const { phase } = run;
+    if (phase.kind !== 'battle') {
+      return { screen: phase.kind };
+    }
+    const shown =
+      session !== null &&
+      (playback === null || session.lastEvents.slice(0, playback.index + 1).some((e) => e.type === 'battleEnd'));
+    return { screen: 'battle', boss: phase.boss !== null, winner: shown ? (session?.state.winner ?? null) : null };
+  };
+  /** 画面に合う BGM にする（音がオフなら止める） */
+  function syncMusic(): void {
+    player.music(ui.sound ? chooseMusic(musicScene()) : null);
+  }
+
   const render = () => {
+    draw();
+    syncMusic();
+  };
+
+  const draw = () => {
     if (run === null) {
       return;
     }
@@ -254,6 +280,7 @@ export function startApp(root: HTMLElement, options: AppOptions): void {
       onStart: startNewRun,
       ...(saved === null ? {} : { onContinue: () => resume(saved) }),
     });
+    syncMusic();
   };
 
   const draftHandlers = {
@@ -336,12 +363,10 @@ export function startApp(root: HTMLElement, options: AppOptions): void {
       toggleSound();
       render();
     },
+    // 早送りしたときも、決着していれば勝ち負けの曲が鳴る（render のあとの BGM 合わせで）
     onSkip: () => {
-      // 早送りしても、勝ち負けの音は鳴らす
-      const ending = playback?.frames.slice(playback.index + 1).find((frame) => frame.sound === 'win' || frame.sound === 'lose');
       stopPlayback();
       render();
-      playSound(ending?.sound ?? null);
     },
   };
 

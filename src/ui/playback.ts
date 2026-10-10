@@ -41,7 +41,7 @@ export interface PlaybackFrame {
   readonly sound: SoundId | null;
 }
 
-/** イベントから、鳴らす効果音を決める */
+/** イベントから、鳴らす効果音を決める。勝ち負けは効果音ではなく、BGM の短い曲（src/data/music.ts）で知らせる */
 function soundOf(event: BattleEvent): SoundId | null {
   switch (event.type) {
     case 'moveUsed':
@@ -60,8 +60,6 @@ function soundOf(event: BattleEvent): SoundId | null {
       return 'switch';
     case 'fainted':
       return 'faint';
-    case 'battleEnd':
-      return event.winner === 'player' ? 'win' : 'lose';
     default:
       return null;
   }
