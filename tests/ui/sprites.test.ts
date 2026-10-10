@@ -129,7 +129,7 @@ describe('彩り手の絵のファイル（仕様書 4.6・5.1）', () => {
 
 describe('マップのアイコンのファイル', () => {
   it('ボス以外のマスの種類すべてにあり、ほかの絵はない（ボスのマスはボスのドット絵を使う）', () => {
-    const kinds = ['battle', 'elite', 'rest', 'scout', 'event'];
+    const kinds = ['battle', 'elite', 'rest', 'scout', 'event', 'rival'];
     for (const kind of kinds) {
       expect(mapIconUrl(kind), kind).toBeTypeOf('string');
     }
@@ -138,8 +138,12 @@ describe('マップのアイコンのファイル', () => {
     expect(mapIconUrl('boss')).toBeNull();
   });
 
-  it('どれも24×24', () => {
+  it('どれも24×24。ライバルのマスだけは、ボスのマスと同じ48×48（クロの絵。仕様書 4.6）', () => {
     for (const [path, dataUri] of Object.entries(MAP_FILES)) {
+      if (path.endsWith('/rival.png')) {
+        expect(pngSize(dataUri), path).toEqual({ width: SPRITE_SIZE, height: SPRITE_SIZE });
+        continue;
+      }
       expect(pngSize(dataUri), path).toEqual({ width: MAP_ICON_SIZE, height: MAP_ICON_SIZE });
     }
   });

@@ -173,8 +173,18 @@ describe('マップ', () => {
 
 describe('バトルの始まりの口ぐせ（仕様書 4.6）', () => {
   it('彩り手のあだ名と口ぐせを1行にする。彩り手がいなければ null', () => {
-    expect(battleOpening({ ...runAt(null), irodorite: getIrodorite('sou') })).toBe('ソウ「すみません、僕の方でやりますね！」');
-    expect(battleOpening(runAt(null))).toBeNull();
+    expect(battleOpening({ ...runAt(null), irodorite: getIrodorite('sou') })).toEqual(['ソウ「すみません、僕の方でやりますね！」']);
+    expect(battleOpening(runAt(null))).toEqual([]);
+  });
+
+  it('ライバルのマスでは、自分の彩り手のあとにクロの口ぐせも出す', () => {
+    const rivalMap: AreaMap = { layers: [[{ kind: 'rival', next: [0] }], [{ kind: 'boss', next: [] }]] };
+    const atRival = { ...runAt({ layer: 0, index: 0 }), map: rivalMap };
+    expect(battleOpening({ ...atRival, irodorite: getIrodorite('hina') })).toEqual([
+      'ヒナ「宣伝！！！」',
+      'クロ「結局ちょっとずつチマチマ」',
+    ]);
+    expect(battleOpening(atRival)).toEqual(['クロ「結局ちょっとずつチマチマ」']);
   });
 });
 

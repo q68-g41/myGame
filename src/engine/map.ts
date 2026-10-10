@@ -1,12 +1,13 @@
 /**
  * 1エリア分の分岐マップ（4.3）。下の層から順に進み、最後の層がボス。
  * マップはシード付き乱数で作り、同じシードなら必ず同じマップになる。
+ * ライバル（4.6）と戦うエリアでは、休憩とボスのあいだに「ライバル」の層（1マス）を足す。
  */
 import { MAP_LAYER_MAX_WIDTH, MAP_LAYER_MIN_WIDTH } from './constants';
 import { nextInt, pickDistinct, type RngResult, type RngState } from './rng';
 
-/** マスの種類（4.2） */
-export type NodeKind = 'battle' | 'elite' | 'rest' | 'scout' | 'event' | 'boss';
+/** マスの種類（4.2）。rival はライバル・クロとの戦い（4.6） */
+export type NodeKind = 'battle' | 'elite' | 'rest' | 'scout' | 'event' | 'rival' | 'boss';
 
 /** マップの1マス */
 export interface MapNode {
@@ -66,8 +67,11 @@ function connectLayers(from: number, to: number, rng: RngState): RngResult<reado
   return { value: next, rng: current };
 }
 
-/** 1エリア分のマップを作る（4.3） */
-export function generateAreaMap(rng: RngState): RngResult<AreaMap> {
+/**
+ * 1エリア分のマップを作る（4.3）。rival なら、休憩とボスのあいだにライバルのマスを置く。
+ * 1マスの層どうしのつなぎ方は乱数を使わないので、ライバルの層があってもなくても、ほかの層は同じシードなら同じになる
+ */
+export function generateAreaMap(rng: RngState, options: { readonly rival?: boolean } = {}): RngResult<AreaMap> {
   let current = rng;
   const width = (): number => {
     const draw = nextInt(current, MAP_LAYER_MIN_WIDTH, MAP_LAYER_MAX_WIDTH);
@@ -88,9 +92,10 @@ export function generateAreaMap(rng: RngState): RngResult<AreaMap> {
   });
   // 4. 3層目で選ばなかったほう（同じ列で、スカウトと戦闘が1回ずつになる）
   const fourth: NodeKind[] = third.map((kind) => (kind === 'scout' ? 'battle' : 'scout'));
-  // 5. 戦闘 → 6. 休憩（全ルートが合流）→ 7. ボス
+  // 5. 戦闘 → 6. 休憩（全ルートが合流）→（ライバル）→ 7. ボス
   const fifth: NodeKind[] = Array.from({ length: width() }, () => 'battle');
-  const kinds: readonly (readonly NodeKind[])[] = [first, secondDraw.value, third, fourth, fifth, ['rest'], ['boss']];
+  const rival: readonly (readonly NodeKind[])[] = options.rival === true ? [['rival']] : [];
+  const kinds: readonly (readonly NodeKind[])[] = [first, secondDraw.value, third, fourth, fifth, ['rest'], ...rival, ['boss']];
 
   const layers = kinds.map((layerKinds, layer) => {
     const above = kinds[layer + 1];

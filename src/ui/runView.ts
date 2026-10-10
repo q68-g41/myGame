@@ -6,6 +6,7 @@ import { BOSSES } from '../data/bosses';
 import { getCharm } from '../data/charms';
 import { getFighter } from '../data/fighters';
 import { getIrodorite } from '../data/irodorite';
+import { RIVAL } from '../data/rival';
 import { NODE_KIND_MARKS, NODE_KIND_NAMES, STAT_NAMES } from '../data/labels';
 import { getMove } from '../data/moves';
 import { AREA_COUNT, MAX_MOVES, RUN_TEAM_SIZE } from '../engine/constants';
@@ -289,7 +290,8 @@ export function teamViews(team: readonly RunMember[]): TeamMemberView[] {
 
 /**
  * マスのアイコン。ボスのマスは、そのエリアのボスのドット絵（48×48）を等倍で出す（どのボスが待っているか分かるように）。
- * ボスの絵は暗い色なので、小さく作り直すとつぶれて見分けにくい
+ * ボスの絵は暗い色なので、小さく作り直すとつぶれて見分けにくい。
+ * ライバルのマスは、クロの絵（48×48。彩り手の絵から作った）をボスと同じ大きさで出す（仕様書 4.6）
  */
 function mapIcon(run: RunState, kind: NodeKind): MapIconView | null {
   if (kind === 'boss') {
@@ -298,7 +300,7 @@ function mapIcon(run: RunState, kind: NodeKind): MapIconView | null {
     return url === null ? null : { url, size: SPRITE_SIZE };
   }
   const url = mapIconUrl(kind);
-  return url === null ? null : { url, size: MAP_ICON_SIZE };
+  return url === null ? null : { url, size: kind === 'rival' ? SPRITE_SIZE : MAP_ICON_SIZE };
 }
 
 /** 次に進めるマスから、この先たどり着けるマスを層ごとに集める */
@@ -379,13 +381,20 @@ export function buildMapView(run: RunState, notice: string | null = null, ui: Ma
 }
 
 /** バトル画面に出す、いまのマスの説明（例：「エリア2・3層目・強敵」） */
-/** バトルの始まりのログに出す、彩り手の口ぐせ（例：「ヒナ「宣伝！！！」」）。彩り手がいなければ null */
-export function battleOpening(run: RunState): string | null {
-  if (run.irodorite === null) {
-    return null;
+/**
+ * バトルの始まりのログに出す口ぐせの行（例：「ヒナ「宣伝！！！」」）。
+ * 自分の彩り手の口ぐせのあと、ライバルのマスならクロの口ぐせも出す（仕様書 4.6）。どちらもなければ空
+ */
+export function battleOpening(run: RunState): readonly string[] {
+  const lines: string[] = [];
+  if (run.irodorite !== null) {
+    const data = getIrodorite(run.irodorite.id);
+    lines.push(`${data.name}「${data.catchphrase}」`);
   }
-  const data = getIrodorite(run.irodorite.id);
-  return `${data.name}「${data.catchphrase}」`;
+  if (run.position !== null && nodeAt(run.map, run.position).kind === 'rival') {
+    lines.push(`${RIVAL.name}「${RIVAL.catchphrase}」`);
+  }
+  return lines;
 }
 
 export function battleCaption(run: RunState): string | null {

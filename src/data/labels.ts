@@ -25,6 +25,7 @@ export const NODE_KIND_NAMES: Readonly<Record<NodeKind, string>> = {
   rest: '休憩',
   scout: 'スカウト',
   event: 'イベント',
+  rival: 'ライバル',
   boss: 'ボス',
 };
 
@@ -35,5 +36,6 @@ export const NODE_KIND_MARKS: Readonly<Record<NodeKind, string>> = {
   rest: '休',
   scout: 'ス',
   event: '？',
+  rival: 'ラ',
   boss: 'ボ',
 };

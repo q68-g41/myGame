@@ -192,7 +192,9 @@ describe('報酬を受け取る', () => {
     expect(next.area).toBe(1);
     expect(next.position).toBeNull();
     expect(next.phase).toEqual({ kind: 'map' });
-    expect(next.map.layers).toHaveLength(7);
+    // エリア2はライバルと戦うエリアなので、休憩とボスのあいだにライバルの層があり、8層（仕様書 4.6）
+    expect(next.map.layers).toHaveLength(8);
+    expect(next.map.layers.map((layer) => layer[0]!.kind).slice(-3)).toEqual(['rest', 'rival', 'boss']);
     expect(next.map).not.toEqual(MAP);
     // チームとお守りはそのまま持ち越す
     expect(next.team.map((m) => m.fighter.id)).toEqual(team.map((m) => m.fighter.id));
