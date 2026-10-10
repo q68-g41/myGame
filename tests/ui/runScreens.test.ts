@@ -276,21 +276,21 @@ describe('マップの画面', () => {
     expect(boss?.closest('.map-node')?.getAttribute('aria-label')).toContain('ボス');
   });
 
-  it('ヒント：戦うマスの下に相手の属性の色、選ぶボタンに相手の属性の名前を、出る順に出す（仕様書 4.3）', () => {
+  it('ヒント：戦うマスの下に先頭の相手の属性の色、選ぶボタンに「先頭」と属性の名前を出す（1体目だけ。仕様書 4.3）', () => {
     const run = chooseTeam(startRun(RUN_CONTENT, 1, IRODORITE[0]!), [0, 1]);
-    const names = (index: number) => nodeEnemies(run, { layer: 0, index })!.map((fighter) => ATTRIBUTE_NAMES[fighter.attribute]);
-    const chips = [...root.querySelectorAll('.screen__controls .map-choice')].map((choice) =>
-      [...choice.querySelectorAll('.enemy-chip')].map((chip) => chip.textContent),
-    );
-    expect(chips).toEqual(runChoices(run).map(names));
-    // マップでは、戦うマス（戦闘・強敵・ボス）にだけ色の四角が付く
+    const leadName = (index: number) => ATTRIBUTE_NAMES[nodeEnemies(run, { layer: 0, index })![0]!.attribute];
+    const chips = [...root.querySelectorAll('.screen__controls .map-choice')].map((choice) => [
+      choice.querySelector('.map-choice__hint-label')?.textContent,
+      ...[...choice.querySelectorAll('.enemy-chip')].map((chip) => chip.textContent),
+    ]);
+    expect(chips).toEqual(runChoices(run).map((index) => ['先頭', leadName(index)]));
+    // マップでは、戦うマス（戦闘・強敵・ボス）にだけ、色の四角が1つ付く
     for (const node of root.querySelectorAll<HTMLElement>('.screen__view .map-node')) {
       const fights = ['battle', 'elite', 'boss', 'rival'].some((kind) => node.classList.contains(`map-node--${kind}`));
-      expect(node.querySelectorAll('.map-node__pip').length > 0, node.className).toBe(fights);
+      expect(node.querySelectorAll('.map-node__pip'), node.className).toHaveLength(fights ? 1 : 0);
     }
     const first = root.querySelector<HTMLElement>('.map-node[data-layer="0"][data-index="0"]')!;
-    expect(first.querySelectorAll('.map-node__pip')).toHaveLength(names(0).length);
-    expect(first.getAttribute('aria-label')).toContain(`相手：${names(0).join('・')}`);
+    expect(first.getAttribute('aria-label')).toContain(`先頭の相手：${leadName(0)}`);
   });
 
   it('選択肢の文字（A・B…）が、マップの進めるマスにも付いている', () => {

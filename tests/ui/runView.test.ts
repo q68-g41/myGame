@@ -137,25 +137,23 @@ describe('マップ', () => {
     expect(view.layers[2]![0]).toMatchObject({ state: 'reachable', mark: 'ボ', name: 'ボス' });
   });
 
-  it('ヒント：戦うマスには、相手の属性を出る順に出す（マップを作るときに決めた相手）。ボスはエリアのボス、戦わないマスは空（仕様書 4.3）', () => {
+  it('ヒント：戦うマスには、先頭に出てくる相手の属性だけを出す（マップを作るときに決めた相手）。ボスはエリアのボス、戦わないマスは null（仕様書 4.3）', () => {
     const run = runAt(null);
     const view = buildMapView(run);
-    const hint = (fighters: readonly FighterDef[]) =>
-      fighters.map((fighter) => ({ name: ATTRIBUTE_NAMES[fighter.attribute], color: ATTRIBUTE_COLORS[fighter.attribute] }));
+    const hint = (fighter: FighterDef) => ({ name: ATTRIBUTE_NAMES[fighter.attribute], color: ATTRIBUTE_COLORS[fighter.attribute] });
     view.layers.forEach((layer, l) =>
       layer.forEach((node, index) => {
         if (node.kind === 'battle' || node.kind === 'elite') {
-          expect(node.enemies).toEqual(hint(nodeEnemies(run, { layer: l, index })!));
-          expect(node.enemies.length).toBeGreaterThan(0);
+          expect(node.lead).toEqual(hint(nodeEnemies(run, { layer: l, index })![0]!));
         } else if (node.kind === 'boss') {
-          expect(node.enemies).toEqual(hint([BOSSES[0]!.fighter]));
+          expect(node.lead).toEqual(hint(BOSSES[0]!.fighter));
         } else {
-          expect(node.enemies, node.kind).toEqual([]);
+          expect(node.lead, node.kind).toBeNull();
         }
       }),
     );
-    // 選ぶボタンにも、同じマスの相手を出す
-    expect(view.choices.map((choice) => choice.enemies)).toEqual(view.choices.map((choice) => view.layers[0]![choice.index]!.enemies));
+    // 選ぶボタンにも、同じマスの先頭の相手を出す
+    expect(view.choices.map((choice) => choice.lead)).toEqual(view.choices.map((choice) => view.layers[0]![choice.index]!.lead));
   });
 
   it('マスにはアイコンの絵（24×24）を出す。ボスのマスは、そのエリアのボスのドット絵（48×48）', () => {

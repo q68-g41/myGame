@@ -1298,21 +1298,16 @@ button.member {
   text-align: center;
 }
 
-/* 戦うマスの下に、相手の属性の色を小さな四角で、出る順に並べる（ヒント。仕様書 4.3） */
-.map-node__hint {
+/* 戦うマスの下に、先頭の相手の属性の色を小さな四角で出す（ヒント。仕様書 4.3） */
+.map-node__pip {
   position: absolute;
   top: calc(100% + 2px);
   left: 50%;
-  display: flex;
-  gap: 2px;
+  width: 8px;
+  height: 8px;
+  box-shadow: 0 0 0 1px rgba(0, 0, 0, 0.6);
   transform: translateX(-50%);
   pointer-events: none;
-}
-
-.map-node__pip {
-  width: 7px;
-  height: 7px;
-  box-shadow: 0 0 0 1px rgba(0, 0, 0, 0.6);
 }
 
 .map__controls {
@@ -1362,13 +1357,19 @@ button.member {
   transform: translateY(2px);
 }
 
-/* 選ぶボタンの2行目に、相手の属性を「色の四角＋名前」の札で出す（色だけに頼らない） */
+/* 選ぶボタンの2行目に、先頭の相手の属性を「先頭」＋「色の四角＋名前」の札で出す（色だけに頼らない） */
 .map-choice__hint {
   display: flex;
   flex-basis: 100%;
-  flex-wrap: wrap;
+  align-items: center;
   justify-content: center;
-  gap: 2px 6px;
+  gap: 6px;
+}
+
+.map-choice__hint-label {
+  font-size: 14px;
+  font-weight: 400;
+  color: var(--color-muted);
 }
 
 .enemy-chip {

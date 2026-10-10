@@ -253,33 +253,27 @@ function mapNode(doc: Document, view: MapView, node: MapNodeView): HTMLElement {
   element.dataset.index = String(node.index);
   element.setAttribute('role', 'img');
   const letter = node.letter === null ? '' : `${node.letter}・`;
-  const enemies = node.enemies.length === 0 ? '' : ` 相手：${node.enemies.map((enemy) => enemy.name).join('・')}`;
-  element.setAttribute('aria-label', `${node.layer + 1}層目 ${node.name}（${letter}${NODE_STATE_LABELS[node.state]}）${enemies}`);
+  const lead = node.lead === null ? '' : ` 先頭の相手：${node.lead.name}`;
+  element.setAttribute('aria-label', `${node.layer + 1}層目 ${node.name}（${letter}${NODE_STATE_LABELS[node.state]}）${lead}`);
   if (node.letter !== null) {
     element.append(el(doc, 'span', 'map-node__letter', node.letter));
   }
-  // 戦うマスには、相手の属性の色を小さな四角で、出る順に並べる（ヒント。4.3）
-  if (node.enemies.length > 0) {
-    const hint = el(doc, 'span', 'map-node__hint');
-    for (const enemy of node.enemies) {
-      const pip = el(doc, 'span', 'map-node__pip');
-      pip.style.background = enemy.color;
-      hint.append(pip);
-    }
-    element.append(hint);
+  // 戦うマスの下に、先頭の相手の属性の色を小さな四角で出す（ヒント。4.3）
+  if (node.lead !== null) {
+    const pip = el(doc, 'span', 'map-node__pip');
+    pip.style.background = node.lead.color;
+    element.append(pip);
   }
   return element;
 }
 
-/** 選ぶボタンに出す、相手の属性（色と名前の札を、出る順に） */
-function enemyChips(doc: Document, enemies: readonly EnemyHintView[]): HTMLElement {
-  const chips = el(doc, 'span', 'map-choice__hint');
-  for (const enemy of enemies) {
-    const chip = el(doc, 'span', 'enemy-chip', enemy.name);
-    chip.style.setProperty('--chip-color', enemy.color);
-    chips.append(chip);
-  }
-  return chips;
+/** 選ぶボタンの2行目に出す、先頭の相手の属性（「先頭」＋色の四角と名前の札） */
+function leadChip(doc: Document, lead: EnemyHintView): HTMLElement {
+  const hint = el(doc, 'span', 'map-choice__hint');
+  const chip = el(doc, 'span', 'enemy-chip', lead.name);
+  chip.style.setProperty('--chip-color', lead.color);
+  hint.append(el(doc, 'span', 'map-choice__hint-label', '先頭'), chip);
+  return hint;
 }
 
 export function renderMapScreen(root: HTMLElement, view: MapView, handlers: MapScreenHandlers): void {
@@ -309,8 +303,8 @@ export function renderMapScreen(root: HTMLElement, view: MapView, handlers: MapS
       choose.append(mapIconElement(doc, { url: choice.icon.url, size: choice.icon.size, className: 'map-choice__icon' }));
     }
     choose.append(el(doc, 'span', 'map-choice__name', choice.name));
-    if (choice.enemies.length > 0) {
-      choose.append(enemyChips(doc, choice.enemies));
+    if (choice.lead !== null) {
+      choose.append(leadChip(doc, choice.lead));
     }
     choices.append(choose);
   }
