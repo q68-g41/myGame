@@ -7,6 +7,7 @@ import type { AreaMap } from '../../src/engine/map';
 import { chooseTeam, enterNode, startRun, type RunState } from '../../src/engine/run';
 import {
   battleCaption,
+  battleOpening,
   buildDraftView,
   buildMapView,
   buildRunEndView,
@@ -15,7 +16,7 @@ import {
   INITIAL_DRAFT_UI,
   toggleDraftPick,
 } from '../../src/ui/runView';
-import { MAP_ICON_SIZE, mapIconUrl, SPRITE_SIZE, spriteUrl } from '../../src/ui/sprites';
+import { irodoriteUrl, MAP_ICON_SIZE, mapIconUrl, SPRITE_SIZE, spriteUrl } from '../../src/ui/sprites';
 
 /** テスト用のマップ：1層目 2マス → 2層目 3マス → ボス */
 const MAP: AreaMap = {
@@ -170,6 +171,13 @@ describe('マップ', () => {
   });
 });
 
+describe('バトルの始まりの口ぐせ（仕様書 4.6）', () => {
+  it('彩り手のあだ名と口ぐせを1行にする。彩り手がいなければ null', () => {
+    expect(battleOpening({ ...runAt(null), irodorite: getIrodorite('sou') })).toBe('ソウ「すみません、僕の方でやりますね！」');
+    expect(battleOpening(runAt(null))).toBeNull();
+  });
+});
+
 describe('ランの結果', () => {
   it('クリアと全滅で、見出しと文章を変える', () => {
     const cleared = buildRunEndView(runAt({ layer: 2, index: 0 }, { kind: 'ended', result: 'cleared' }));
@@ -177,6 +185,13 @@ describe('ランの結果', () => {
     const defeated = buildRunEndView(runAt({ layer: 1, index: 1 }, { kind: 'ended', result: 'defeated' }));
     expect(defeated).toMatchObject({ result: 'defeated', title: '全滅…', message: 'エリア1・2層目・強敵で全滅した' });
     expect(defeated.team).toHaveLength(3);
+  });
+
+  it('彩り手のいるランでは、彩り手の絵とあだ名を出す。いなければ null', () => {
+    const sou = getIrodorite('sou');
+    const ended = { ...runAt({ layer: 2, index: 0 }, { kind: 'ended', result: 'cleared' }), irodorite: sou };
+    expect(buildRunEndView(ended).irodorite).toEqual({ name: 'ソウ', portrait: irodoriteUrl('sou'), color: expect.any(String) });
+    expect(buildRunEndView(runAt({ layer: 2, index: 0 }, { kind: 'ended', result: 'cleared' })).irodorite).toBeNull();
   });
 
   it('終わっていないランや、チーム選択でないときに作ろうとするとエラー', () => {

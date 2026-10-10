@@ -57,7 +57,11 @@ describe('バトル画面', () => {
     expect(view.querySelector('.battle__caption')?.textContent).toBe('エリア1・1層目・戦闘');
     expect(view.querySelector('[data-side="enemy"]')).not.toBeNull();
     expect(view.querySelector('[data-side="player"]')).not.toBeNull();
-    expect(view.querySelector('[role="status"]')?.textContent).toBe('バトル開始！ 技を選んでください');
+    // バトルの始まりのログには、彩り手の口ぐせを1行出す（仕様書 4.6）
+    expect([...view.querySelectorAll('[role="status"] .battle__log-line')].map((line) => line.textContent)).toEqual([
+      'ヒナ「宣伝！！！」',
+      'バトル開始！ 技を選んでください',
+    ]);
     expect(controls.querySelectorAll('.move-button')).toHaveLength(4);
     expect(controls.querySelectorAll('.bench-button')).toHaveLength(2);
   });

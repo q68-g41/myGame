@@ -20,6 +20,18 @@ describe('バトル画面に出す内容', () => {
     expect(view.moves.every((move) => !move.disabled)).toBe(true);
   });
 
+  it('バトルの始まりのログは、口ぐせの1行のあとに「バトル開始！」。口ぐせがなければ「バトル開始！」だけ', () => {
+    const opening = 'ヒナ「宣伝！！！」';
+    expect(buildBattleView(session, INITIAL_UI_STATE, null, null, opening).logLines).toEqual([
+      opening,
+      'バトル開始！ 技を選んでください',
+    ]);
+    expect(buildBattleView(session).logLines).toEqual(['バトル開始！ 技を選んでください']);
+    // 1ターン目が終わったら、口ぐせは出さない
+    const next = playMove(session, selectableMoves(activeCombatant(session.state, 'player'))[0]!.id);
+    expect(buildBattleView(next, INITIAL_UI_STATE, null, null, opening).logLines).not.toContain(opening);
+  });
+
   it('技を選ぶ場面では、控えを交代先として選べる。選ぶと確認が出る', () => {
     const view = buildBattleView(session, { ...INITIAL_UI_STATE, selectedBench: 2 });
     expect(view.bench.every((member) => member.selectable)).toBe(true);

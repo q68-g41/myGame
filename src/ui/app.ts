@@ -45,6 +45,7 @@ import { buildFrames, stepDuration, type PlaybackFrame } from './playback';
 import { renderDraftScreen, renderMapScreen, renderRewardScreen, renderRunEndScreen } from './runScreens';
 import {
   battleCaption,
+  battleOpening,
   buildDraftView,
   buildMapView,
   buildRewardView,
@@ -194,7 +195,7 @@ export function startApp(root: HTMLElement, options: AppOptions): void {
           return;
         }
         const frame = playback === null ? null : (playback.frames[playback.index] ?? null);
-        renderBattleScreen(root, buildBattleView(session, ui, frame, battleCaption(run)), battleHandlers);
+        renderBattleScreen(root, buildBattleView(session, ui, frame, battleCaption(run), battleOpening(run)), battleHandlers);
         return;
       }
       case 'reward':

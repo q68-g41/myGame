@@ -224,8 +224,11 @@ function benchViews(state: BattleSession['state'], phase: BattlePhase, ui: UiSta
   );
 }
 
-/** 演出がないときのログ：直前のターンの最後の数行（読み返せるように残す） */
-function logLines(session: BattleSession, phase: BattlePhase): readonly string[] {
+/**
+ * 演出がないときのログ：直前のターンの最後の数行（読み返せるように残す）。
+ * opening は、バトルの始まりに出す1行（彩り手の口ぐせ。仕様書 4.6）
+ */
+function logLines(session: BattleSession, phase: BattlePhase, opening: string | null): readonly string[] {
   const lines = describeEvents(session.lastEvents, session.previousState);
   if (phase === 'replacement') {
     // 何が起きて倒れたのかが分かるように、直前の行も残す
@@ -233,7 +236,10 @@ function logLines(session: BattleSession, phase: BattlePhase): readonly string[]
   }
   if (lines.length === 0) {
     // 起きたことがないのは、バトルの最初か、保存したところから再開した直後
-    return [session.state.turn === 1 ? 'バトル開始！ 技を選んでください' : '続きから。技を選んでください'];
+    if (session.state.turn !== 1) {
+      return ['続きから。技を選んでください'];
+    }
+    return opening === null ? ['バトル開始！ 技を選んでください'] : [opening, 'バトル開始！ 技を選んでください'];
   }
   return lines.slice(-LOG_LINES);
 }
@@ -265,12 +271,14 @@ function detailView(state: BattleSession['state'], ui: UiState): MoveDetailView 
 /**
  * セッションと画面の状態から、バトル画面に出す内容を作る。
  * 演出中は frame（そのコマの状態とログ）を見せ、ボタンはすべて押せなくする。
+ * opening は、バトルの始まりのログに出す1行（彩り手の口ぐせ）。なければ null
  */
 export function buildBattleView(
   session: BattleSession,
   ui: UiState = INITIAL_UI_STATE,
   frame: FrameOverlay | null = null,
   caption: string | null = null,
+  opening: string | null = null,
 ): BattleView {
   const phase = frame !== null ? 'playing' : phaseOf(session);
   const state = frame?.state ?? session.state;
@@ -280,7 +288,7 @@ export function buildBattleView(
     phase,
     enemy: panel(state, 'enemy'),
     player: panel(state, 'player'),
-    logLines: frame?.logLines ?? logLines(session, phase),
+    logLines: frame?.logLines ?? logLines(session, phase, opening),
     moves: moveButtons(activeOf(state.sides.player), activeOf(state.sides.enemy), phase, state.sides.player.charms),
     bench,
     confirm: phase === 'playing' ? null : confirmView(session, phase, bench, ui),
