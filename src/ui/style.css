@@ -1288,6 +1288,18 @@ button.member {
   color: var(--color-accent);
 }
 
+.run-end__irodorite {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 4px;
+}
+
+.run-end__name {
+  font-family: var(--font-dot);
+  font-size: 18px;
+}
+
 .run-end__message {
   margin: 0;
   font-size: 14px;

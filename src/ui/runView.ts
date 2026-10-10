@@ -23,7 +23,7 @@ import {
 } from '../engine/run';
 import type { FighterDef, MoveDef } from '../engine/types';
 import { MOVE_KIND_NAMES, summarizeEffects } from './moveInfo';
-import { iconUrl, MAP_ICON_SIZE, mapIconUrl, SPRITE_SIZE, spriteUrl } from './sprites';
+import { iconUrl, irodoriteUrl, MAP_ICON_SIZE, mapIconUrl, SPRITE_SIZE, spriteUrl } from './sprites';
 
 /** チームの1体の表示（HPつき） */
 export interface TeamMemberView {
@@ -379,6 +379,15 @@ export function buildMapView(run: RunState, notice: string | null = null, ui: Ma
 }
 
 /** バトル画面に出す、いまのマスの説明（例：「エリア2・3層目・強敵」） */
+/** バトルの始まりのログに出す、彩り手の口ぐせ（例：「ヒナ「宣伝！！！」」）。彩り手がいなければ null */
+export function battleOpening(run: RunState): string | null {
+  if (run.irodorite === null) {
+    return null;
+  }
+  const data = getIrodorite(run.irodorite.id);
+  return `${data.name}「${data.catchphrase}」`;
+}
+
 export function battleCaption(run: RunState): string | null {
   if (run.position === null) {
     return null;
@@ -586,10 +595,21 @@ export function rewardNotice(run: RunState, choice: RewardChoice): string {
 
 /* ===== ランの結果 ===== */
 
+/** ランの結果に出す彩り手 */
+export interface RunEndIrodoriteView {
+  readonly name: string;
+  /** 彩り手の絵（64×64）の URL。絵がなければ null */
+  readonly portrait: string | null;
+  /** 相棒の属性の色（絵がないときの四角に使う） */
+  readonly color: string;
+}
+
 export interface RunEndView {
   readonly result: RunResult;
   readonly title: string;
   readonly message: string;
+  /** 選んだ彩り手。彩り手のいないランは null */
+  readonly irodorite: RunEndIrodoriteView | null;
   readonly team: readonly TeamMemberView[];
 }
 
@@ -603,6 +623,14 @@ export function buildRunEndView(run: RunState): RunEndView {
     result,
     title: result === 'cleared' ? 'クリア！' : '全滅…',
     message: result === 'cleared' ? `${AREA_COUNT}つのエリアを突破した！` : `${where}で全滅した`,
+    irodorite:
+      run.irodorite === null
+        ? null
+        : {
+            name: getIrodorite(run.irodorite.id).name,
+            portrait: irodoriteUrl(run.irodorite.id),
+            color: ATTRIBUTE_COLORS[run.irodorite.partner.attribute],
+          },
     team: teamViews(run.team),
   };
 }

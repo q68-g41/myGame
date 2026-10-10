@@ -215,7 +215,7 @@ describe('画面：長押しで詳細', () => {
     firstButton().click();
     expect(root.querySelector('.move-detail')).toBeNull();
     expect(root.querySelector('.battle--playing')).toBeNull();
-    expect(root.querySelector('[role="status"]')?.textContent).toBe('バトル開始！ 技を選んでください');
+    expect(root.querySelector('[role="status"] .battle__log-line--latest')?.textContent).toBe('バトル開始！ 技を選んでください');
   });
 
   it('すぐ離した（短いタップ）なら、詳細は出ずに技を使う', () => {

@@ -12,7 +12,7 @@ import type {
   RunEndView,
   TeamMemberView,
 } from './runView';
-import { iconElement, mapIconElement, spriteElement } from './sprites';
+import { iconElement, irodoriteElement, mapIconElement, spriteElement } from './sprites';
 
 const SVG_NS = 'http://www.w3.org/2000/svg';
 
@@ -399,11 +399,22 @@ export function renderRunEndScreen(root: HTMLElement, view: RunEndView, handlers
   const doc = root.ownerDocument;
 
   const display = el(doc, 'section', 'run-end__view');
-  display.append(
-    el(doc, 'h2', `run-end__title run-end__title--${view.result}`, view.title),
-    el(doc, 'p', 'run-end__message', view.message),
-    teamRow(doc, view.team),
-  );
+  display.append(el(doc, 'h2', `run-end__title run-end__title--${view.result}`, view.title));
+  if (view.irodorite !== null) {
+    // 彩り手の絵（2倍）とあだ名
+    const irodorite = el(doc, 'div', 'run-end__irodorite');
+    irodorite.append(
+      irodoriteElement(doc, {
+        url: view.irodorite.portrait,
+        color: view.irodorite.color,
+        scale: 2,
+        className: 'run-end__portrait',
+      }),
+      el(doc, 'span', 'run-end__name', view.irodorite.name),
+    );
+    display.append(irodorite);
+  }
+  display.append(el(doc, 'p', 'run-end__message', view.message), teamRow(doc, view.team));
 
   const controls = el(doc, 'section', 'run-end__controls');
   controls.append(

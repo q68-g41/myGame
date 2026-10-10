@@ -312,6 +312,9 @@ describe('ランを最後まで', () => {
       }
       expect(root.querySelector('.run-end')).not.toBeNull();
       expect(root.querySelector('.run-end__title')?.textContent).toMatch(/^(クリア！|全滅…)$/);
+      // 選んだ彩り手（1人目のヒナ）の絵（2倍）とあだ名
+      expect(root.querySelector('.run-end__name')?.textContent).toBe('ヒナ');
+      expect(root.querySelector('img.run-end__portrait')?.getAttribute('width')).toBe('128');
       expect(seen.has('battle')).toBe(true);
       onlyBottomIsInteractive();
     }
