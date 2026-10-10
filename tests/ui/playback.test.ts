@@ -59,6 +59,44 @@ describe('演出のコマ', () => {
     expect(checked).toBeGreaterThan(0);
   });
 
+  it('コマごとに、イベントに合わせた効果音を決める。ダメージの音は相性で変える（M7-2）', () => {
+    const seen = new Set<string>();
+    for (const seed of [1, 2, 3, 40]) {
+      for (const session of sessions(seed)) {
+        const frames = buildFrames(session.previousState, session.lastEvents, session.state);
+        session.lastEvents.forEach((event, index) => {
+          const sound = frames[index]!.sound;
+          if (sound !== null) {
+            seen.add(sound);
+          }
+          switch (event.type) {
+            case 'moveUsed':
+              expect(sound).toBe('move');
+              break;
+            case 'damage':
+              expect(sound).toBe({ advantage: 'hitStrong', disadvantage: 'hitWeak', neutral: 'hit' }[event.effectiveness]);
+              break;
+            case 'statusDamage':
+              expect(sound).toBe('hit');
+              break;
+            case 'switched':
+              expect(sound).toBe('switch');
+              break;
+            case 'fainted':
+              expect(sound).toBe('faint');
+              break;
+            case 'battleEnd':
+              expect(sound).toBe(event.winner === 'player' ? 'win' : 'lose');
+              break;
+            default:
+              expect(sound === null || ['heal', 'status'].includes(sound)).toBe(true);
+          }
+        });
+      }
+    }
+    expect(seen.has('move') && seen.has('faint')).toBe(true);
+  });
+
   it('ダメージを受けたコマでは、受けた側を光らせる', () => {
     const session = sessions(1)[0]!;
     const frames = buildFrames(session.previousState, session.lastEvents, session.state);

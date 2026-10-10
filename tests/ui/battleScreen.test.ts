@@ -186,6 +186,7 @@ describe('補助技のボタン', () => {
       onCancel: vi.fn(),
       onContinue: vi.fn(),
       onToggleSpeed: vi.fn(),
+      onToggleSound: vi.fn(),
       onSkip: vi.fn(),
     };
     renderBattleScreen(root, buildBattleView(session), handlers);
@@ -206,6 +207,7 @@ describe('HPバーの動き', () => {
     onCancel: vi.fn(),
     onContinue: vi.fn(),
     onToggleSpeed: vi.fn(),
+    onToggleSound: vi.fn(),
     onSkip: vi.fn(),
   };
   const battle = createBattle(['crimson-trial', 'blue-trial'].map(getFighter), ['green-trial', 'yellow-trial'].map(getFighter));
@@ -272,6 +274,7 @@ describe('キャラの動き（M7-1）', () => {
     onCancel: vi.fn(),
     onContinue: vi.fn(),
     onToggleSpeed: vi.fn(),
+    onToggleSound: vi.fn(),
     onSkip: vi.fn(),
   };
   const battle = createBattle(['crimson-trial', 'blue-trial'].map(getFighter), ['green-trial', 'yellow-trial'].map(getFighter));

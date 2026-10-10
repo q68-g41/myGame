@@ -107,7 +107,7 @@ export function createSaveStore(storage: Pick<Storage, 'getItem' | 'setItem' | '
   };
 }
 
-/* ===== 設定（演出の速さ） ===== */
+/* ===== 設定（演出の速さ・音） ===== */
 
 /** 設定の localStorage のキー。ランの保存とは別にして、ランが終わっても消さない（名前の付け方は SAVE_KEY と同じ） */
 export const SETTINGS_KEY = 'sairei-no-michi.settings';
@@ -116,9 +116,11 @@ export const SETTINGS_KEY = 'sairei-no-michi.settings';
 export interface Settings {
   /** 演出の速さ */
   readonly speed: PlaybackSpeed;
+  /** 効果音を鳴らすか（M7-2）。はじめはオン */
+  readonly sound: boolean;
 }
 
-export const DEFAULT_SETTINGS: Settings = { speed: 1 };
+export const DEFAULT_SETTINGS: Settings = { speed: 1, sound: true };
 
 /** 保存した設定を読む。読めない・形がおかしいときは、最初の設定 */
 export function parseSettings(text: string | null): Settings {
@@ -128,7 +130,8 @@ export function parseSettings(text: string | null): Settings {
   try {
     const file: unknown = JSON.parse(text);
     if (isObject(file) && (file.speed === 1 || file.speed === 2)) {
-      return { speed: file.speed };
+      // 音の設定がない（M7-2 より前に保存した）ときは、はじめの設定（オン）
+      return { speed: file.speed, sound: typeof file.sound === 'boolean' ? file.sound : DEFAULT_SETTINGS.sound };
     }
   } catch {
     // 読めなければ最初の設定

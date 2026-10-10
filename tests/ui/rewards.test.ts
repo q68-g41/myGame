@@ -96,7 +96,7 @@ describe('報酬の画面に出す内容', () => {
     const view = buildBattleView(createSession(battle, 1));
     expect(view.moves.find((move) => move.id === 'quick-jab')?.power).toBe(42);
     expect(view.moves.find((move) => move.id === 'crimson-strike')?.power).toBe(60);
-    const detail = buildBattleView(createSession(battle, 1), { selectedBench: null, speed: 1, detailMoveId: 'quick-jab' }).detail;
+    const detail = buildBattleView(createSession(battle, 1), { selectedBench: null, speed: 1, sound: true, detailMoveId: 'quick-jab' }).detail;
     expect(detail?.lines).toContain('威力 42（お守りで 35 から上がっている）');
   });
 });

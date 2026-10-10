@@ -1,5 +1,6 @@
 import './ui/style.css';
 import { startApp } from './ui/app';
+import { createSoundPlayer } from './ui/sound';
 
 const root = document.querySelector<HTMLElement>('#app');
 if (!root) {
@@ -18,6 +19,8 @@ function localStorageOrNull(): Storage | null {
 startApp(root, {
   buildId: __BUILD_ID__,
   storage: localStorageOrNull(),
+  // 効果音（Web Audio）。使えないブラウザでは鳴らさない
+  sound: createSoundPlayer(),
   // バトルごとのシード。エンジンには、この値から作ったシード付き乱数だけを渡す
   newSeed: () => crypto.getRandomValues(new Uint32Array(1))[0]!,
 });
