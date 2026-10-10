@@ -1,6 +1,7 @@
 // @vitest-environment happy-dom
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 import { RUN_CONTENT } from '../../src/data/content';
+import { getIrodorite } from '../../src/data/irodorite';
 import { chooseTeam, startRun } from '../../src/engine/run';
 import { startApp } from '../../src/ui/app';
 import {
@@ -57,6 +58,14 @@ describe('保存の形', () => {
     // 戦闘中なのにバトルがない、戦闘中でないのにバトルがある
     const battleRun = { ...run, phase: { kind: 'battle', enemy: [], seed: 1 } };
     expect(parseSavedGame(JSON.stringify({ version: SAVE_VERSION, run: battleRun, battle: null }))).toBeNull();
+  });
+
+  it('彩り手を選んだランも保存して読み戻せる。彩り手を持たない前の形（版4）のセーブは捨てる', () => {
+    const withIrodorite = chooseTeam(startRun(RUN_CONTENT, 3, getIrodorite('hina')), [0, 1]);
+    expect(parseSavedGame(serializeGame(withIrodorite, null))).toEqual({ run: withIrodorite, battle: null });
+    const { irodorite: _dropped, ...oldRun } = run;
+    expect(parseSavedGame(JSON.stringify({ version: 4, run: oldRun, battle: null }))).toBeNull();
+    expect(parseSavedGame(JSON.stringify({ version: SAVE_VERSION, run: oldRun, battle: null }))).toBeNull();
   });
 
   it('音の設定がない（M7-2 より前の）保存は、音をオンとして読む。音の値がおかしいときもオン', () => {

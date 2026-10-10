@@ -25,6 +25,7 @@ const rewardRun = (pick = 1, picks = 1, members = team): RunState => ({
   position: { layer: 0, index: 0 },
   team: members,
   charms: [],
+  irodorite: null,
   phase: { kind: 'reward', offers: OFFERS, pick, picks },
   rng: 1,
 });

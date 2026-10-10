@@ -12,8 +12,11 @@ import { saveSession, type BattleSession, type SavedBattle } from './session';
  */
 export const SAVE_KEY = 'sairei-no-michi.save';
 
-/** 保存の形の版。形を変えて古いセーブが読めなくなるときに上げる（古い版のセーブは捨てる） */
-export const SAVE_VERSION = 4;
+/**
+ * 保存の形の版。形を変えて古いセーブが読めなくなるときに上げる（古い版のセーブは捨てる）。
+ * 5：ランの状態に、選んだ彩り手（irodorite）を足した（M8。仕様書 4.6）
+ */
+export const SAVE_VERSION = 5;
 
 /** 保存したゲーム：ランの状態と、戦闘中ならバトルの状態 */
 export interface SavedGame {
@@ -55,6 +58,7 @@ export function parseSavedGame(text: string | null): SavedGame | null {
     typeof run.area !== 'number' ||
     !isObject(run.map) ||
     !Array.isArray(run.team) ||
+    !(run.irodorite === null || isObject(run.irodorite)) ||
     !isObject(run.phase) ||
     typeof run.phase.kind !== 'string'
   ) {
