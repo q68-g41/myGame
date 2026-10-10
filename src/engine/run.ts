@@ -181,6 +181,23 @@ export function chooseTeam(run: RunState, picks: readonly number[]): RunState {
   return { ...run, team, phase: { kind: 'map' } };
 }
 
+/**
+ * チームの2体の並び順（戦闘に出る順）を入れ替える（4.1）。
+ * マップで次のマスを選ぶ段階だけでできる。HPなどはそのまま、位置だけが変わる
+ */
+export function swapTeamOrder(run: RunState, a: number, b: number): RunState {
+  if (run.phase.kind !== 'map') {
+    throw new Error('並び順を変えられるのは、マップで次のマスを選ぶときだけです');
+  }
+  const first = run.team[a];
+  const second = run.team[b];
+  if (first === undefined || second === undefined || a === b) {
+    throw new Error(`チームの違う2体を選んでください（${a} と ${b}）`);
+  }
+  const team = run.team.map((member, index) => (index === a ? second : index === b ? first : member));
+  return { ...run, team };
+}
+
 /** 次に進めるマス（次の層での位置） */
 export function runChoices(run: RunState): readonly number[] {
   return run.phase.kind === 'map' ? nextChoices(run.map, run.position) : [];

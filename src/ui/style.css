@@ -784,6 +784,27 @@ body {
   opacity: 0.6;
 }
 
+/* マップ画面では、チームのカードをタップして並び順を入れ替える */
+button.member {
+  width: 100%;
+  font: inherit;
+  color: inherit;
+  text-align: left;
+  background: transparent;
+  cursor: pointer;
+}
+
+.member--selected {
+  border-color: var(--color-accent);
+  background: rgba(240, 180, 69, 0.12);
+}
+
+.team-order-hint {
+  margin: 0;
+  font-size: 14px;
+  color: var(--color-muted);
+}
+
 /* チームのカード：上に絵（32×32）、その下に名前 */
 .member__header {
   display: flex;
@@ -911,6 +932,11 @@ body {
 
 .fighter-detail__stats {
   margin: 4px 0;
+}
+
+.fighter-detail__description {
+  font-size: 14px;
+  line-height: 1.4;
 }
 
 .fighter-detail__moves {

@@ -11,6 +11,7 @@ import {
   enterNode,
   finishBattle,
   startRun,
+  swapTeamOrder,
   takeReward,
   type RewardChoice,
   type RunState,
@@ -42,6 +43,10 @@ import {
   INITIAL_DRAFT_UI,
   INITIAL_REWARD_UI,
   rewardNotice,
+  focusDraftCandidate,
+  INITIAL_MAP_UI,
+  tapMapMember,
+  type MapUiState,
   toggleDraftPick,
   type DraftUiState,
   type RewardUiState,
@@ -87,6 +92,7 @@ export function startApp(root: HTMLElement, options: AppOptions): void {
   const settings = createSettingsStore(options.storage ?? null);
   let run: RunState | null = null;
   let draft: DraftUiState = INITIAL_DRAFT_UI;
+  let mapUi: MapUiState = INITIAL_MAP_UI;
   let reward: RewardUiState = INITIAL_REWARD_UI;
   let rest: RestUiState = INITIAL_REST_UI;
   let scout: ScoutUiState = INITIAL_SCOUT_UI;
@@ -118,6 +124,8 @@ export function startApp(root: HTMLElement, options: AppOptions): void {
   let pressTimer: ReturnType<typeof setTimeout> | null = null;
   /** 長押しで詳細を出したあと、指を離したときのタップでは技を使わない */
   let suppressNextMove = false;
+  // 候補を長押ししたあとの click では、選ぶ・外すをしない
+  let suppressNextPick = false;
 
   /** 自動保存：画面を描くたびに、いまのランを保存する。ランが終わったら消す */
   const persist = () => {
@@ -165,7 +173,7 @@ export function startApp(root: HTMLElement, options: AppOptions): void {
         renderDraftScreen(root, buildDraftView(run, draft), draftHandlers);
         return;
       case 'map':
-        renderMapScreen(root, buildMapView(run, notice), mapHandlers);
+        renderMapScreen(root, buildMapView(run, notice, mapUi), mapHandlers);
         return;
       case 'battle': {
         if (session === null) {
@@ -285,6 +293,10 @@ export function startApp(root: HTMLElement, options: AppOptions): void {
 
   const draftHandlers = {
     onPick: (index: number) => {
+      if (suppressNextPick) {
+        suppressNextPick = false;
+        return;
+      }
       draft = toggleDraftPick(draft, index);
       render();
     },
@@ -305,12 +317,25 @@ export function startApp(root: HTMLElement, options: AppOptions): void {
       }
       run = enterNode(run, index, RUN_CONTENT);
       notice = null;
+      mapUi = INITIAL_MAP_UI;
       rest = INITIAL_REST_UI;
       scout = INITIAL_SCOUT_UI;
       event = INITIAL_EVENT_UI;
       if (run.phase.kind === 'battle') {
         session = createSession(createRunBattle(run), run.phase.seed, run.phase.cpu, run.phase.boss);
         ui = { ...INITIAL_UI_STATE, speed: ui.speed, sound: ui.sound };
+      }
+      render();
+    },
+    onMember: (index: number) => {
+      if (run === null) {
+        return;
+      }
+      const tapped = tapMapMember(mapUi, index);
+      mapUi = tapped.ui;
+      if (tapped.swap !== null) {
+        run = swapTeamOrder(run, ...tapped.swap);
+        notice = null;
       }
       render();
     },
@@ -519,8 +544,21 @@ export function startApp(root: HTMLElement, options: AppOptions): void {
   const runEndHandlers = { onRetry: startNewRun, onTitle: showTop };
 
   // 技ボタンの長押し：押してから LONG_PRESS_MS で詳細を出し、指を離したら消す（画面を描き直しても続くよう root で受ける）
+  // チーム選択の候補の長押し：選ばずに、そのキャラの詳細を出す（指を離しても出したまま）
   root.addEventListener('pointerdown', (event) => {
     suppressNextMove = false;
+    suppressNextPick = false;
+    const candidate = (event.target as Element | null)?.closest<HTMLElement>('[data-candidate-index]');
+    if (candidate?.dataset.candidateIndex !== undefined && run?.phase.kind === 'draft') {
+      const index = Number(candidate.dataset.candidateIndex);
+      pressTimer = setTimeout(() => {
+        pressTimer = null;
+        draft = focusDraftCandidate(draft, index);
+        suppressNextPick = true;
+        render();
+      }, LONG_PRESS_MS);
+      return;
+    }
     const button = (event.target as Element | null)?.closest<HTMLElement>('[data-move-id]');
     const moveId = button?.dataset.moveId;
     if (session === null || playback !== null || moveId === undefined) {

@@ -173,6 +173,21 @@ shadow. {雰囲気} Original design that does not resemble any existing game, an
 - 16色に減らすときは、4コマを並べた1枚からパレットを作り、4コマとも同じパレットを使う
 - 4コマを左から順に横に並べ、192×48 の PNG で `src/assets/anim/<キャラID>.png` に保存する
 
+## カラスウサギ（M8）
+
+主人公の相棒の2体（仕様書 7 の M8-2）。カラスとウサギを合わせたオリジナルキャラ「からすうさぎ」の絵（白いウサギの体に、カラスの黒い翼・くちばし・尾羽）をもとに描いた。もとの絵は生成サービスに送れなかったので、特徴を文で伝え、参考画像には採用済みの絵（ベニコウラとイナホイタチ）を渡して絵柄をそろえた。GPT Image 2.5（Higgsfield。quality high、1k、正方形）。
+
+| ID | 名前 | 止まった絵の生成 | コマ送りアニメの生成 | 動き |
+| --- | --- | --- | --- | --- |
+| white-twin | シラハウサギ | 7a58ed2c-e65a-4ac8-91a0-04f464be5f35 | 50198a19-e4b5-41df-9fcd-51706d7b99f5 | 耳が動く・翼が小さく開く・胸の毛がふくらむ |
+| black-twin | クロハウサギ | e22cae33-611e-49d1-8c50-cda759756512 | 9322d8bb-1986-4819-b401-de3362b52675 | 同じ |
+
+- 黒は、白の色を反転した案（黒い体に白い翼・くちばし・尾羽）を採用した。全身を黒にしてつやを足した案（a9b175dc-209d-44e9-8f96-445acf8095f8）は、48×48 に縮めると暗い背景に沈み、紫属性にも見えたので使っていない
+- 白は、白い体が白い背景と一緒に抜けないように、背景を緑（#00FF00）で塗ってもらい、画像の端につながる緑を抜いた。黒は、ほかのキャラと同じ白い背景
+- 止まった絵の指示は「描き直し」の文に近い形で、`{題材}` に次の文を入れた（黒は色を反転した文。顔が黒に埋もれないよう、目に白い光を入れるよう足した）
+  - `A 'crow-rabbit' (karasu-usagi): a small, round, chubby rabbit with a white body and head (soft white with light gray shading), two long upright rabbit ears with light gray insides, two small black dot eyes, a small black triangular crow beak in place of a rabbit nose, a fluffy white chest ruff, short white rabbit feet, small black crow wings on both sides of its body, and a short tuft of black crow tail feathers at the back.`
+- コマ送りアニメは、上の「コマ送りアニメ」と同じ指示の形で、止まった絵の生成を参考画像にした。組み込みの手順もほかのキャラと同じ（48×48・32×32・192×48）
+
 ## 差し替えるとき
 
 - `src/assets/sprites/<キャラID>.png` を、48×48・右向きの PNG で上書きすれば、コードを変えずに差し替わる。バトルの場では `src/assets/anim/<キャラID>.png`（192×48・4コマ）を使うので、止まった絵を変えたらアニメも作り直す（アニメの1コマ目と止まった絵はそろえる）

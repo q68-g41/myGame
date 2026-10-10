@@ -79,7 +79,20 @@ describe('キャラと技からのダメージ', () => {
     });
   });
 
-  it('白・黒のキャラが受けるときも等倍（紫の技 → 黒のキャラは 30）', () => {
+  it('計算例（仕様書 3.3）：白のキャラが白の技（威力60）を黒のキャラに使う → 有利と共鳴で 54', () => {
+    const attacker = makeCombatant({ attribute: 'white' });
+    const defender = makeCombatant({ attribute: 'black' });
+    const move = makeMove({ attribute: 'white', power: 60 });
+
+    // 60 × 1 × 1.5 × 1.2 × 1.00 × 0.5 = 54
+    expect(computeDamage(attacker, defender, move, 100)).toEqual({
+      amount: 54,
+      effectiveness: 'advantage',
+      resonance: true,
+    });
+  });
+
+  it('白・黒のキャラが6色の技を受けるときは等倍（紫の技 → 黒のキャラは 30）', () => {
     const attacker = makeCombatant({ attribute: 'violet' });
     const defender = makeCombatant({ attribute: 'black' });
     const move = makeMove({ attribute: 'violet', power: 60 });

@@ -17,8 +17,8 @@ const SPEC_TABLE: Record<AttributeId, number[]> = {
   green: [1.0, 0.7, 0.7, 1.0, 1.5, 1.5, 1.0, 1.0],
   blue: [1.5, 1.0, 0.7, 0.7, 1.0, 1.5, 1.0, 1.0],
   violet: [1.5, 1.5, 1.0, 0.7, 0.7, 1.0, 1.0, 1.0],
-  white: [1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0],
-  black: [1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0],
+  white: [1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.5],
+  black: [1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.5, 1.0],
 };
 
 const cases = COLUMNS.flatMap((attacker) =>
@@ -44,13 +44,20 @@ describe('属性相性（仕様書 3.3 の相性表）', () => {
     expect(getEffectiveness('violet', 'orange')).toBe('advantage');
   });
 
-  it('白・黒は相性がなく、技でも受ける側でも、どの属性とも等倍', () => {
-    for (const other of COLUMNS) {
-      for (const neutral of ['white', 'black'] as const) {
-        expect(getEffectiveness(neutral, other)).toBe('neutral');
-        expect(getEffectiveness(other, neutral)).toBe('neutral');
+  it('白・黒は6色とは相性がなく、技でも受ける側でも等倍', () => {
+    for (const color of COLUMNS.slice(0, 6)) {
+      for (const monochrome of ['white', 'black'] as const) {
+        expect(getEffectiveness(monochrome, color)).toBe('neutral');
+        expect(getEffectiveness(color, monochrome)).toBe('neutral');
       }
     }
+  });
+
+  it('白と黒はお互いに弱点（白の技 → 黒、黒の技 → 白は有利）。白どうし・黒どうしは等倍', () => {
+    expect(getEffectiveness('white', 'black')).toBe('advantage');
+    expect(getEffectiveness('black', 'white')).toBe('advantage');
+    expect(getEffectiveness('white', 'white')).toBe('neutral');
+    expect(getEffectiveness('black', 'black')).toBe('neutral');
   });
 });
 

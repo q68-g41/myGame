@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest';
 import { ATTRIBUTE_COLORS, ATTRIBUTE_NAMES } from '../../src/data/attributes';
-import { ATTRIBUTE_ORDER, NEUTRAL_ATTRIBUTES } from '../../src/engine/constants';
+import { ATTRIBUTE_ORDER, MONOCHROME_ATTRIBUTES } from '../../src/engine/constants';
 import styleCss from '../../src/ui/style.css?raw';
 
 /** src/ui/style.css で決めている色（`--name: #rrggbb;`） */
@@ -15,7 +15,7 @@ function cssColor(name: string): string {
 // 画面の背景とパネルの色
 const BACKGROUNDS = { '--color-bg': cssColor('--color-bg'), '--color-panel': cssColor('--color-panel') };
 
-const ALL_ATTRIBUTES = [...ATTRIBUTE_ORDER, ...NEUTRAL_ATTRIBUTES];
+const ALL_ATTRIBUTES = [...ATTRIBUTE_ORDER, ...MONOCHROME_ATTRIBUTES];
 
 /** 相対輝度（WCAG の式） */
 function luminance(hex: string): number {

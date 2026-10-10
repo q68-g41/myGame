@@ -4,8 +4,8 @@
  */
 import { el } from './dom';
 import type { EventView, NodeMemberView, RestView, ScoutView } from './nodeView';
-import { button, charmLine, screen, teamRow } from './runScreens';
-import { iconElement, spriteElement } from './sprites';
+import { button, charmLine, fighterDetailCard, screen, teamRow } from './runScreens';
+import { iconElement } from './sprites';
 
 /** 大きめの選択肢（見出しと説明の2行） */
 function optionCard(
@@ -118,23 +118,9 @@ export function renderScoutScreen(root: HTMLElement, view: ScoutView, handlers: 
   const display = el(doc, 'section', 'node__view');
   display.append(el(doc, 'h2', 'node__title', 'スカウト'));
   if (view.detail === null) {
-    display.append(el(doc, 'p', 'node__text', '仲間になってくれそうなキャラがいる。タップすると、能力と技が出ます。'));
+    display.append(el(doc, 'p', 'node__text', '仲間になってくれそうなキャラがいる。タップすると、説明と能力・技が出ます。'));
   } else {
-    const card = el(doc, 'div', 'fighter-detail');
-    const header = el(doc, 'div', 'fighter-detail__header');
-    const title = el(doc, 'div', 'fighter-detail__title');
-    title.append(
-      el(doc, 'span', 'fighter-detail__name', view.detail.name),
-      el(doc, 'span', 'fighter-detail__attribute', view.detail.attributeName),
-    );
-    header.append(
-      spriteElement(doc, { url: view.detail.sprite, color: view.detail.color, scale: 2, className: 'fighter-detail__sprite' }),
-      title,
-    );
-    const moves = el(doc, 'ul', 'fighter-detail__moves');
-    moves.append(...view.detail.moves.map((move) => el(doc, 'li', '', move)));
-    card.append(header, el(doc, 'p', 'fighter-detail__stats', view.detail.stats), moves);
-    display.append(card);
+    display.append(fighterDetailCard(doc, view.detail));
   }
   display.append(teamRow(doc, view.team));
 
