@@ -1,12 +1,12 @@
 import { describe, expect, it } from 'vitest';
 import { ATTRIBUTE_COLORS, ATTRIBUTE_NAMES } from '../../src/data/attributes';
-import { ATTRIBUTE_ORDER, NEUTRAL_ATTRIBUTES } from '../../src/engine/constants';
+import { ATTRIBUTE_ORDER, MONOCHROME_ATTRIBUTES } from '../../src/engine/constants';
 
 // 画面の背景とパネルの色（src/ui/style.css の --color-bg と --color-panel）。
 // テストでは CSS の中身を読み込めないので、ここに写しておく
 const BACKGROUNDS = { '--color-bg': '#14141f', '--color-panel': '#1e1e2d' };
 
-const ALL_ATTRIBUTES = [...ATTRIBUTE_ORDER, ...NEUTRAL_ATTRIBUTES];
+const ALL_ATTRIBUTES = [...ATTRIBUTE_ORDER, ...MONOCHROME_ATTRIBUTES];
 
 /** 相対輝度（WCAG の式） */
 function luminance(hex: string): number {

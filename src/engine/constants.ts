@@ -23,8 +23,8 @@ export const ATTRIBUTE_ORDER: readonly AttributeId[] = [
   'violet',
 ];
 
-/** 相性のない属性。円には入らず、技でも受ける側でも、どの属性とも等倍（3.3） */
-export const NEUTRAL_ATTRIBUTES: readonly AttributeId[] = ['white', 'black'];
+/** 白と黒。6色の円には入らず、6色とは技でも受ける側でも等倍。白と黒はお互いに有利（3.3） */
+export const MONOCHROME_ATTRIBUTES: readonly AttributeId[] = ['white', 'black'];
 
 /** 相性の倍率（3.3） */
 export const AFFINITY_MULTIPLIER = {
