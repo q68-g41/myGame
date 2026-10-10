@@ -1,7 +1,7 @@
 import { describe, expect, it } from 'vitest';
 import { ATTRIBUTE_NAMES } from '../../src/data/attributes';
 import { RUN_CONTENT } from '../../src/data/content';
-import { FIGHTERS } from '../../src/data/fighters';
+import { BOSS_FIGHTERS, FIGHTERS } from '../../src/data/fighters';
 import { MOVES, getMove } from '../../src/data/moves';
 import { createCombatant } from '../../src/engine/battle';
 import {
@@ -64,6 +64,13 @@ describe('キャラのデータ（仕様書 3.2 の目安）', () => {
   it('ID も名前も重ならない', () => {
     expect(new Set(FIGHTERS.map((fighter) => fighter.id)).size).toBe(FIGHTERS.length);
     expect(new Set(FIGHTERS.map((fighter) => fighter.name)).size).toBe(FIGHTERS.length);
+  });
+
+  it('どのキャラ（ボスも）にも説明があり、24文字まで（詳細の絵の横に2行で収まる長さ）', () => {
+    for (const fighter of [...FIGHTERS, ...BOSS_FIGHTERS]) {
+      expect(fighter.description, fighter.id).toBeTruthy();
+      expect([...fighter.description].length, fighter.description).toBeLessThanOrEqual(24);
+    }
   });
 
   it('名前は6文字まで（仕様書 5。狭い枠でも省略せずに出せる長さ）', () => {

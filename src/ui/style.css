@@ -913,6 +913,11 @@ body {
   margin: 4px 0;
 }
 
+.fighter-detail__description {
+  font-size: 14px;
+  line-height: 1.4;
+}
+
 .fighter-detail__moves {
   margin: 0;
   padding-left: 1.2em;

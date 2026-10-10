@@ -1,5 +1,5 @@
 // @vitest-environment happy-dom
-import { beforeEach, describe, expect, it } from 'vitest';
+import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { RUN_CONTENT } from '../../src/data/content';
 import { chooseTeam, runChoices, startRun } from '../../src/engine/run';
 import { startApp } from '../../src/ui/app';
@@ -131,6 +131,52 @@ describe('チーム選択の画面', () => {
     expect(confirmButton().disabled).toBe(true);
     expect(candidates().map((c) => c.getAttribute('aria-pressed'))).toEqual(['false', 'false', 'false', 'true', 'true']);
     onlyBottomIsInteractive();
+  });
+
+  it('詳細には、キャラの説明が出る', () => {
+    candidates()[0]!.click();
+    expect(root.querySelector('.screen__view .fighter-detail__description')?.textContent).toMatch(/。/);
+  });
+
+  describe('長押し', () => {
+    beforeEach(() => vi.useFakeTimers());
+    afterEach(() => vi.useRealTimers());
+    const press = (target: Element) => target.dispatchEvent(new PointerEvent('pointerdown', { bubbles: true }));
+    const release = (target: Element) => target.dispatchEvent(new PointerEvent('pointerup', { bubbles: true }));
+
+    it('候補を長押しすると、選ばずに詳細だけ出る。指を離したあとも出したまま', () => {
+      const name = candidates()[3]!.querySelector('.candidate__name')?.textContent;
+      press(candidates()[3]!);
+      vi.advanceTimersByTime(500);
+      expect(root.querySelector('.fighter-detail__name')?.textContent).toBe(name);
+      release(candidates()[3]!);
+      candidates()[3]!.click();
+      expect(candidates().map((c) => c.getAttribute('aria-pressed'))).toEqual(['false', 'false', 'false', 'false', 'false']);
+      expect(root.querySelector('.fighter-detail__name')?.textContent).toBe(name);
+      onlyBottomIsInteractive();
+    });
+
+    it('3体選んだあとでも、長押しで選んでいない候補の詳細を見られる。選んだチームは変わらない', () => {
+      for (const index of [0, 1, 2]) {
+        candidates()[index]!.click();
+      }
+      press(candidates()[4]!);
+      vi.advanceTimersByTime(500);
+      release(candidates()[4]!);
+      candidates()[4]!.click();
+      expect(root.querySelector('.fighter-detail__name')?.textContent).toBe(
+        candidates()[4]!.querySelector('.candidate__name')?.textContent,
+      );
+      expect(candidates().map((c) => c.querySelector('.candidate__order')?.textContent)).toEqual(['1', '2', '3', '', '']);
+    });
+
+    it('すぐ離した（短いタップ）なら、今までどおり選ぶ', () => {
+      press(candidates()[2]!);
+      vi.advanceTimersByTime(100);
+      release(candidates()[2]!);
+      candidates()[2]!.click();
+      expect(candidates()[2]!.getAttribute('aria-pressed')).toBe('true');
+    });
   });
 
   it('出発すると、選んだ順のチームでマップに進む', () => {

@@ -85,13 +85,16 @@ export interface DraftScreenHandlers {
   onConfirm(): void;
 }
 
-function detailCard(doc: Document, detail: FighterDetailView): HTMLElement {
+/** キャラの詳細（説明・能力・技）。チーム選択とスカウトで使う */
+export function fighterDetailCard(doc: Document, detail: FighterDetailView): HTMLElement {
   const card = el(doc, 'div', 'fighter-detail');
   const header = el(doc, 'div', 'fighter-detail__header');
   const title = el(doc, 'div', 'fighter-detail__title');
+  // 説明は絵の横（名前と属性の下）に置き、絵の高さの中に収める
   title.append(
     el(doc, 'span', 'fighter-detail__name', detail.name),
     el(doc, 'span', 'fighter-detail__attribute', detail.attributeName),
+    el(doc, 'span', 'fighter-detail__description', detail.description),
   );
   header.append(
     spriteElement(doc, { url: detail.sprite, color: detail.color, scale: 2, className: 'fighter-detail__sprite' }),
@@ -121,9 +124,11 @@ export function renderDraftScreen(root: HTMLElement, view: DraftView, handlers: 
   }
   display.append(
     el(doc, 'h2', 'draft__title', 'チームを選ぶ'),
-    el(doc, 'p', 'draft__hint', '候補から3体。タップした順に戦闘に出ます'),
+    el(doc, 'p', 'draft__hint', 'タップした順に3体。長押しで説明だけ見られます'),
     slots,
-    view.detail === null ? el(doc, 'p', 'draft__placeholder', '候補をタップすると、能力と技が出ます') : detailCard(doc, view.detail),
+    view.detail === null
+      ? el(doc, 'p', 'draft__placeholder', '候補をタップすると、説明と能力・技が出ます')
+      : fighterDetailCard(doc, view.detail),
   );
 
   // 下半分：候補5体と出発ボタン
@@ -137,6 +142,8 @@ export function renderDraftScreen(root: HTMLElement, view: DraftView, handlers: 
       () => handlers.onPick(candidate.index),
     );
     pick.setAttribute('aria-pressed', String(candidate.order !== null));
+    // 長押しで、選ばずに詳細だけ出す（app.ts で受ける）
+    pick.dataset.candidateIndex = String(candidate.index);
     pick.append(
       iconElement(doc, { url: candidate.icon, color: candidate.color, className: 'candidate__icon' }),
       el(doc, 'span', 'candidate__name', candidate.name),
