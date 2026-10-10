@@ -1,5 +1,6 @@
 import { describe, expect, it } from 'vitest';
 import { ATTRIBUTE_NAMES } from '../../src/data/attributes';
+import { RUN_CONTENT } from '../../src/data/content';
 import { FIGHTERS } from '../../src/data/fighters';
 import { MOVES, getMove } from '../../src/data/moves';
 import { createCombatant } from '../../src/engine/battle';
@@ -103,5 +104,30 @@ describe('ランに必要なキャラの数', () => {
       expect(count).toBeLessThanOrEqual(Math.min(MAX_TEAM_SIZE, FIGHTERS.length));
     }
     expect(RUN_TEAM_SIZE).toBeLessThanOrEqual(MAX_TEAM_SIZE);
+  });
+});
+
+describe('白・黒の技はカラスウサギ専用（仕様書 3.6）', () => {
+  it('報酬で覚えられる技には、白・黒の技が入らない（6色の36個だけ）', () => {
+    expect(RUN_CONTENT.moves).toHaveLength(36);
+    for (const move of RUN_CONTENT.moves) {
+      expect(MONOCHROME_ATTRIBUTES, move.id).not.toContain(move.attribute);
+    }
+  });
+
+  it('カラスウサギ2体は、はじめから自分の属性の技を覚えている', () => {
+    for (const attribute of MONOCHROME_ATTRIBUTES) {
+      const twins = FIGHTERS.filter((fighter) => fighter.attribute === attribute);
+      expect(twins).toHaveLength(1);
+      expect(twins[0]!.moves.filter((move) => move.attribute === attribute).map((move) => move.kind).sort()).toEqual([
+        'big',
+        'normal',
+      ]);
+    }
+  });
+
+  it('白・黒の技を覚えているのは、カラスウサギ2体だけ', () => {
+    const users = FIGHTERS.filter((fighter) => fighter.moves.some((move) => MONOCHROME_ATTRIBUTES.includes(move.attribute)));
+    expect(users.map((fighter) => fighter.id).sort()).toEqual(['black-twin', 'white-twin']);
   });
 });
