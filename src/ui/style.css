@@ -38,6 +38,33 @@
     sans-serif;
   --font-dot: 'DotGothic16', var(--font-text);
 
+  /*
+   * 画面の部品（仕様書 5 の画面の見た目）：漆の地・金の縁・黒の縁取り。1ドット＝2px（キャラのドット絵と同じ倍率）。
+   * 窓と札の枠・足場は src/assets/ui/ のドット絵（npm run ui-art で作る）
+   */
+  --ink: #0d0a14;
+  --gold: #d4a24a;
+  --gold-light: #f6d98b;
+  --gold-dark: #8d6424;
+  --lacquer: #191324;
+  --lacquer-light: #2b2140;
+  --lacquer-dark: #120d1a;
+  /* ボタンや札の角を1ドット欠いた形（角丸の代わり） */
+  --notch: polygon(
+    2px 0,
+    calc(100% - 2px) 0,
+    100% 2px,
+    100% calc(100% - 2px),
+    calc(100% - 2px) 100%,
+    2px 100%,
+    0 calc(100% - 2px),
+    0 2px
+  );
+  /* 小さな印（菱形・下向きの三角・右向きの三角）。mask で切り抜いて、色は background で付ける */
+  --mark-diamond: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='5' height='5' shape-rendering='crispEdges'%3E%3Cpath d='M2 0h1v1h1v1h1v1h-1v1h-1v1h-1v-1h-1v-1h-1v-1h1v-1h1z'/%3E%3C/svg%3E");
+  --mark-down: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='5' height='3' shape-rendering='crispEdges'%3E%3Cpath d='M0 0h5v1h-1v1h-1v1h-1v-1h-1v-1h-1z'/%3E%3C/svg%3E");
+  --mark-right: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='3' height='5' shape-rendering='crispEdges'%3E%3Cpath d='M0 0h1v1h1v1h1v1h-1v1h-1v1h-1z'/%3E%3C/svg%3E");
+
   font-family: var(--font-text);
   font-size: 16px;
   line-height: 1.5;
@@ -162,35 +189,71 @@ body {
   flex-direction: column;
   justify-content: center;
   gap: 16px;
-  padding: 16px 16px calc(16px + env(safe-area-inset-bottom));
-  /* 上半分の空の色を、ほんの少しだけ引きつぐ */
-  background: linear-gradient(180deg, color-mix(in srgb, var(--sky-bottom) 45%, var(--color-panel)), var(--color-panel) 40%);
-  border-top: 2px solid var(--color-border);
+  padding: 20px 16px calc(16px + env(safe-area-inset-bottom));
+  /* 上の縁に金の2重線を引いた漆の地。上半分の空の色を、ほんの少しだけ引きつぐ */
+  background:
+    linear-gradient(var(--ink), var(--ink)) 0 0 / 100% 2px no-repeat,
+    linear-gradient(var(--gold), var(--gold)) 0 2px / 100% 2px no-repeat,
+    linear-gradient(var(--ink), var(--ink)) 0 4px / 100% 2px no-repeat,
+    linear-gradient(var(--gold-dark), var(--gold-dark)) 0 6px / 100% 2px no-repeat,
+    linear-gradient(
+      180deg,
+      color-mix(in srgb, var(--sky-bottom) 40%, var(--lacquer-light)) 0 8px,
+      color-mix(in srgb, var(--sky-bottom) 30%, var(--lacquer)) 8px 40%,
+      var(--lacquer-dark)
+    );
+}
+
+/*
+ * ボタンは「厚みのある板」：黒の縁取り、上に光の筋、下に厚み（影）。角は1ドット欠く。押すと沈む。
+ * 板の色は --face で変える（明るいところ・暗いところも一緒に）
+ */
+.button,
+.move-button,
+.bench-button,
+.menu__button {
+  --face: #241c33;
+  --face-light: rgba(255, 255, 255, 0.14);
+  --face-dark: rgba(0, 0, 0, 0.38);
+  position: relative;
+  border: 2px solid var(--ink);
+  border-radius: 0;
+  clip-path: var(--notch);
+  background: var(--face);
+  box-shadow:
+    inset 0 2px 0 var(--face-light),
+    inset 0 -6px 0 var(--face-dark);
+  color: var(--color-text);
+}
+
+.button:active:not(:disabled),
+.move-button:active:not([aria-disabled='true']),
+.bench-button--selectable:active,
+.menu__button:active {
+  transform: translateY(4px);
+  box-shadow:
+    inset 0 2px 0 var(--face-dark),
+    inset 0 -2px 0 var(--face-dark);
 }
 
 .button {
   min-width: 44px;
   min-height: 56px;
-  padding: 8px 16px;
-  border: none;
-  border-radius: 8px;
+  padding: 8px 16px 12px;
   font: inherit;
   font-size: 18px;
-  font-weight: bold;
+  letter-spacing: 0.06em;
   touch-action: manipulation;
   -webkit-tap-highlight-color: transparent;
   user-select: none;
   cursor: pointer;
 }
 
-.button:active {
-  transform: translateY(2px);
-  filter: brightness(0.85);
-}
-
 .button--primary {
-  background: var(--color-accent);
-  color: var(--color-accent-text);
+  --face: var(--gold);
+  --face-light: var(--gold-light);
+  --face-dark: var(--gold-dark);
+  color: var(--ink);
 }
 
 .top__title {
@@ -213,10 +276,10 @@ body {
   color: var(--color-muted);
 }
 
-/* 効果音のオン/オフ（M7-2）。オフのときは薄くして、いまの状態がひと目でわかるようにする */
+/* 効果音のオン/オフ（M7-2）。オフのときは板を暗く、文字を薄くして、いまの状態がひと目でわかるようにする */
 .sound-toggle[aria-pressed='false'] {
+  --face: var(--lacquer-dark);
   color: var(--color-muted);
-  border-style: dashed;
 }
 
 .top__sound {
@@ -231,9 +294,7 @@ body {
 }
 
 .button--secondary {
-  background: transparent;
-  color: var(--color-text);
-  border: 2px solid var(--color-border);
+  font-size: 16px;
 }
 
 /* ===== バトル画面 ===== */
@@ -241,14 +302,33 @@ body {
 .battle__view {
   justify-content: space-between;
   align-items: stretch;
-  gap: 12px;
+  gap: 10px;
   text-align: left;
 }
 
+/* 場のキャラは石の足場に立たせる（自分は左、相手は右）。足もとをそろえるため、下で並べる */
 .fighter {
+  position: relative;
   display: flex;
-  align-items: center;
+  align-items: flex-end;
   gap: 12px;
+}
+
+.fighter::before {
+  content: '';
+  position: absolute;
+  left: -8px;
+  bottom: -10px;
+  width: 112px;
+  height: 32px;
+  background: url('../assets/ui/platform.png') no-repeat center / 112px 32px;
+  image-rendering: pixelated;
+  pointer-events: none;
+}
+
+.fighter--enemy::before {
+  left: auto;
+  right: -8px;
 }
 
 /* 相手は右寄せ（四角が右）、自分は左寄せ（四角が左） */
@@ -271,21 +351,33 @@ body {
   border-radius: 6px;
 }
 
-/* 場のキャラ：後ろに属性の色をうすく敷く（暗い色のボスも背景に埋もれないように） */
+/* 場のキャラ：後ろに属性の色をうすく、輪を2段にして敷く（暗い色のボスも背景に埋もれないように）。足場より手前に出す */
 .fighter__sprite {
+  position: relative;
+  z-index: 1;
   flex: none;
   width: 96px;
   height: 96px;
-  border-radius: 50%;
-  background: radial-gradient(circle at 50% 58%, var(--sprite-glow, transparent) 0 46%, transparent 70%);
+  background: radial-gradient(
+    closest-side at 50% 62%,
+    color-mix(in srgb, var(--sprite-glow, transparent) 70%, transparent) 0 52%,
+    color-mix(in srgb, var(--sprite-glow, transparent) 30%, transparent) 52% 78%,
+    transparent 78%
+  );
 }
 
+/* 名前とHPの札：金の細い枠 */
 .fighter__info {
   flex: 1;
   min-width: 0;
   display: flex;
   flex-direction: column;
-  gap: 6px;
+  gap: 3px;
+  margin-bottom: 4px;
+  padding: 0 6px 2px;
+  border: 8px solid transparent;
+  border-image: url('../assets/ui/frame-plate.png') 4 fill / 8px stretch;
+  image-rendering: pixelated;
 }
 
 .fighter__header,
@@ -297,7 +389,8 @@ body {
 }
 
 .fighter__name {
-  font-weight: bold;
+  font-size: 17px;
+  letter-spacing: 0.04em;
   overflow: hidden;
   text-overflow: ellipsis;
   white-space: nowrap;
@@ -308,39 +401,55 @@ body {
   gap: 4px;
 }
 
+/* 残りの数：金の小さな四角。倒れたキャラは暗い四角 */
 .team-dot {
-  width: 10px;
-  height: 10px;
-  border-radius: 50%;
-  background: var(--color-text);
+  width: 8px;
+  height: 8px;
+  margin: 2px;
+  background: var(--gold);
+  box-shadow:
+    0 0 0 2px var(--ink),
+    inset -2px -2px 0 var(--gold-dark);
 }
 
 .team-dot--fainted {
-  background: transparent;
-  border: 1px solid var(--color-muted);
+  background: var(--lacquer-light);
+  box-shadow: 0 0 0 2px var(--ink);
+}
+
+/* HPの数字は右にそろえる（状態異常があれば、その左に出す） */
+.fighter__footer {
+  justify-content: flex-end;
 }
 
 .fighter__hp {
   font-size: 14px;
-  color: var(--color-muted);
+  letter-spacing: 0.04em;
 }
 
 .fighter__status {
+  order: -1;
+  margin-right: auto;
   font-size: 14px;
   padding: 0 8px;
-  border-radius: 999px;
+  clip-path: var(--notch);
   background: #5b3a7a;
 }
 
+/* HPバー：黒い縁取り・角なし。中身の上に光の筋 */
 .hp-bar {
-  height: 10px;
-  border-radius: 999px;
-  background: var(--color-border);
+  height: 14px;
+  border: 2px solid var(--ink);
+  background: #3a2f4f;
+  box-shadow: inset 0 2px 0 rgba(0, 0, 0, 0.35);
   overflow: hidden;
 }
 
 .hp-bar__fill {
   height: 100%;
+  box-shadow:
+    inset 0 2px 0 rgba(255, 255, 255, 0.35),
+    inset 0 -2px 0 rgba(0, 0, 0, 0.25);
   transition: width 0.3s ease;
 }
 
@@ -356,7 +465,7 @@ body {
 }
 
 .hp-bar__fill--high {
-  background: #4fb36a;
+  background: #57c26f;
 }
 
 .hp-bar__fill--middle {
@@ -367,17 +476,41 @@ body {
   background: #d9473f;
 }
 
+/* ログはメッセージの窓：角に金具の付いた漆の枠。右下で ▼ が点滅する */
 .battle__log {
+  position: relative;
   margin: 0;
   /* 3行ぶんの高さを取っておき、行が増えてもほかの表示が動かないようにする */
-  min-height: calc(3 * 1.5em + 12px);
-  padding: 6px 12px;
-  border-radius: 8px;
-  background: var(--color-panel);
+  min-height: calc(3 * 1.45em + 26px);
+  padding: 0 10px 2px;
+  border: 12px solid transparent;
+  border-image: url('../assets/ui/frame-window.png') 6 fill / 12px stretch;
+  image-rendering: pixelated;
   font-size: 14px;
+  line-height: 1.45;
   display: flex;
   flex-direction: column;
   justify-content: flex-end;
+}
+
+.battle__log::after {
+  content: '';
+  position: absolute;
+  right: 2px;
+  bottom: -2px;
+  width: 10px;
+  height: 6px;
+  background: var(--gold);
+  -webkit-mask: var(--mark-down) center / 10px 6px;
+  mask: var(--mark-down) center / 10px 6px;
+  animation: blink 0.8s steps(1) infinite;
+}
+
+/* 点滅（▼ や、選んでいるものの ▶） */
+@keyframes blink {
+  50% {
+    opacity: 0;
+  }
 }
 
 .battle__log-line {
@@ -404,18 +537,17 @@ body {
   gap: 8px;
 }
 
+/* 技ボタン：板に属性の色（--move-color）をうすく混ぜる */
 .move-button {
+  --face: color-mix(in srgb, var(--move-color, #888) 20%, #1d1729);
+  --face-light: color-mix(in srgb, var(--move-color, #888) 55%, rgba(255, 255, 255, 0.2));
   display: flex;
   flex-direction: column;
   align-items: flex-start;
   justify-content: center;
-  gap: 2px;
+  gap: 0;
   min-height: 64px;
-  padding: 8px 12px;
-  border: 2px solid var(--color-border);
-  border-radius: 8px;
-  background: var(--color-bg);
-  color: var(--color-text);
+  padding: 6px 12px 10px;
   font: inherit;
   text-align: left;
   touch-action: manipulation;
@@ -424,18 +556,29 @@ body {
   cursor: pointer;
 }
 
-.move-button:active:not([aria-disabled='true']) {
-  transform: translateY(2px);
-}
-
 /* 使えない技（長押しで詳細は見られる） */
 .move-button[aria-disabled='true'] {
   opacity: 0.45;
+  filter: grayscale(0.8);
   cursor: default;
 }
 
+/* 技の名前の前に、属性の色の菱形 */
 .move-button__name {
-  font-weight: bold;
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+}
+
+.move-button__name::before {
+  content: '';
+  flex: none;
+  width: 10px;
+  height: 10px;
+  background: var(--move-color, var(--gold));
+  -webkit-mask: var(--mark-diamond) center / 10px 10px;
+  mask: var(--mark-diamond) center / 10px 10px;
+  filter: drop-shadow(0 2px 0 var(--ink));
 }
 
 .move-button__note {
@@ -450,15 +593,12 @@ body {
 }
 
 .bench-button {
+  --face: #1d1729;
   display: flex;
   align-items: center;
   gap: 8px;
   min-height: 56px;
-  padding: 8px;
-  border: 2px solid var(--color-border);
-  border-radius: 8px;
-  background: transparent;
-  color: var(--color-text);
+  padding: 6px 8px 10px;
   font: inherit;
   text-align: left;
   touch-action: manipulation;
@@ -470,18 +610,23 @@ body {
   cursor: pointer;
 }
 
-/* 倒れて次を選ぶときは、選べる控えを目立たせる */
+/* 倒れて次を選ぶときは、選べる控えを金の縁で目立たせる */
 .battle--replacement .bench-button--selectable {
-  border-color: var(--color-accent);
+  --face: #33261a;
+  box-shadow:
+    inset 0 0 0 2px var(--gold),
+    inset 0 -6px 0 var(--face-dark);
 }
 
 .bench-button:disabled {
   opacity: 0.6;
 }
 
-/* 控えの絵（32×32 を等倍）。倒れたキャラは色を抜いてうすく出す */
+/* 控えの絵（32×32 を等倍）を黒い小窓に入れる。倒れたキャラは色を抜いてうすく出す */
 .bench-button__icon {
   flex: none;
+  background: var(--ink);
+  box-shadow: 0 0 0 2px var(--lacquer-light);
 }
 
 .bench-button__icon--fainted {
@@ -518,9 +663,23 @@ body {
   text-align: center;
 }
 
+/* 選んでいる控え：板を金茶にして、左で ▶ を点滅させる */
 .bench-button--selected {
-  border-color: var(--color-accent);
-  background: rgba(240, 180, 69, 0.15);
+  --face: #3a2c1c;
+}
+
+.bench-button--selected::before {
+  content: '';
+  position: absolute;
+  left: 4px;
+  top: 50%;
+  width: 6px;
+  height: 10px;
+  margin-top: -7px;
+  background: var(--gold-light);
+  -webkit-mask: var(--mark-right) center / 6px 10px;
+  mask: var(--mark-right) center / 6px 10px;
+  animation: blink 0.8s steps(1) infinite;
 }
 
 .confirm {
@@ -662,10 +821,12 @@ body {
   animation-duration: 0.23s;
 }
 
-/* 端末の「動きを減らす」設定がオンなら動かさない（倒れたあとの薄い表示は残す） */
+/* 端末の「動きを減らす」設定がオンなら動かさない（倒れたあとの薄い表示は残す）。▼ や ▶ も点滅させない */
 @media (prefers-reduced-motion: reduce) {
   .fighter__sprite,
-  .sprite__frames {
+  .sprite__frames,
+  .battle__log::after,
+  .bench-button--selected::before {
     animation: none !important;
   }
 }
@@ -692,13 +853,10 @@ body {
 }
 
 .menu__button {
+  --face: #1d1729;
   min-width: 96px;
   min-height: 44px;
-  padding: 8px 16px;
-  border: 2px solid var(--color-border);
-  border-radius: 999px;
-  background: transparent;
-  color: var(--color-text);
+  padding: 6px 14px 10px;
   font: inherit;
   font-size: 14px;
   touch-action: manipulation;
@@ -731,7 +889,6 @@ body {
 /* ===== 技ボタンの情報（M3-4） ===== */
 
 .move-button {
-  border-left-width: 8px;
   -webkit-touch-callout: none;
 }
 
@@ -745,17 +902,19 @@ body {
   width: 100%;
 }
 
+/* 技の種類（大技・先制・補助）の札 */
 .move-button__kind {
   font-size: 14px;
-  padding: 0 6px;
-  border-radius: 4px;
-  background: var(--color-border);
+  padding: 0 5px;
+  background: var(--ink);
+  color: var(--gold-light);
+  box-shadow: inset 0 0 0 2px var(--gold-dark);
 }
 
 .move-button__power,
 .move-button__note {
   font-size: 14px;
-  color: var(--color-muted);
+  color: #cfc6e4;
 }
 
 .move-button__effect {
@@ -775,10 +934,24 @@ body {
   color: #f08a7a;
 }
 
+/* 行動順の予告：頭に金の ▶ */
 .order-preview {
+  display: flex;
+  align-items: center;
+  gap: 8px;
   margin: 0;
   font-size: 14px;
   color: var(--color-muted);
+}
+
+.order-preview::before {
+  content: '';
+  flex: none;
+  width: 6px;
+  height: 10px;
+  background: var(--gold);
+  -webkit-mask: var(--mark-right) center / 6px 10px;
+  mask: var(--mark-right) center / 6px 10px;
 }
 
 .order-preview--first {
@@ -793,20 +966,23 @@ body {
   position: relative;
 }
 
+/* 技の詳細（長押し）：ログと同じ窓に出す。下のログが透けないように、枠の内側は塗りつぶす */
 .move-detail {
   position: absolute;
+  z-index: 2;
   left: 16px;
   right: 16px;
   bottom: 16px;
-  padding: 8px 12px;
-  border-radius: 8px;
-  border: 2px solid var(--color-accent);
-  background: var(--color-panel);
+  padding: 0 10px 2px;
+  border: 12px solid transparent;
+  border-image: url('../assets/ui/frame-window.png') 6 fill / 12px stretch;
+  background: var(--lacquer) padding-box;
+  image-rendering: pixelated;
 }
 
 .move-detail__name {
   margin: 0 0 4px;
-  font-weight: bold;
+  color: var(--gold-light);
 }
 
 .move-detail__lines {
@@ -822,10 +998,17 @@ body {
 
 /* ===== ランの画面（M4-2） ===== */
 
+/* 場所の札（例：エリア1・1層目・戦闘） */
 .battle__caption {
+  align-self: center;
   margin: 0;
+  padding: 1px 14px;
+  border: 2px solid var(--gold);
+  clip-path: var(--notch);
+  background: rgba(13, 10, 20, 0.78);
+  color: var(--gold-light);
   font-size: 14px;
-  color: var(--color-muted);
+  letter-spacing: 0.1em;
   text-align: center;
 }
 

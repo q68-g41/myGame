@@ -15,7 +15,8 @@
     "zip:itch": "cd dist && rm -f sairei-itch.zip ../sairei-itch.zip && zip -qr ../sairei-itch.zip . && mv ../sairei-itch.zip .",
     "preview": "vite preview --host",
     "sim": "tsx scripts/simulate.ts",
-    "fonts": "tsx scripts/subset-fonts.ts"
+    "fonts": "tsx scripts/subset-fonts.ts",
+    "ui-art": "tsx scripts/make-ui-art.ts"
   },
   "devDependencies": {
     "@types/node": "^24.19.1",
