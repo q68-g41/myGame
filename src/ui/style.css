@@ -1800,26 +1800,58 @@ button.member {
   font-size: 14px;
 }
 
-/* ランの結果 */
+/* ランの結果：見出しは、左右に菱形を添えた大きな文字。クリアは金、全滅は青白い色。黒で縁取る */
 .run-end__title {
+  display: flex;
+  align-items: center;
+  gap: 12px;
   margin: 0;
   font-size: 28px;
+  letter-spacing: 0.1em;
+  color: #b9c3e0;
+  text-shadow:
+    2px 0 0 var(--ink),
+    -2px 0 0 var(--ink),
+    0 2px 0 var(--ink),
+    0 -2px 0 var(--ink),
+    0 4px 0 var(--ink);
+}
+
+.run-end__title::before,
+.run-end__title::after {
+  content: '';
+  flex: none;
+  width: 12px;
+  height: 12px;
+  background: currentColor;
+  -webkit-mask: var(--mark-diamond) center / 12px 12px;
+  mask: var(--mark-diamond) center / 12px 12px;
+  filter: drop-shadow(0 2px 0 var(--ink));
 }
 
 .run-end__title--cleared {
-  color: var(--color-accent);
+  color: var(--gold-light);
 }
 
+/* 彩り手（64×64 を2倍）を石の足場に立たせ、その下にあだ名 */
 .run-end__irodorite {
   display: flex;
   flex-direction: column;
   align-items: center;
   gap: 4px;
+  background: url('../assets/ui/platform.png') no-repeat center top 106px / 112px 32px;
+  image-rendering: pixelated;
+}
+
+.run-end__portrait {
+  image-rendering: pixelated;
 }
 
 .run-end__name {
+  margin-top: 8px;
   font-family: var(--font-dot);
   font-size: 18px;
+  color: var(--gold-light);
 }
 
 .run-end__message {
