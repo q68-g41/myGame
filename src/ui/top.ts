@@ -59,7 +59,7 @@ export function renderTopScreen(root: HTMLElement, options: TopScreenOptions, co
   view.append(title, scene, message);
 
   // 下半分：操作領域
-  const controls = el(doc, 'section', 'screen__controls');
+  const controls = el(doc, 'section', 'screen__controls top__controls');
   controls.setAttribute('aria-label', '操作');
 
   if (onContinue === undefined) {

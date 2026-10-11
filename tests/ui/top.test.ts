@@ -54,6 +54,10 @@ describe('トップ画面', () => {
     expect(onStart).toHaveBeenCalledTimes(1);
   });
 
+  it('「はじめる」は、トップの操作領域の主なボタン（頭で ▶ を点滅させる。M7-4）', () => {
+    expect(root.querySelector('.top__controls .button--primary')?.textContent).toBe('はじめる');
+  });
+
   it('ビルドの識別子を表示する', () => {
     expect(root.querySelector('.top__build')?.textContent).toBe('build: abc1234');
   });
