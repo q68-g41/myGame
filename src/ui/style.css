@@ -213,7 +213,9 @@ body {
 .bench-button,
 .menu__button,
 .candidate,
-.irodorite-choice {
+.irodorite-choice,
+.map-choice,
+button.member {
   --face: #241c33;
   --face-light: rgba(255, 255, 255, 0.14);
   --face-dark: rgba(0, 0, 0, 0.38);
@@ -233,7 +235,9 @@ body {
 .bench-button--selectable:active,
 .menu__button:active,
 .candidate:active,
-.irodorite-choice:active {
+.irodorite-choice:active,
+.map-choice:active,
+button.member:active {
   transform: translateY(4px);
   box-shadow:
     inset 0 2px 0 var(--face-dark),
@@ -825,12 +829,13 @@ body {
   animation-duration: 0.23s;
 }
 
-/* 端末の「動きを減らす」設定がオンなら動かさない（倒れたあとの薄い表示は残す）。▼ や ▶ も点滅させない */
+/* 端末の「動きを減らす」設定がオンなら動かさない（倒れたあとの薄い表示は残す）。▼ や ▶、マップの次のマスも点滅させない */
 @media (prefers-reduced-motion: reduce) {
   .fighter__sprite,
   .sprite__frames,
   .battle__log::after,
-  .bench-button--selected::before {
+  .bench-button--selected::before,
+  .map-node--choice {
     animation: none !important;
   }
 }
@@ -1160,16 +1165,19 @@ body {
   gap: 8px;
 }
 
-/* 絵を足した分、上下の余白と行の間を詰める（スカウトの上半分に、詳細とチームが収まるように） */
+/*
+ * チームの1体：見るだけのところ（報酬・休憩などの上半分、ランの結果）は金の細い枠の札。
+ * 絵を足した分、上下の余白と行の間を詰める（スカウトの上半分に、詳細とチームが収まるように）
+ */
 .member {
   display: flex;
   flex-direction: column;
   gap: 2px;
   min-width: 0;
-  padding: 6px 8px;
-  border: 2px solid var(--color-border);
-  border-left-width: 8px;
-  border-radius: 8px;
+  padding: 0 4px;
+  border: 8px solid transparent;
+  border-image: url('../assets/ui/frame-plate.png') 4 fill / 8px stretch;
+  image-rendering: pixelated;
   text-align: left;
 }
 
@@ -1177,19 +1185,29 @@ body {
   opacity: 0.6;
 }
 
-/* マップ画面では、チームのカードをタップして並び順を入れ替える */
+/* 小さい札の中のHPバーは、細くする */
+.member .hp-bar {
+  height: 10px;
+}
+
+/* マップ画面では、チームのカードをタップして並び順を入れ替えるので、厚みのある板にする。属性の色（--card-color）をうすく混ぜる */
 button.member {
+  --face: color-mix(in srgb, var(--card-color, #888) 16%, #1d1729);
+  --face-light: color-mix(in srgb, var(--card-color, #888) 45%, rgba(255, 255, 255, 0.16));
   width: 100%;
+  padding: 6px 6px 10px;
+  border-image: none;
   font: inherit;
-  color: inherit;
   text-align: left;
-  background: transparent;
   cursor: pointer;
 }
 
-.member--selected {
-  border-color: var(--color-accent);
-  background: rgba(240, 180, 69, 0.12);
+/* 並び替えで選んでいるカード：板を金茶にして、金で縁取る（板の色の指定より強くする） */
+.member.member--selected {
+  --face: color-mix(in srgb, var(--gold) 24%, #1d1729);
+  box-shadow:
+    inset 0 0 0 2px var(--gold),
+    inset 0 -6px 0 var(--face-dark);
 }
 
 .team-order-hint {
@@ -1219,7 +1237,6 @@ button.member {
 
 .member__name {
   font-size: 14px;
-  font-weight: bold;
   overflow: hidden;
   text-overflow: ellipsis;
   white-space: nowrap;
@@ -1562,10 +1579,17 @@ button.member {
   gap: 8px;
 }
 
+/* いまの場所（例：エリア1・3層目）：金の縁の札 */
 .map__progress {
+  align-self: flex-start;
   margin: 0;
+  padding: 1px 12px;
+  border: 2px solid var(--gold);
+  clip-path: var(--notch);
+  background: rgba(13, 10, 20, 0.78);
+  color: var(--gold-light);
   font-size: 14px;
-  color: var(--color-muted);
+  letter-spacing: 0.08em;
   text-align: left;
 }
 
@@ -1583,25 +1607,29 @@ button.member {
   overflow: visible;
 }
 
+/* マスをつなぐ道：点線。通れる道は金 */
 .map-line {
-  stroke: var(--color-border);
+  stroke: var(--lacquer-light);
   stroke-width: 2;
+  stroke-dasharray: 4 4;
 }
 
 .map-line--active {
-  stroke: var(--color-muted);
+  stroke: var(--gold-dark);
 }
 
+/* マス：黒の縁取りの四角い札（角丸なし）。内側の縁の色で種類を分ける */
 .map-node {
+  --node-ring: var(--lacquer-light);
   position: absolute;
   display: flex;
   align-items: center;
   justify-content: center;
   width: 36px;
   height: 36px;
-  border: 2px solid var(--color-muted);
-  border-radius: 50%;
-  background: var(--color-panel);
+  border: 2px solid var(--ink);
+  background: var(--lacquer);
+  box-shadow: inset 0 0 0 2px var(--node-ring);
   color: var(--color-text);
   font-size: 14px;
   font-weight: bold;
@@ -1609,15 +1637,15 @@ button.member {
 }
 
 .map-node--elite {
-  border-color: #f08a7a;
+  --node-ring: #f08a7a;
 }
 
 /* ボスのマスは、ボスのドット絵（48×48）を等倍で出す。暗い色の絵なので、後ろを明るくする */
 .map-node--boss {
+  --node-ring: #f08a7a;
   width: 56px;
   height: 56px;
-  border-color: #f08a7a;
-  background: radial-gradient(circle, #5a5368 0 55%, var(--color-panel) 100%);
+  background: radial-gradient(circle, #5a5368 0 55%, var(--lacquer) 100%);
 }
 
 .map-node--passed,
@@ -1625,17 +1653,31 @@ button.member {
   opacity: 0.35;
 }
 
+/* いまいるマス：金の札 */
 .map-node--current {
-  border-color: var(--color-accent);
-  background: var(--color-accent);
-  color: var(--color-accent-text);
+  --node-ring: var(--gold-light);
+  background: var(--gold);
+  color: var(--ink);
 }
 
+/* 次に進めるマス：金の縁で、外側の金の輪をゆっくり点滅させる */
 .map-node--choice {
-  border-color: var(--color-accent);
-  box-shadow: 0 0 0 3px rgba(240, 180, 69, 0.35);
+  --node-ring: var(--gold);
+  box-shadow:
+    inset 0 0 0 2px var(--node-ring),
+    0 0 0 2px var(--gold-dark);
+  animation: choice-ring 1.2s steps(1) infinite;
 }
 
+@keyframes choice-ring {
+  50% {
+    box-shadow:
+      inset 0 0 0 2px var(--node-ring),
+      0 0 0 2px var(--gold-light);
+  }
+}
+
+/* マスの記号（A・B・C）：金の四角い札 */
 .map-node__letter {
   position: absolute;
   top: -10px;
@@ -1643,11 +1685,11 @@ button.member {
   min-width: 20px;
   height: 20px;
   padding: 0 4px;
-  border-radius: 999px;
-  background: var(--color-accent);
-  color: var(--color-accent-text);
+  border: 2px solid var(--ink);
+  background: var(--gold);
+  color: var(--ink);
   font-size: 14px;
-  line-height: 20px;
+  line-height: 16px;
   text-align: center;
 }
 
@@ -1658,7 +1700,7 @@ button.member {
   left: 50%;
   width: 8px;
   height: 8px;
-  box-shadow: 0 0 0 1px rgba(0, 0, 0, 0.6);
+  box-shadow: 0 0 0 2px var(--ink);
   transform: translateX(-50%);
   pointer-events: none;
 }
@@ -1681,7 +1723,7 @@ button.member {
   gap: 8px;
 }
 
-/* 3つ並んで狭いときは、名前の途中で折り返さずに、記号の下に名前を出す */
+/* 次のマスを選ぶボタン（厚みのある板）。3つ並んで狭いときは、名前の途中で折り返さずに、記号の下に名前を出す */
 .map-choice {
   display: flex;
   flex-wrap: wrap;
@@ -1689,13 +1731,8 @@ button.member {
   justify-content: center;
   gap: 4px 8px;
   min-height: 64px;
-  padding: 8px;
-  border: 2px solid var(--color-accent);
-  border-radius: 8px;
-  background: var(--color-bg);
-  color: var(--color-text);
+  padding: 6px 8px 10px;
   font: inherit;
-  font-weight: bold;
   touch-action: manipulation;
   -webkit-tap-highlight-color: transparent;
   user-select: none;
@@ -1704,10 +1741,6 @@ button.member {
 
 .map-choice__name {
   white-space: nowrap;
-}
-
-.map-choice:active {
-  transform: translateY(2px);
 }
 
 /* 選ぶボタンの2行目に、先頭の相手の属性を「先頭」＋「色の四角＋名前」の札で出す（色だけに頼らない） */
@@ -1740,7 +1773,7 @@ button.member {
   width: 10px;
   height: 10px;
   background: var(--chip-color);
-  box-shadow: 0 0 0 1px rgba(0, 0, 0, 0.6);
+  box-shadow: 0 0 0 2px var(--ink);
 }
 
 .map-choice__letter {
@@ -1749,9 +1782,9 @@ button.member {
   justify-content: center;
   width: 24px;
   height: 24px;
-  border-radius: 999px;
-  background: var(--color-accent);
-  color: var(--color-accent-text);
+  border: 2px solid var(--ink);
+  background: var(--gold);
+  color: var(--ink);
   font-size: 14px;
 }
 

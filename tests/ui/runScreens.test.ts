@@ -233,6 +233,14 @@ describe('マップの画面', () => {
     onlyBottomIsInteractive();
   });
 
+  it('チームのカードには、属性の色を --card-color で渡す（板にうすく混ぜる。M7-4）', () => {
+    const cards = [...root.querySelectorAll<HTMLElement>('.screen__controls .member')];
+    expect(cards).toHaveLength(3);
+    expect(cards.every((card) => /^#[0-9a-f]{6}$/i.test(card.style.getPropertyValue('--card-color')))).toBe(true);
+    // 左の色の帯（M4 から）は使わない
+    expect(cards.every((card) => card.style.borderLeftColor === '')).toBe(true);
+  });
+
   describe('チームの並び順', () => {
     const members = () => [...root.querySelectorAll<HTMLButtonElement>('.screen__controls button.member')];
     const names = () => members().map((card) => card.querySelector('.member__name')?.textContent);

@@ -39,10 +39,13 @@ function hpLevel(hp: number, maxHp: number): 'high' | 'middle' | 'low' {
   return ratio > 0.5 ? 'high' : ratio > 0.2 ? 'middle' : 'low';
 }
 
-/** チームの1体（名前・HPバー・数字）。属性の色は、技ボタンと同じく左の帯で見せる（6文字の名前が1行に収まるように） */
+/**
+ * チームの1体（名前・HPバー・数字）。属性の色は --card-color で渡す（マップの並び替えのボタンでは、板にうすく混ぜる。CSS）。
+ * 6文字の名前が1行に収まるように、絵を上、名前をその下に出す
+ */
 function memberCard(doc: Document, member: TeamMemberView, card: HTMLElement = el(doc, 'div', '')): HTMLElement {
   card.className = member.hp === 0 ? 'member member--fainted' : 'member';
-  card.style.borderLeftColor = member.color;
+  card.style.setProperty('--card-color', member.color);
   const header = el(doc, 'div', 'member__header');
   // 絵を上に、名前をその下に出す（3つ並ぶので、横に並べると6文字の名前が入らない）
   header.append(
