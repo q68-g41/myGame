@@ -100,6 +100,14 @@ describe('バトル画面', () => {
     }
   });
 
+  it('技ボタンには、技の属性の色を --move-color で渡す（板の色と名前の前の菱形に使う）', () => {
+    const buttons = [...root.querySelectorAll<HTMLElement>('.move-button')];
+    expect(buttons).toHaveLength(4);
+    for (const button of buttons) {
+      expect(button.style.getPropertyValue('--move-color')).toMatch(/^#[0-9a-f]{6}$/i);
+    }
+  });
+
   it('技をタップするとターンが進み、ログが変わる', () => {
     const before = logText();
     enabled('.move-button')[0]!.click();

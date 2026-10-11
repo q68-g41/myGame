@@ -108,8 +108,8 @@ function moveButton(doc: Document, view: MoveButtonView, handlers: BattleScreenH
     button.setAttribute('aria-disabled', 'true');
   }
   button.dataset.moveId = view.id;
-  // 属性の色を左の帯で見せる
-  button.style.borderLeftColor = view.color;
+  // 属性の色を、板の色と名前の前の菱形で見せる（CSS）
+  button.style.setProperty('--move-color', view.color);
 
   const top = el(doc, 'span', 'move-button__top');
   top.append(el(doc, 'span', 'move-button__name', view.name));
