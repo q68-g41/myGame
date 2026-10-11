@@ -154,11 +154,10 @@ const PLATE = frame(['.KKK', 'KGGG', 'KGKK', 'KGKp'], 'KGKp', 'p', 2);
 
 // ===== 足場（石の台） =====
 
-/** 横長のだ円の上面と、少しの厚みを持つ石の台（56×16） */
-function platform(): Rgba[][] {
-  const width = 56;
+/** 横長のだ円の上面と、少しの厚みを持つ石の台（幅 width × 高さ16） */
+function platform(width: number): Rgba[][] {
   const height = 16;
-  const [cx, cy, rx, ry, depth] = [27.5, 6, 27, 5.6, 4];
+  const [cx, cy, rx, ry, depth] = [(width - 1) / 2, 6, (width - 2) / 2, 5.6, 4];
   const inTop = (x: number, y: number) => ((x + 0.5 - cx) / rx) ** 2 + ((y + 0.5 - cy) / ry) ** 2 <= 1;
   const inBody = (x: number, y: number) => Array.from({ length: depth + 1 }, (_, d) => inTop(x, y - d)).some(Boolean);
   const inCenter = (x: number, y: number) =>
@@ -196,7 +195,9 @@ function platform(): Rgba[][] {
 const OUTPUTS = [
   { file: 'frame-window.png', pixels: fromText(WINDOW) },
   { file: 'frame-plate.png', pixels: fromText(PLATE) },
-  { file: 'platform.png', pixels: platform() },
+  // バトルのキャラ1体ぶん（56×16）と、トップ画面の彩り手と相棒の2人ぶん（120×16）
+  { file: 'platform.png', pixels: platform(56) },
+  { file: 'platform-wide.png', pixels: platform(120) },
 ];
 
 for (const { file, pixels } of OUTPUTS) {
