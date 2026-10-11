@@ -133,6 +133,13 @@ describe('チーム選択の画面', () => {
     expect(sprite?.getAttribute('src')).toBeTruthy();
   });
 
+  it('候補のボタンと詳細には、属性の色を --card-color で渡す（板の色と名前の前の菱形に使う。M7-4）', () => {
+    const color = (element: Element | null) => (element as HTMLElement | null)?.style.getPropertyValue('--card-color');
+    expect(candidates().every((candidate) => /^#[0-9a-f]{6}$/i.test(color(candidate) ?? ''))).toBe(true);
+    candidates()[2]!.click();
+    expect(color(root.querySelector('.fighter-detail'))).toBe(color(candidates()[2]!));
+  });
+
   it('相棒のあとに2体選ぶまでは出発できない。タップした順が出る順になり、3体目は選べず、もう一度タップで外せる', () => {
     expect(confirmButton().disabled).toBe(true);
     candidates()[3]!.click();

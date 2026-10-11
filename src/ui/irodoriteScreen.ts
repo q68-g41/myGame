@@ -25,7 +25,8 @@ export function renderIrodoriteScreen(root: HTMLElement, view: IrodoriteSelectVi
   // 相棒の名前は彩り手の横に出さず、相棒の詳細の側で示す
   const display = el(doc, 'section', 'irodorite__view');
   const card = el(doc, 'div', 'irodorite-detail');
-  card.style.borderLeftColor = detail.color;
+  // 属性の色は、あだ名の前の菱形で見せる（CSS）
+  card.style.setProperty('--card-color', detail.color);
   const text = el(doc, 'div', 'irodorite-detail__text');
   const trait = el(doc, 'p', 'irodorite-detail__trait');
   trait.append(
@@ -60,7 +61,8 @@ export function renderIrodoriteScreen(root: HTMLElement, view: IrodoriteSelectVi
       () => handlers.onSelect(choice.index),
     );
     pick.setAttribute('aria-pressed', String(choice.selected));
-    pick.style.borderBottomColor = choice.color;
+    // 属性の色を、板にうすく混ぜる（CSS）
+    pick.style.setProperty('--card-color', choice.color);
     pick.append(
       irodoriteElement(doc, { url: choice.portrait, color: choice.color, scale: 1, className: 'irodorite-choice__portrait' }),
       el(doc, 'span', 'irodorite-choice__name', choice.name),

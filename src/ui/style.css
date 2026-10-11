@@ -211,7 +211,9 @@ body {
 .button,
 .move-button,
 .bench-button,
-.menu__button {
+.menu__button,
+.candidate,
+.irodorite-choice {
   --face: #241c33;
   --face-light: rgba(255, 255, 255, 0.14);
   --face-dark: rgba(0, 0, 0, 0.38);
@@ -229,7 +231,9 @@ body {
 .button:active:not(:disabled),
 .move-button:active:not([aria-disabled='true']),
 .bench-button--selectable:active,
-.menu__button:active {
+.menu__button:active,
+.candidate:active,
+.irodorite-choice:active {
   transform: translateY(4px);
   box-shadow:
     inset 0 2px 0 var(--face-dark),
@@ -1235,9 +1239,57 @@ button.member {
   text-align: left;
 }
 
-.draft__title {
+/* 画面の見出し：金の文字で、頭に金の菱形 */
+.draft__title,
+.irodorite__title {
+  display: flex;
+  align-items: center;
+  gap: 8px;
   margin: 0;
   font-size: 20px;
+  color: var(--gold-light);
+  letter-spacing: 0.06em;
+}
+
+.draft__title::before,
+.irodorite__title::before {
+  content: '';
+  flex: none;
+  width: 10px;
+  height: 10px;
+  background: var(--gold);
+  -webkit-mask: var(--mark-diamond) center / 10px 10px;
+  mask: var(--mark-diamond) center / 10px 10px;
+}
+
+/*
+ * 札（金の細い枠）：キャラや彩り手の詳細、チームの枠。--card-color があれば、名前の前に属性の色の菱形を出す
+ */
+.draft-slot,
+.fighter-detail,
+.irodorite-detail {
+  border: 8px solid transparent;
+  border-image: url('../assets/ui/frame-plate.png') 4 fill / 8px stretch;
+  image-rendering: pixelated;
+}
+
+.fighter-detail__name,
+.irodorite-detail__name {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.fighter-detail__name::before,
+.irodorite-detail__name::before {
+  content: '';
+  flex: none;
+  width: 10px;
+  height: 10px;
+  background: var(--card-color, var(--gold));
+  -webkit-mask: var(--mark-diamond) center / 10px 10px;
+  mask: var(--mark-diamond) center / 10px 10px;
+  filter: drop-shadow(0 2px 0 var(--ink));
 }
 
 .draft__hint,
@@ -1263,20 +1315,18 @@ button.member {
   align-items: center;
   gap: 2px 6px;
   min-width: 0;
-  padding: 6px 8px;
-  border: 2px solid var(--color-accent);
-  border-radius: 8px;
+  padding: 0 2px;
   font-size: 14px;
 }
 
+/* まだ選んでいない枠は、札を薄くする */
 .draft-slot--empty {
-  border-style: dashed;
-  border-color: var(--color-border);
+  opacity: 0.55;
   color: var(--color-muted);
 }
 
 .draft-slot__order {
-  font-weight: bold;
+  color: var(--gold-light);
 }
 
 .draft-slot__icon {
@@ -1291,9 +1341,7 @@ button.member {
 }
 
 .fighter-detail {
-  padding: 8px 12px;
-  border-radius: 8px;
-  background: var(--color-panel);
+  padding: 0 6px;
 }
 
 .fighter-detail__header {
@@ -1310,7 +1358,8 @@ button.member {
 }
 
 .fighter-detail__name {
-  font-weight: bold;
+  font-size: 17px;
+  letter-spacing: 0.04em;
 }
 
 .fighter-detail__attribute,
@@ -1348,17 +1397,16 @@ button.member {
   gap: 8px;
 }
 
+/* 候補：板に属性の色（--card-color）をうすく混ぜる */
 .candidate {
+  --face: color-mix(in srgb, var(--card-color, #888) 16%, #1d1729);
+  --face-light: color-mix(in srgb, var(--card-color, #888) 45%, rgba(255, 255, 255, 0.16));
   display: flex;
   align-items: center;
   /* 6文字の名前（例：イナホイタチ）が、絵（32px）と選んだ順の数字と並んでも1行に収まるように詰める */
   gap: 4px;
   min-height: 56px;
-  padding: 8px 6px;
-  border: 2px solid var(--color-border);
-  border-radius: 8px;
-  background: var(--color-bg);
-  color: var(--color-text);
+  padding: 6px 6px 10px;
   font: inherit;
   text-align: left;
   touch-action: manipulation;
@@ -1367,9 +1415,13 @@ button.member {
   cursor: pointer;
 }
 
-.candidate--picked {
-  border-color: var(--color-accent);
-  background: rgba(240, 180, 69, 0.15);
+/* 選んだ候補・選んでいる彩り手：板を金茶にして、金で縁取る */
+.candidate--picked,
+.irodorite-choice--selected {
+  --face: color-mix(in srgb, var(--gold) 24%, #1d1729);
+  box-shadow:
+    inset 0 0 0 2px var(--gold),
+    inset 0 -6px 0 var(--face-dark);
 }
 
 .candidate__icon {
@@ -1378,13 +1430,11 @@ button.member {
 
 .candidate__name {
   flex: 1;
-  font-weight: bold;
 }
 
 .candidate__order {
   min-width: 0.75em;
-  font-weight: bold;
-  color: var(--color-accent);
+  color: var(--gold-light);
   text-align: center;
 }
 
@@ -1396,20 +1446,12 @@ button.member {
   text-align: left;
 }
 
-.irodorite__title {
-  margin: 0;
-  font-size: 20px;
-}
-
 /* 彩り手の絵（64×64 を2倍）の横に、あだ名・口ぐせ・特性 */
 .irodorite-detail {
   display: flex;
   align-items: center;
   gap: 12px;
-  padding: 8px 12px;
-  border-left: 6px solid var(--color-border);
-  border-radius: 8px;
-  background: var(--color-panel);
+  padding: 0 6px;
 }
 
 .irodorite-detail__portrait {
@@ -1451,7 +1493,7 @@ button.member {
 
 .irodorite-detail__trait-name {
   font-weight: bold;
-  color: var(--color-accent);
+  color: var(--gold-light);
 }
 
 /* 特性の効果は、文節で折り返すと3行になるもの（ユヒ）があり、上半分に収まらなくなるので、行の長さだけそろえる */
@@ -1481,18 +1523,16 @@ button.member {
   overflow-y: auto;
 }
 
+/* 一覧のボタン：板に属性の色（--card-color）をうすく混ぜる */
 .irodorite-choice {
+  --face: color-mix(in srgb, var(--card-color, #888) 16%, #1d1729);
+  --face-light: color-mix(in srgb, var(--card-color, #888) 45%, rgba(255, 255, 255, 0.16));
   display: flex;
   flex-direction: column;
   align-items: center;
   gap: 2px;
   min-height: 44px;
-  padding: 6px 4px;
-  border: 2px solid var(--color-border);
-  border-bottom-width: 4px;
-  border-radius: 8px;
-  background: var(--color-bg);
-  color: var(--color-text);
+  padding: 6px 4px 10px;
   font: inherit;
   touch-action: manipulation;
   -webkit-tap-highlight-color: transparent;
@@ -1500,12 +1540,6 @@ button.member {
   cursor: pointer;
 }
 
-.irodorite-choice--selected {
-  border-top-color: var(--color-accent);
-  border-left-color: var(--color-accent);
-  border-right-color: var(--color-accent);
-  background: rgba(240, 180, 69, 0.15);
-}
 
 .irodorite-choice__portrait {
   flex: none;
@@ -1516,10 +1550,9 @@ button.member {
   font-size: 14px;
 }
 
-/* チーム選択の相棒の枠（はじめから入っていて、外せない） */
+/* チーム選択の相棒の枠（はじめから入っていて、外せない）：地を金茶にする */
 .draft-slot--partner {
-  border-style: double;
-  border-width: 3px;
+  background: rgba(212, 162, 74, 0.18) padding-box;
 }
 
 /* マップ：下から上へ進む */

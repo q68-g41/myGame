@@ -110,6 +110,8 @@ export interface DraftScreenHandlers {
 /** キャラの詳細（説明・能力・技）。チーム選択とスカウトで使う */
 export function fighterDetailCard(doc: Document, detail: FighterDetailView): HTMLElement {
   const card = el(doc, 'div', 'fighter-detail');
+  // 属性の色は、名前の前の菱形で見せる（CSS）
+  card.style.setProperty('--card-color', detail.color);
   const header = el(doc, 'div', 'fighter-detail__header');
   const title = el(doc, 'div', 'fighter-detail__title');
   // 説明は絵の横（名前と属性の下）に置き、絵の高さの中に収める
@@ -173,6 +175,8 @@ export function renderDraftScreen(root: HTMLElement, view: DraftView, handlers: 
     pick.setAttribute('aria-pressed', String(candidate.order !== null));
     // 長押しで、選ばずに詳細だけ出す（app.ts で受ける）
     pick.dataset.candidateIndex = String(candidate.index);
+    // 属性の色を、板にうすく混ぜる（CSS）
+    pick.style.setProperty('--card-color', candidate.color);
     pick.append(
       iconElement(doc, { url: candidate.icon, color: candidate.color, className: 'candidate__icon' }),
       el(doc, 'span', 'candidate__name', candidate.name),
