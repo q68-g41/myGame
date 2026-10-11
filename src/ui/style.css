@@ -215,7 +215,11 @@ body {
 .candidate,
 .irodorite-choice,
 .map-choice,
-button.member {
+button.member,
+.reward-offer,
+.reward-option,
+.node-option,
+.node-pick {
   --face: #241c33;
   --face-light: rgba(255, 255, 255, 0.14);
   --face-dark: rgba(0, 0, 0, 0.38);
@@ -237,7 +241,11 @@ button.member {
 .candidate:active,
 .irodorite-choice:active,
 .map-choice:active,
-button.member:active {
+button.member:active,
+.reward-offer:active,
+.reward-option:active:not(:disabled),
+.node-option:active,
+.node-pick:active:not(:disabled) {
   transform: translateY(4px);
   box-shadow:
     inset 0 2px 0 var(--face-dark),
@@ -1258,7 +1266,9 @@ button.member {
 
 /* 画面の見出し：金の文字で、頭に金の菱形 */
 .draft__title,
-.irodorite__title {
+.irodorite__title,
+.reward__title,
+.node__title {
   display: flex;
   align-items: center;
   gap: 8px;
@@ -1269,7 +1279,9 @@ button.member {
 }
 
 .draft__title::before,
-.irodorite__title::before {
+.irodorite__title::before,
+.reward__title::before,
+.node__title::before {
   content: '';
   flex: none;
   width: 10px;
@@ -1844,27 +1856,28 @@ button.member {
   text-align: left;
 }
 
-.reward__title {
-  margin: 0;
-  font-size: 20px;
-}
-
 .reward__placeholder {
   margin: 0;
   font-size: 14px;
   color: var(--color-muted);
 }
 
+/* 報酬の詳細・イベントの結果：ログと同じメッセージの窓 */
+.reward-detail,
+.event-result {
+  border: 12px solid transparent;
+  border-image: url('../assets/ui/frame-window.png') 6 fill / 12px stretch;
+  background: var(--lacquer) padding-box;
+  image-rendering: pixelated;
+}
+
 .reward-detail {
-  padding: 8px 12px;
-  border: 2px solid var(--color-accent);
-  border-radius: 8px;
-  background: var(--color-panel);
+  padding: 0 6px;
 }
 
 .reward-detail__title {
   margin: 0 0 4px;
-  font-weight: bold;
+  color: var(--gold-light);
 }
 
 .reward-detail__lines {
@@ -1899,6 +1912,15 @@ button.member {
   gap: 8px;
 }
 
+/* 報酬・休憩・スカウト・イベントのボタン（厚みのある板）。属性の色（--card-color）をうすく混ぜる */
+.reward-offer,
+.reward-option,
+.node-option,
+.node-pick {
+  --face: color-mix(in srgb, var(--card-color, #888) 16%, #1d1729);
+  --face-light: color-mix(in srgb, var(--card-color, #888) 45%, rgba(255, 255, 255, 0.16));
+}
+
 .reward-offer,
 .reward-option {
   display: flex;
@@ -1907,12 +1929,7 @@ button.member {
   justify-content: center;
   gap: 2px;
   min-height: 64px;
-  padding: 8px 12px;
-  border: 2px solid var(--color-border);
-  border-left-width: 8px;
-  border-radius: 8px;
-  background: var(--color-bg);
-  color: var(--color-text);
+  padding: 6px 12px 10px;
   font: inherit;
   text-align: left;
   touch-action: manipulation;
@@ -1921,11 +1938,14 @@ button.member {
   cursor: pointer;
 }
 
-.reward-offer--selected {
-  border-top-color: var(--color-accent);
-  border-right-color: var(--color-accent);
-  border-bottom-color: var(--color-accent);
-  background: rgba(240, 180, 69, 0.15);
+/* 選んでいるもの：板を金茶にして、金で縁取る（板の色の指定より強くする） */
+.reward-offer.reward-offer--selected,
+.node-option.node-option--selected,
+.node-pick.node-pick--selected {
+  --face: color-mix(in srgb, var(--gold) 24%, #1d1729);
+  box-shadow:
+    inset 0 0 0 2px var(--gold),
+    inset 0 -6px 0 var(--face-dark);
 }
 
 .reward-option:disabled {
@@ -1939,22 +1959,19 @@ button.member {
   gap: 8px;
 }
 
+/* 報酬の種類（技・能力・お守り）の札：技ボタンの種類の札と同じ */
 .reward-offer__kind {
   font-size: 14px;
-  padding: 0 6px;
-  border-radius: 4px;
-  background: var(--color-border);
-}
-
-.reward-offer__title,
-.reward-option__name {
-  font-weight: bold;
+  padding: 0 5px;
+  background: var(--ink);
+  color: var(--gold-light);
+  box-shadow: inset 0 0 0 2px var(--gold-dark);
 }
 
 .reward-offer__detail,
 .reward-option__note {
   font-size: 14px;
-  color: var(--color-muted);
+  color: #cfc6e4;
 }
 
 /* ===== 休憩・スカウト・イベント（M4-4） ===== */
@@ -1966,11 +1983,6 @@ button.member {
   text-align: left;
 }
 
-.node__title {
-  margin: 0;
-  font-size: 20px;
-}
-
 .node__text {
   margin: 0;
   font-size: 14px;
@@ -1979,10 +1991,7 @@ button.member {
 
 .event-result {
   margin: 0;
-  padding: 8px 12px 8px 2em;
-  border: 2px solid var(--color-accent);
-  border-radius: 8px;
-  background: var(--color-panel);
+  padding: 0 6px 0 1.6em;
   font-size: 14px;
 }
 
@@ -2021,12 +2030,7 @@ button.member {
   justify-content: center;
   gap: 2px;
   min-height: 64px;
-  padding: 8px 12px;
-  border: 2px solid var(--color-border);
-  border-left-width: 8px;
-  border-radius: 8px;
-  background: var(--color-bg);
-  color: var(--color-text);
+  padding: 6px 12px 10px;
   font: inherit;
   text-align: left;
   touch-action: manipulation;
@@ -2035,28 +2039,16 @@ button.member {
   cursor: pointer;
 }
 
-.node-option--selected,
-.node-pick--selected {
-  border-top-color: var(--color-accent);
-  border-right-color: var(--color-accent);
-  border-bottom-color: var(--color-accent);
-  background: rgba(240, 180, 69, 0.15);
-}
 
 .node-pick:disabled {
   opacity: 0.45;
   cursor: default;
 }
 
-.node-option__title,
-.node-pick__name {
-  font-weight: bold;
-}
-
 .node-option__detail,
 .node-pick__note {
   font-size: 14px;
-  color: var(--color-muted);
+  color: #cfc6e4;
 }
 
 /* ===== 自動保存と再開（M4-5） ===== */
@@ -2071,7 +2063,7 @@ button.member {
 .reward-members .reward-option,
 .node-members .node-pick,
 .node-moves .node-pick {
-  padding: 8px;
+  padding: 6px 8px 10px;
 }
 
 .reward-members .reward-option__name,
