@@ -176,6 +176,16 @@ describe('休憩の画面', () => {
     moves.querySelector<HTMLButtonElement>('.button--secondary')!.click();
     expect(handlers.onBack).toHaveBeenCalled();
   });
+
+  it('キャラと技のボタンには、属性の色を --card-color で渡す（板にうすく混ぜる。左の色の帯は使わない。M7-4）', () => {
+    const color = (button: HTMLElement) => button.style.getPropertyValue('--card-color');
+    const members = [...draw({ step: 'member', selected: 'power', member: null }).querySelectorAll<HTMLElement>('.node-pick')];
+    const moves = [...draw({ step: 'move', selected: 'power', member: 0 }).querySelectorAll<HTMLElement>('.node-pick')];
+    for (const button of [...members, ...moves]) {
+      expect(color(button)).toMatch(/^#[0-9a-f]{6}$/i);
+      expect(button.style.borderLeftColor).toBe('');
+    }
+  });
 });
 
 describe('スカウト・イベントの画面', () => {

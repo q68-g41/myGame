@@ -152,6 +152,10 @@ describe('報酬の画面', () => {
     expect(confirm().disabled).toBe(true);
     onlyBottomIsInteractive();
 
+    // 技の報酬は、技の属性の色を --card-color で渡す（板にうすく混ぜる。M7-4）
+    expect(offer('技').style.getPropertyValue('--card-color')).toMatch(/^#[0-9a-f]{6}$/i);
+    expect(offer('技').style.borderLeftColor).toBe('');
+
     offer('能力').click();
     expect(root.querySelector('.reward-detail__title')?.textContent).toMatch(/^能力強化：/);
     expect(root.querySelector('.reward')).not.toBeNull();

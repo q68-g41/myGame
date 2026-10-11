@@ -19,7 +19,7 @@ function optionCard(
   const card = button(doc, selected ? 'node-option node-option--selected' : 'node-option', '', onClick);
   card.setAttribute('aria-pressed', String(selected));
   if (color !== null) {
-    card.style.borderLeftColor = color;
+    card.style.setProperty('--card-color', color);
   }
   card.append(el(doc, 'span', 'node-option__title', title), el(doc, 'span', 'node-option__detail', detail));
   return card;
@@ -31,7 +31,7 @@ function memberPicks(doc: Document, members: readonly NodeMemberView[], onPick: 
   for (const member of members) {
     const pick = button(doc, 'node-pick', '', () => onPick(member.index));
     pick.disabled = member.disabled === true;
-    pick.style.borderLeftColor = member.color;
+    pick.style.setProperty('--card-color', member.color);
     pick.append(
       iconElement(doc, { url: member.icon, color: member.color, className: 'node-pick__icon' }),
       el(doc, 'span', 'node-pick__name', member.name),
@@ -89,7 +89,7 @@ export function renderRestScreen(root: HTMLElement, view: RestView, handlers: Re
       for (const move of view.moves) {
         const pick = button(doc, 'node-pick', '', () => handlers.onMove(move.index));
         pick.disabled = move.disabled;
-        pick.style.borderLeftColor = move.color;
+        pick.style.setProperty('--card-color', move.color);
         pick.append(el(doc, 'span', 'node-pick__name', move.name), el(doc, 'span', 'node-pick__note', move.detail));
         moves.append(pick);
       }
@@ -134,7 +134,7 @@ export function renderScoutScreen(root: HTMLElement, view: ScoutView, handlers: 
         handlers.onCandidate(candidate.index),
       );
       pick.setAttribute('aria-pressed', String(candidate.selected));
-      pick.style.borderLeftColor = candidate.color;
+      pick.style.setProperty('--card-color', candidate.color);
       pick.append(
         iconElement(doc, { url: candidate.icon, color: candidate.color, className: 'node-pick__icon' }),
         el(doc, 'span', 'node-pick__name', candidate.name),

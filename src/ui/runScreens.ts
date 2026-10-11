@@ -348,7 +348,7 @@ function offerButton(doc: Document, offer: RewardView['offers'][number], handler
   );
   choose.setAttribute('aria-pressed', String(offer.selected));
   if (offer.color !== null) {
-    choose.style.borderLeftColor = offer.color;
+    choose.style.setProperty('--card-color', offer.color);
   }
   const top = el(doc, 'span', 'reward-offer__top');
   top.append(el(doc, 'span', 'reward-offer__kind', offer.kindLabel), el(doc, 'span', 'reward-offer__title', offer.title));
@@ -391,7 +391,7 @@ export function renderRewardScreen(root: HTMLElement, view: RewardView, handlers
       for (const member of view.members) {
         const choose = button(doc, 'reward-option', '', () => handlers.onMember(member.index));
         choose.disabled = member.disabled;
-        choose.style.borderLeftColor = member.color;
+        choose.style.setProperty('--card-color', member.color);
         choose.append(
           iconElement(doc, { url: member.icon, color: member.color, className: 'reward-option__icon' }),
           el(doc, 'span', 'reward-option__name', member.name),
@@ -403,7 +403,7 @@ export function renderRewardScreen(root: HTMLElement, view: RewardView, handlers
       for (const forget of view.forgets) {
         const choose = button(doc, 'reward-option', '', () => handlers.onForget(forget.index));
         choose.disabled = forget.disabled;
-        choose.style.borderLeftColor = forget.color;
+        choose.style.setProperty('--card-color', forget.color);
         choose.append(el(doc, 'span', 'reward-option__name', forget.name), el(doc, 'span', 'reward-option__note', forget.detail));
         options.append(choose);
       }
