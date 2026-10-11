@@ -27,6 +27,16 @@ export interface FrameMotion {
   readonly kind: MotionKind;
 }
 
+/** キャラの上に出す数字の種類（M7-4）。ダメージは相性で見た目を変え、回復は別の色にする */
+export type PopupKind = 'advantage' | 'neutral' | 'disadvantage' | 'heal';
+
+/** キャラの上に出す数字（ダメージ・回復） */
+export interface FramePopup {
+  readonly side: Side;
+  readonly amount: number;
+  readonly kind: PopupKind;
+}
+
 /** 演出の1コマ */
 export interface PlaybackFrame {
   /** このコマで画面に出す状態 */
@@ -39,6 +49,8 @@ export interface PlaybackFrame {
   readonly hit: Side | null;
   /** このコマで動く場のキャラ。なければ null */
   readonly motion: FrameMotion | null;
+  /** このコマでキャラの上に出す数字（M7-4）。なければ null */
+  readonly popup: FramePopup | null;
   /** このコマで鳴らす効果音（M7-2）。なければ null */
   readonly sound: SoundId | null;
 }
@@ -76,6 +88,20 @@ function motionOf(event: BattleEvent): FrameMotion | null {
       return { side: event.side, kind: 'faint' };
     case 'switched':
       return { side: event.side, kind: 'enter' };
+    default:
+      return null;
+  }
+}
+
+/** イベントから、キャラの上に出す数字を決める（ダメージ・状態異常のダメージ・回復） */
+function popupOf(event: BattleEvent): FramePopup | null {
+  switch (event.type) {
+    case 'damage':
+      return { side: event.side, amount: event.amount, kind: event.effectiveness };
+    case 'statusDamage':
+      return { side: event.side, amount: event.amount, kind: 'neutral' };
+    case 'healed':
+      return event.amount > 0 ? { side: event.side, amount: event.amount, kind: 'heal' } : null;
     default:
       return null;
   }
@@ -130,6 +156,7 @@ export function buildFrames(
       logLines: logs.slice(Math.max(0, index + 1 - LOG_LINES), index + 1),
       hit,
       motion: motionOf(event),
+      popup: popupOf(event),
       sound: soundOf(event),
     };
   });

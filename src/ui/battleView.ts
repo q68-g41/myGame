@@ -15,7 +15,7 @@ import { activeOf, isFainted } from '../engine/team';
 import type { CharmEffect, Combatant, Effectiveness, Side } from '../engine/types';
 import { describeEvents } from './messages';
 import { describeMove, MOVE_KIND_NAMES, summarizeEffects } from './moveInfo';
-import { LOG_LINES, type FrameMotion } from './playback';
+import { LOG_LINES, type FrameMotion, type FramePopup } from './playback';
 import { needsPlayerReplacement, type BattleSession } from './session';
 import { animUrl, iconUrl, spriteUrl } from './sprites';
 
@@ -112,6 +112,7 @@ export interface FrameOverlay {
   readonly logLines: readonly string[];
   readonly hit: Side | null;
   readonly motion?: FrameMotion | null;
+  readonly popup?: FramePopup | null;
 }
 
 export const INITIAL_UI_STATE: UiState = { selectedBench: null, speed: 1, sound: true, detailMoveId: null };
@@ -130,6 +131,8 @@ export interface BattleView {
   readonly hit: Side | null;
   /** 演出で動く場のキャラ（技・倒れる・交代）。なければ null */
   readonly motion: FrameMotion | null;
+  /** 演出でキャラの上に出す数字（ダメージ・回復）。なければ null */
+  readonly popup: FramePopup | null;
   /** 演出の速さ（メニューの表示に使う） */
   readonly speed: 1 | 2;
   /** 音（効果音と BGM）を鳴らすか（メニューの表示に使う） */
@@ -294,6 +297,7 @@ export function buildBattleView(
     confirm: phase === 'playing' ? null : confirmView(session, phase, bench, ui),
     hit: frame?.hit ?? null,
     motion: frame?.motion ?? null,
+    popup: frame?.popup ?? null,
     speed: ui.speed,
     sound: ui.sound,
     orderPreview: orderPreview(session, state),
