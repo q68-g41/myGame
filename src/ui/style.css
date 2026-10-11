@@ -846,6 +846,143 @@ body {
   }
 }
 
+/*
+ * ===== ダメージと回復の数字（M7-4） =====
+ * キャラの絵（96×96）の上のほうに飛び出す。そのコマのあいだ（1行0.8秒、2倍速なら0.4秒：playback.ts の STEP_MS）だけ出す。
+ * 黒で縁取りして、どの空の色の上でも読めるようにする
+ */
+.damage-pop {
+  position: absolute;
+  z-index: 2;
+  left: 48px;
+  bottom: 60px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  transform: translateX(-50%);
+  font-family: var(--font-dot);
+  line-height: 1;
+  white-space: nowrap;
+  color: #fff;
+  text-shadow:
+    2px 0 0 var(--ink),
+    -2px 0 0 var(--ink),
+    0 2px 0 var(--ink),
+    0 -2px 0 var(--ink),
+    2px 2px 0 var(--ink),
+    -2px 2px 0 var(--ink),
+    2px -2px 0 var(--ink),
+    -2px -2px 0 var(--ink),
+    0 4px 0 var(--ink);
+  pointer-events: none;
+  animation: damage-pop 0.8s ease-out forwards;
+}
+
+.fighter--enemy .damage-pop {
+  left: auto;
+  right: 48px;
+  transform: translateX(50%);
+}
+
+.damage-pop__amount {
+  font-size: 32px;
+}
+
+.damage-pop__note {
+  margin-bottom: 2px;
+  font-size: 15px;
+}
+
+/* 有利：大きな金の数字。不利：小さく灰色。回復：緑 */
+.damage-pop--advantage .damage-pop__amount {
+  font-size: 40px;
+  color: #ffd166;
+}
+
+.damage-pop--advantage .damage-pop__note {
+  color: #ff9b54;
+}
+
+.damage-pop--disadvantage .damage-pop__amount {
+  font-size: 26px;
+  color: #b9c3e0;
+}
+
+.damage-pop--disadvantage .damage-pop__note {
+  color: #9aa6c8;
+}
+
+.damage-pop--heal .damage-pop__amount {
+  color: #7fe39a;
+}
+
+.battle--fast .damage-pop {
+  animation-duration: 0.4s;
+}
+
+@keyframes damage-pop {
+  0% {
+    opacity: 0;
+    translate: 0 10px;
+    scale: 0.5;
+  }
+  14% {
+    opacity: 1;
+    translate: 0 -16px;
+    scale: 1.2;
+  }
+  26% {
+    translate: 0 -10px;
+    scale: 1;
+  }
+  80% {
+    opacity: 1;
+    translate: 0 -16px;
+  }
+  100% {
+    opacity: 0;
+    translate: 0 -30px;
+  }
+}
+
+/* 有利の技が当たったコマでは、上半分（空と山並みごと）を小さく揺らす */
+.battle--shake .battle__view {
+  animation: screen-shake 0.28s steps(2) 1;
+}
+
+.battle--fast.battle--shake .battle__view {
+  animation-duration: 0.14s;
+}
+
+@keyframes screen-shake {
+  0% {
+    translate: -4px 0;
+  }
+  25% {
+    translate: 4px 2px;
+  }
+  50% {
+    translate: -4px -2px;
+  }
+  75% {
+    translate: 2px 0;
+  }
+  100% {
+    translate: 0 0;
+  }
+}
+
+/* 端末の「動きを減らす」設定がオンなら、数字は動かさずに出し、画面も揺らさない */
+@media (prefers-reduced-motion: reduce) {
+  .damage-pop {
+    animation: none;
+  }
+
+  .battle--shake .battle__view {
+    animation: none;
+  }
+}
+
 .menu {
   display: flex;
   align-items: center;

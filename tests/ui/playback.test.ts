@@ -103,6 +103,36 @@ describe('演出のコマ', () => {
     expect(seen.has('move') && seen.has('faint')).toBe(true);
   });
 
+  it('ダメージ・状態異常のダメージ・回復のコマでは、キャラの上に出す数字を決める。ダメージは相性で種類を変える（M7-4）', () => {
+    const kinds = new Set<string>();
+    for (const seed of [1, 2, 3, 40]) {
+      for (const session of sessions(seed)) {
+        const frames = buildFrames(session.previousState, session.lastEvents, session.state);
+        session.lastEvents.forEach((event, index) => {
+          const popup = frames[index]!.popup;
+          if (popup !== null) {
+            kinds.add(popup.kind);
+          }
+          switch (event.type) {
+            case 'damage':
+              expect(popup).toEqual({ side: event.side, amount: event.amount, kind: event.effectiveness });
+              break;
+            case 'statusDamage':
+              expect(popup).toEqual({ side: event.side, amount: event.amount, kind: 'neutral' });
+              break;
+            case 'healed':
+              // HPが満タンで回復しなかったときは出さない
+              expect(popup).toEqual(event.amount > 0 ? { side: event.side, amount: event.amount, kind: 'heal' } : null);
+              break;
+            default:
+              expect(popup).toBeNull();
+          }
+        });
+      }
+    }
+    expect(kinds.has('neutral')).toBe(true);
+  });
+
   it('ダメージを受けたコマでは、受けた側を光らせる', () => {
     const session = sessions(1)[0]!;
     const frames = buildFrames(session.previousState, session.lastEvents, session.state);

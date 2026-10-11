@@ -337,3 +337,80 @@ describe('キャラの動き（M7-1）', () => {
     expect(root.querySelector<HTMLElement>('.battle')!.style.getPropertyValue('--anim-delay')).toMatch(/^-\d+ms$/);
   });
 });
+
+describe('ダメージと回復の数字（M7-4）', () => {
+  const handlers = {
+    onMove: vi.fn(),
+    onBench: vi.fn(),
+    onConfirm: vi.fn(),
+    onCancel: vi.fn(),
+    onContinue: vi.fn(),
+    onToggleSpeed: vi.fn(),
+    onToggleSound: vi.fn(),
+    onSkip: vi.fn(),
+  };
+  const battle = createBattle(['crimson-trial', 'blue-trial'].map(getFighter), ['green-trial', 'yellow-trial'].map(getFighter));
+  const view = buildBattleView(createSession(battle, 1));
+  const pops = () => [...root.querySelectorAll<HTMLElement>('.damage-pop')];
+  const shaking = () => root.querySelector('.battle')!.classList.contains('battle--shake');
+
+  beforeEach(() => {
+    document.body.innerHTML = '<div id="app"></div>';
+    root = document.querySelector<HTMLElement>('#app')!;
+  });
+
+  it('ふだんは出さない', () => {
+    renderBattleScreen(root, view, handlers);
+    expect(pops()).toHaveLength(0);
+    expect(shaking()).toBe(false);
+  });
+
+  it('有利のダメージは、受けた側に「有利！」と数字を出し、上半分を揺らす', () => {
+    renderBattleScreen(root, { ...view, popup: { side: 'enemy', amount: 69, kind: 'advantage' } }, handlers);
+    const [pop] = pops();
+    expect(pops()).toHaveLength(1);
+    expect(pop!.closest('[data-side]')?.getAttribute('data-side')).toBe('enemy');
+    expect(pop!.classList.contains('damage-pop--advantage')).toBe(true);
+    expect(pop!.querySelector('.damage-pop__note')?.textContent).toBe('有利！');
+    expect(pop!.querySelector('.damage-pop__amount')?.textContent).toBe('69');
+    // 読み上げはログに任せ、数字は読ませない。上半分は表示だけ（押せるものを置かない）
+    expect(pop!.getAttribute('aria-hidden')).toBe('true');
+    expect(root.querySelector('.screen__view')!.querySelectorAll(INTERACTIVE)).toHaveLength(0);
+    expect(shaking()).toBe(true);
+  });
+
+  it('不利は「不利…」、ふつうは数字だけ。どちらも揺らさない', () => {
+    renderBattleScreen(root, { ...view, popup: { side: 'player', amount: 37, kind: 'disadvantage' } }, handlers);
+    expect(pops()[0]!.textContent).toBe('不利…37');
+    expect(pops()[0]!.closest('[data-side]')?.getAttribute('data-side')).toBe('player');
+    expect(shaking()).toBe(false);
+
+    renderBattleScreen(root, { ...view, popup: { side: 'player', amount: 12, kind: 'neutral' } }, handlers);
+    expect(pops()[0]!.textContent).toBe('12');
+    expect(shaking()).toBe(false);
+  });
+
+  it('回復は「+数字」', () => {
+    renderBattleScreen(root, { ...view, popup: { side: 'player', amount: 15, kind: 'heal' } }, handlers);
+    expect(pops()[0]!.classList.contains('damage-pop--heal')).toBe(true);
+    expect(pops()[0]!.textContent).toBe('+15');
+  });
+
+  it('演出で、ダメージのコマに数字が出て、早送りしたあとの画面には残らない', () => {
+    startBattle();
+    const seen: string[] = [];
+    vi.useFakeTimers();
+    try {
+      enabled('.move-button')[0]!.click();
+      for (let i = 0; i < 12; i++) {
+        seen.push(...pops().map((pop) => pop.textContent ?? ''));
+        vi.advanceTimersByTime(800);
+      }
+    } finally {
+      vi.useRealTimers();
+    }
+    finishPlayback();
+    expect(seen.some((text) => /\d+$/.test(text))).toBe(true);
+    expect(pops()).toHaveLength(0);
+  });
+});

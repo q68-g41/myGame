@@ -12,7 +12,7 @@ import type {
   OrderPreview,
 } from './battleView';
 import { el } from './dom';
-import type { MotionKind } from './playback';
+import type { FramePopup, MotionKind } from './playback';
 import { ANIM_CYCLE_MS, animatedSpriteElement, iconElement } from './sprites';
 
 export interface BattleScreenHandlers {
@@ -37,6 +37,23 @@ function hpLevel(hp: number, maxHp: number): 'high' | 'middle' | 'low' {
   return ratio > 0.5 ? 'high' : ratio > 0.2 ? 'middle' : 'low';
 }
 
+const POPUP_NOTE = { advantage: '有利！', neutral: null, disadvantage: '不利…', heal: null } as const;
+
+/**
+ * キャラの上に飛び出す数字（M7-4）。有利・不利のときは、数字の上に短い言葉を添える。回復は「+数字」。
+ * そのコマのあいだだけ出す（次のコマで描き直すと消える）。読み上げはログに任せる（絵と同じく aria-hidden）
+ */
+function popupElement(doc: Document, popup: FramePopup): HTMLElement {
+  const pop = el(doc, 'span', `damage-pop damage-pop--${popup.kind}`);
+  pop.setAttribute('aria-hidden', 'true');
+  const note = POPUP_NOTE[popup.kind];
+  if (note !== null) {
+    pop.append(el(doc, 'span', 'damage-pop__note', note));
+  }
+  pop.append(el(doc, 'span', 'damage-pop__amount', popup.kind === 'heal' ? `+${popup.amount}` : String(popup.amount)));
+  return pop;
+}
+
 /**
  * 場のキャラのパネル。動き（M7-1）は CSS のクラスで付ける：
  * fighter--hit（揺れて光る）、fighter--attack（前に出る）、fighter--faint（沈んで薄れる）、fighter--enter（入ってくる）、
@@ -48,6 +65,7 @@ function fighterPanel(
   side: 'enemy' | 'player',
   hit: boolean,
   motion: MotionKind | null,
+  popup: FramePopup | null,
 ): HTMLElement {
   const classes = ['fighter', `fighter--${side}`];
   if (hit) {
@@ -94,6 +112,10 @@ function fighterPanel(
 
   info.append(header, bar, footer);
   panel.append(sprite, info);
+  // 数字は絵の外に置く（絵が光ったり沈んだりする動きに、数字を巻き込まないため）
+  if (popup !== null) {
+    panel.append(popupElement(doc, popup));
+  }
   return panel;
 }
 
@@ -293,9 +315,10 @@ export function renderBattleScreen(root: HTMLElement, view: BattleView, handlers
     display.append(el(doc, 'p', 'battle__caption', view.caption));
   }
   const motionOf = (side: 'enemy' | 'player') => (view.motion?.side === side ? view.motion.kind : null);
+  const popupOf = (side: 'enemy' | 'player') => (view.popup?.side === side ? view.popup : null);
   display.append(
-    fighterPanel(doc, view.enemy, 'enemy', view.hit === 'enemy', motionOf('enemy')),
-    fighterPanel(doc, view.player, 'player', view.hit === 'player', motionOf('player')),
+    fighterPanel(doc, view.enemy, 'enemy', view.hit === 'enemy', motionOf('enemy'), popupOf('enemy')),
+    fighterPanel(doc, view.player, 'player', view.hit === 'player', motionOf('player'), popupOf('player')),
     log,
   );
   if (view.detail !== null) {
@@ -323,7 +346,15 @@ export function renderBattleScreen(root: HTMLElement, view: BattleView, handlers
   bench.append(...view.bench.map((member) => benchButton(doc, member, handlers)));
   controls.append(bench, menu(doc, view, handlers));
 
-  const screen = el(doc, 'div', `screen battle battle--${view.phase}${view.speed === 2 ? ' battle--fast' : ''}`);
+  const classes = ['screen', 'battle', `battle--${view.phase}`];
+  if (view.speed === 2) {
+    classes.push('battle--fast');
+  }
+  if (view.popup?.kind === 'advantage') {
+    // 有利の技が当たったコマでは、上半分を小さく揺らす（M7-4）
+    classes.push('battle--shake');
+  }
+  const screen = el(doc, 'div', classes.join(' '));
   // 待機中のコマ送りは、描き直しても最初のコマに戻らないように、いまの時刻から続きのコマで始める
   screen.style.setProperty('--anim-delay', `-${Math.round(performance.now() % ANIM_CYCLE_MS)}ms`);
   screen.append(display, controls);
