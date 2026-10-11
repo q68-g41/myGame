@@ -1,10 +1,19 @@
 import { describe, expect, it } from 'vitest';
 import { ATTRIBUTE_COLORS, ATTRIBUTE_NAMES } from '../../src/data/attributes';
 import { ATTRIBUTE_ORDER, MONOCHROME_ATTRIBUTES } from '../../src/engine/constants';
+import styleCss from '../../src/ui/style.css?raw';
 
-// 画面の背景とパネルの色（src/ui/style.css の --color-bg と --color-panel）。
-// テストでは CSS の中身を読み込めないので、ここに写しておく
-const BACKGROUNDS = { '--color-bg': '#14141f', '--color-panel': '#1e1e2d' };
+/** src/ui/style.css で決めている色（`--name: #rrggbb;`） */
+function cssColor(name: string): string {
+  const color = new RegExp(`${name}:\\s*(#[0-9a-f]{6})\\s*;`, 'i').exec(styleCss)?.[1];
+  if (color === undefined) {
+    throw new Error(`style.css に ${name} の色（#rrggbb）が見つからない`);
+  }
+  return color.toLowerCase();
+}
+
+// 画面の背景とパネルの色
+const BACKGROUNDS = { '--color-bg': cssColor('--color-bg'), '--color-panel': cssColor('--color-panel') };
 
 const ALL_ATTRIBUTES = [...ATTRIBUTE_ORDER, ...MONOCHROME_ATTRIBUTES];
 
