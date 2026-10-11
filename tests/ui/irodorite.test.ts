@@ -86,6 +86,13 @@ describe('彩り手を選ぶ画面', () => {
     expect(root.querySelectorAll('.screen__view .fighter-detail__moves li')).toHaveLength(4);
   });
 
+  it('一覧のボタンと詳細には、相棒の属性の色を --card-color で渡す（板の色と名前の前の菱形に使う。M7-4）', () => {
+    const color = (element: Element | null) => (element as HTMLElement | null)?.style.getPropertyValue('--card-color');
+    expect(choices().every((choice) => /^#[0-9a-f]{6}$/i.test(color(choice) ?? ''))).toBe(true);
+    expect(color(root.querySelector('.irodorite-detail'))).toBe(color(choices()[0]!));
+    expect(color(root.querySelector('.screen__view .fighter-detail'))).toBe(color(choices()[0]!));
+  });
+
   it('一覧をタップすると、その彩り手を選ぶ（詳細が変わる）', () => {
     const sou = indexOf('sou');
     choices()[sou]!.click();
