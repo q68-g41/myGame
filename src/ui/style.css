@@ -1415,9 +1415,9 @@ button.member {
   cursor: pointer;
 }
 
-/* 選んだ候補・選んでいる彩り手：板を金茶にして、金で縁取る */
-.candidate--picked,
-.irodorite-choice--selected {
+/* 選んだ候補・選んでいる彩り手：板を金茶にして、金で縁取る（板の色の指定より強くする） */
+.candidate.candidate--picked,
+.irodorite-choice.irodorite-choice--selected {
   --face: color-mix(in srgb, var(--gold) 24%, #1d1729);
   box-shadow:
     inset 0 0 0 2px var(--gold),
